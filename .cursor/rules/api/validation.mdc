@@ -1,0 +1,82 @@
+---
+description: Shared Zod contracts — single source of truth for API shapes
+globs:
+  - "packages/contracts/**/*.ts"
+  - "apps/api/**/*.ts"
+alwaysApply: false
+---
+
+# API Contracts (Zod)
+
+Source of truth: `docs/architecture/api-contracts.md`.
+
+## Decision
+
+`packages/contracts` holds Zod request/response schemas + inferred types. Backend wraps with `nestjs-zod`; frontend imports the same schemas. **Application does not import contracts** — controllers map DTO → command.
+
+## File Naming
+
+- `*.input.ts` — body / query
+- `*.output.ts` — responses
+- `*.param.ts` — path params
+
+Organize by context: `contracts/tenancy/`, `contracts/authorization/`, …
+
+## Example
+
+```typescript
+// packages/contracts/src/tenancy/invite-member.input.ts
+import { z } from 'zod'
+
+export const InviteMemberInputSchema = z.object({
+  email: z.string().email(),
+  roleIds: z.array(z.string().uuid()).min(1),
+})
+
+export type InviteMemberInput = z.infer<typeof InviteMemberInputSchema>
+```
+
+```typescript
+// packages/contracts/src/tenancy/membership.output.ts
+import { z } from 'zod'
+
+export const MembershipOutputSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  status: z.enum(['invited', 'active', 'suspended']),
+})
+
+export type MembershipOutput = z.infer<typeof MembershipOutputSchema>
+```
+
+## Backend Wiring
+
+```typescript
+import { createZodDto } from 'nestjs-zod'
+import { InviteMemberInputSchema } from '@b2b-saas-starter-kit/contracts'
+
+export class InviteMemberInputDto extends createZodDto(InviteMemberInputSchema) {}
+
+@Post()
+async invite(@Body() body: InviteMemberInputDto) {
+  return this.inviteMember.execute({
+    tenantId: this.tenantContext.tenantId,
+    email: body.email,
+    roleIds: body.roleIds,
+    actorUserId: this.currentUser.id,
+  })
+}
+```
+
+## Allowed in `contracts`
+
+Wire schemas, shared error/pagination envelopes, permission string unions used on the wire.
+
+## Forbidden in `contracts`
+
+Domain logic, Nest/React, TypeORM entities, context-internal types that are not API shapes.
+
+## OpenAPI
+
+Generated from nestjs-zod DTOs for **external** consumers. Internal FE uses `contracts` directly — no codegen channel.

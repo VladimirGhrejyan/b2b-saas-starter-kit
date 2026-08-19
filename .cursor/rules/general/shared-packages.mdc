@@ -1,0 +1,51 @@
+---
+description: Shared package allow/forbid rules — contracts, kernel types, utils, config
+globs:
+  - "packages/shared-kernel-types/**/*.ts"
+  - "packages/contracts/**/*.ts"
+  - "packages/utils/**/*.ts"
+  - "packages/config-validation/**/*.ts"
+alwaysApply: false
+---
+
+# Shared Packages
+
+Source of truth: `docs/architecture/shared-packages.md`.
+
+## Allowed Shared Libs
+
+| Package | Contents |
+|---------|----------|
+| `shared-kernel-types` | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums |
+| `contracts` | Zod API schemas + inferred types |
+| `utils` | Pure helpers (`ObjectUtils`, `ArrayUtils`, `DateUtils`, …) |
+| `config-validation` | YAML + Zod config schemas (BE + FE) |
+
+No `constants` package. Domain base classes (`AggregateRoot`, `DomainEvent`) stay in `domain/shared-kernel` (backend-only).
+
+## DAG
+
+```
+shared-kernel-types  ← leaf
+contracts            → shared-kernel-types
+domain               → shared-kernel-types   (NOT contracts)
+frontend / api       → contracts + shared-kernel-types
+```
+
+```typescript
+// ✅
+import type { TenantId } from '@b2b-saas-starter-kit/shared-kernel-types'
+import { InviteMemberInputSchema } from '@b2b-saas-starter-kit/contracts'
+
+// ❌ domain must never import contracts
+import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
+```
+
+## Must Never Be Shared
+
+- Domain / business rules
+- TypeORM, Redis, Nest, React
+- Context-internal types that are not wire contracts
+- Side effects at import time
+
+When unsure: keep it context-local rather than dumping into `utils`.

@@ -1,0 +1,59 @@
+---
+description: TypeScript strict mode and type safety standards
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: false
+---
+
+# TypeScript Standards
+
+## Strict Mode
+
+All packages use full strict mode (already in `tsconfig.base.json`):
+
+- `strict: true`
+- `noUncheckedIndexedAccess: true`
+- Prefer `unknown` over `any`
+
+## Type Imports
+
+Always use `import type` for type-only imports:
+
+```typescript
+// ✅
+import type { Tenant } from '@b2b-saas-starter-kit/domain'
+import { InviteMemberUseCase } from '@b2b-saas-starter-kit/application'
+
+// ❌
+import { Tenant, InviteMemberUseCase } from './combined'
+```
+
+## No `any`
+
+```typescript
+// ✅
+function parse(input: unknown): User {
+  // validate / narrow first
+}
+
+// ❌
+function parse(input: any): User {}
+```
+
+## Array Access
+
+With `noUncheckedIndexedAccess`, indexed access is `T | undefined`:
+
+```typescript
+const members: Membership[] = []
+const first = members[0] // Membership | undefined
+if (first) {
+  // safe
+}
+```
+
+## Module Resolution
+
+- **Backend / libs:** follow workspace `tsconfig.base.json` (`nodenext`)
+- **Frontend apps (Vite):** `moduleResolution: "bundler"` in the app tsconfig

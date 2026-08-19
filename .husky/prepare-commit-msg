@@ -1,0 +1,1 @@
+pnpm exec jiti scripts/git/prepare-commit-msg.ts "$@"

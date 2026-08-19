@@ -1,0 +1,90 @@
+---
+description: Pure domain layer — framework-free business logic and repository ports
+globs:
+  - "packages/domain/**/*.ts"
+alwaysApply: false
+---
+
+# Domain Layer
+
+Source of truth: `docs/architecture/backend.md`, `docs/architecture/persistence.md`.
+
+## Rules
+
+- Pure TypeScript only
+- Repository **ports** live in `packages/domain/<context>/ports`
+- May depend on `@b2b-saas-starter-kit/shared-kernel-types` and Zod
+- Never import NestJS, TypeORM, Redis, `contracts`, `application`, or `infrastructure`
+
+## Allowed
+
+```typescript
+import { randomUUID } from 'node:crypto'
+import { z } from 'zod'
+import type { TenantId, UserId } from '@b2b-saas-starter-kit/shared-kernel-types'
+```
+
+## Forbidden
+
+```typescript
+import { Injectable } from '@nestjs/common'
+import { Entity, Column } from 'typeorm'
+import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
+```
+
+## Aggregate Example
+
+```typescript
+// packages/domain/src/tenancy/tenant.ts
+import type { TenantId } from '@b2b-saas-starter-kit/shared-kernel-types'
+import type { DomainEvent } from '../shared-kernel/domain-event'
+
+export class Tenant {
+  private constructor(
+    readonly id: TenantId,
+    private name: string,
+    private status: 'active' | 'suspended',
+  ) {}
+
+  static create(id: TenantId, name: string): { tenant: Tenant; events: DomainEvent[] } {
+    const tenant = new Tenant(id, name, 'active')
+    return {
+      tenant,
+      events: [{ type: 'TenantCreated', tenantId: id, occurredAt: new Date() }],
+    }
+  }
+
+  rename(name: string): DomainEvent[] {
+    if (!name.trim()) throw new InvalidTenantNameError()
+    this.name = name.trim()
+    return [{ type: 'TenantRenamed', tenantId: this.id, name: this.name, occurredAt: new Date() }]
+  }
+
+  suspend(): DomainEvent[] {
+    if (this.status === 'suspended') throw new TenantAlreadySuspendedError()
+    this.status = 'suspended'
+    return [{ type: 'TenantSuspended', tenantId: this.id, occurredAt: new Date() }]
+  }
+}
+```
+
+## Repository Port (in domain)
+
+```typescript
+// packages/domain/src/tenancy/ports/tenant.repository.ts
+import type { TenantId } from '@b2b-saas-starter-kit/shared-kernel-types'
+import type { Tenant } from '../tenant'
+
+export interface TenantRepository {
+  findById(id: TenantId): Promise<Tenant | null>
+  save(tenant: Tenant): Promise<void>
+}
+```
+
+## Context Isolation
+
+Do not import another context's internals (`tenancy` must not import `authorization` domain types). Reference by ID only (`UserId`, `TenantId`, `RoleId` from `shared-kernel-types`).
+
+## Testing
+
+Unit-test aggregates with Vitest — no Nest/DB/Redis. Target ~90% coverage on `packages/domain`.

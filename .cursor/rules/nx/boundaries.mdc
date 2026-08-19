@@ -1,0 +1,71 @@
+---
+description: Nx scope×layer tags and dependency constraints for this workspace
+globs:
+  - "**/project.json"
+  - "**/package.json"
+  - "**/nx.json"
+  - "**/eslint.config.*"
+alwaysApply: false
+---
+
+# Nx Boundaries
+
+Source of truth: `docs/architecture/boundaries.md`.
+
+## Tag Axes
+
+Every project: `scope:*` + `layer:*` (apps also `type:app`).
+
+| Project | Tags |
+|---------|------|
+| `shared-kernel-types`, `contracts`, `utils`, `config-validation` | `scope:shared`, matching `layer:*` |
+| `domain` | `scope:backend`, `layer:domain` |
+| `application` | `scope:backend`, `layer:application` |
+| `platform` | `scope:backend`, `layer:platform` |
+| `infrastructure-*` | `scope:backend`, `layer:infrastructure` |
+| `composition-*` | `scope:backend`, `layer:composition` |
+| `frontend-ui` | `scope:frontend`, `layer:ui` |
+| `frontend-core` | `scope:frontend`, `layer:frontend-core` |
+| `api`, `worker` | `scope:backend`, `type:app` |
+| `web`, `admin` | `scope:frontend`, `type:app` |
+
+## Hard Constraints (intent)
+
+```
+scope:shared   → scope:shared only
+scope:backend  → backend + shared
+scope:frontend → frontend + shared
+
+layer:domain         → shared-types only
+layer:platform       → shared-types only
+layer:application    → domain, platform, shared-types, utils
+layer:infrastructure → domain, application, platform, shared…
+layer:composition    → domain, application, infrastructure, platform…
+type:app             → composition / frontend libs / shared (never other apps)
+```
+
+## Forbidden Edges
+
+```typescript
+// ❌ domain → contracts / application / infrastructure
+import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
+
+// ❌ application → infrastructure
+import { TypeOrmTenantRepository } from '@b2b-saas-starter-kit/infrastructure-postgres'
+
+// ❌ frontend → backend
+import { Tenant } from '@b2b-saas-starter-kit/domain'
+
+// ❌ shared → frontend/backend framework code
+```
+
+## Context Isolation
+
+Contexts are folders, not projects. Enforce with folder-level lint: `domain/src/tenancy` must not import `domain/src/authorization` internals. Cross-context: IDs + events only.
+
+## Commands
+
+```bash
+pnpm nx graph
+pnpm nx affected -t lint,test,build
+```

@@ -1,0 +1,1 @@
+pnpm exec jiti scripts/git/validate-branch.ts

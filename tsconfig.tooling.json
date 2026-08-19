@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "composite": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "module": "esnext",
+    "moduleResolution": "bundler"
+  },
+  "include": [
+    "eslint.config.mts",
+    "commitlint.config.ts",
+    "vitest.eslint-plugin.config.ts",
+    "config/eslint/**/*.ts",
+    "config/commitlint/**/*.ts",
+    "scripts/**/*.ts"
+  ]
+}

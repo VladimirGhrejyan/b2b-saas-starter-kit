@@ -1,0 +1,89 @@
+---
+description: Port-based persistence — domain ports, TypeORM entities, mappers, UnitOfWork
+globs:
+  - "packages/domain/**/ports/**/*.ts"
+  - "packages/platform/**/*.ts"
+  - "packages/infrastructure*/**/*.ts"
+  - "packages/application/**/*.ts"
+alwaysApply: false
+---
+
+# Port-Based Persistence
+
+Source of truth: `docs/architecture/persistence.md`.
+
+## Placement
+
+| Artifact | Location |
+|----------|----------|
+| Repository ports | `packages/domain/<context>/ports` |
+| Domain models | `packages/domain/<context>` |
+| TypeORM entities + mappers + repo impls | `packages/infrastructure-postgres/<context>` |
+| Migrations (global) | `packages/infrastructure-postgres/migrations` |
+| `UnitOfWork` port | `packages/platform` |
+| `UnitOfWork` impl | `packages/infrastructure-postgres` |
+
+## Separate Models + Mappers
+
+```typescript
+// domain — pure
+export interface TenantRepository {
+  findById(id: TenantId): Promise<Tenant | null>
+  save(tenant: Tenant): Promise<void>
+}
+
+// infrastructure-postgres — TypeORM entity (never exported as domain)
+@Entity('tenants')
+export class TenantEntity {
+  @PrimaryColumn('uuid') id!: string
+  @Column() name!: string
+  @Column() status!: string
+}
+
+// mapper
+export const TenantMapper = {
+  toDomain(e: TenantEntity): Tenant { /* … */ },
+  toEntity(t: Tenant): TenantEntity { /* … */ },
+}
+```
+
+## Unit of Work
+
+```typescript
+// platform
+export interface UnitOfWork {
+  run<T>(work: () => Promise<T>): Promise<T>
+}
+
+// application
+await this.uow.run(async () => {
+  await this.tenants.save(tenant)
+  await this.memberships.save(ownerMembership)
+})
+```
+
+Do **not** put `EntityManager` on domain port signatures.
+
+## Tenant-Aware Repositories
+
+Tenant-owned repos extend `TenantAwareRepository` (ambient `TenantContext`). See `multi-tenancy.mdc`.
+
+## Cross-Context Data
+
+- FKs only **within** a context
+- Across contexts: store branded IDs (`userId`, `tenantId`, `roleId`) — no cross-context FKs/joins
+
+## Anti-Patterns
+
+```typescript
+// ❌ Port leaking TypeORM
+export interface TenantRepository {
+  getRepo(): Repository<TenantEntity>
+}
+
+// ❌ Domain model = TypeORM entity
+@Entity('tenants')
+export class Tenant { /* domain methods */ }
+
+// ❌ Application importing EntityManager / contracts DTOs
+```

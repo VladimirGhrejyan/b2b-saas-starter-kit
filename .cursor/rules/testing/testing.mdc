@@ -1,0 +1,84 @@
+---
+description: Vitest testing standards for domain, application, and apps
+globs:
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/*.integration.spec.ts"
+  - "**/*.e2e.spec.ts"
+  - "**/vitest.config.ts"
+alwaysApply: false
+---
+
+# Testing Standards
+
+## Types
+
+| Kind | Suffix | Where |
+|------|--------|-------|
+| Unit | `.spec.ts` | next to code |
+| Integration | `.integration.spec.ts` | next to code / infra |
+| E2E | `.e2e.spec.ts` | `apps/api` or `test/e2e` |
+
+Use **Vitest** everywhere. Prefer in-memory port fakes over mocks.
+
+## Domain Unit Test
+
+```typescript
+// packages/domain/src/tenancy/tenant.spec.ts
+import { describe, it, expect } from 'vitest'
+import { Tenant } from './tenant'
+import { asTenantId } from '@b2b-saas-starter-kit/shared-kernel-types'
+
+describe('Tenant', () => {
+  it('emits TenantCreated on create', () => {
+    const { tenant, events } = Tenant.create(asTenantId('…'), 'Acme')
+    expect(tenant).toBeDefined()
+    expect(events[0]?.type).toBe('TenantCreated')
+  })
+
+  it('rejects empty rename', () => {
+    const { tenant } = Tenant.create(asTenantId('…'), 'Acme')
+    expect(() => tenant.rename('  ')).toThrow()
+  })
+})
+```
+
+## Application Unit Test (in-memory ports)
+
+```typescript
+it('invites a member inside a unit of work', async () => {
+  const memberships = new InMemoryMembershipRepository()
+  const uow = new InMemoryUnitOfWork()
+  const useCase = new InviteMemberUseCase(uow, authzFake, memberships)
+
+  await useCase.execute({
+    tenantId: asTenantId('t1'),
+    email: 'a@example.com',
+    roleIds: [asRoleId('r1')],
+    actorUserId: asUserId('u1'),
+  })
+
+  expect(await memberships.count()).toBe(1)
+})
+```
+
+## Coverage
+
+Enforce ~90% on `packages/domain` only. Other layers: meaningful tests, no universal high threshold.
+
+## Frontend
+
+```typescript
+render(<MemberCard member={membershipFixture} />)
+expect(screen.getByText('active')).toBeInTheDocument()
+```
+
+Mock RTK hooks or use MSW for integration. Use contract types for fixtures.
+
+## Commands
+
+```bash
+pnpm nx test domain
+pnpm nx test application
+pnpm nx affected -t test
+```

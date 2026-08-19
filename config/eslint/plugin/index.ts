@@ -1,0 +1,24 @@
+import type {ESLint} from 'eslint'
+
+import {maxClassesPerFileRule} from './rules/max-classes-per-file'
+import {maxStandaloneFunctionsRule} from './rules/max-standalone-functions'
+import {noMixedFileDeclarationsRule} from './rules/no-mixed-file-declarations'
+
+/** Workspace ESLint plugin for file-structure conventions. */
+export class WorkspaceEslintPlugin {
+  static readonly name = '@b2b-saas-starter-kit'
+
+  static readonly plugin = {
+    meta: {
+      name: '@b2b-saas-starter-kit/eslint-plugin',
+      version: '0.0.0',
+    },
+    rules: {
+      'max-standalone-functions': maxStandaloneFunctionsRule,
+      'max-classes-per-file': maxClassesPerFileRule,
+      'no-mixed-file-declarations': noMixedFileDeclarationsRule,
+    },
+  } as unknown as ESLint.Plugin
+}
+
+export const workspaceEslintPlugin = WorkspaceEslintPlugin.plugin

@@ -1,0 +1,84 @@
+---
+description: Event-driven domain pattern — aggregates emit events, handlers react
+globs:
+  - "packages/domain/**/*.ts"
+  - "packages/application/**/*.ts"
+  - "packages/composition*/**/*.ts"
+  - "packages/infrastructure*/**/*.ts"
+alwaysApply: false
+---
+
+# Event-Driven Domain
+
+Source of truth: `docs/architecture/backend.md`, `docs/architecture/infrastructure.md`.
+
+## Flow
+
+```
+Aggregate.method() → returns DomainEvent[]
+  → UnitOfWork commits (persist + outbox rows)
+  → in-process EventBus.dispatch (same process)
+  → outbox relay → BullMQ for reliable cross-context work
+```
+
+## Naming
+
+Past tense: `TenantCreated`, `MemberInvited`, `RoleAssigned`. Not `CreateTenant`.
+
+## Aggregates Return Events (do not dispatch)
+
+```typescript
+export class Membership {
+  invite(cmd: InviteMemberCommand): DomainEvent[] {
+    // invariants…
+    return [{
+      type: 'MemberInvited',
+      membershipId: this.id,
+      tenantId: cmd.tenantId,
+      email: cmd.email,
+      occurredAt: new Date(),
+    }]
+  }
+}
+
+// ❌ Aggregate must not take EventBus / Redis / Nest
+```
+
+## Use Case Dispatches After Persist
+
+```typescript
+@Injectable()
+export class InviteMemberUseCase {
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly memberships: MembershipRepository,
+    private readonly eventBus: EventBus,
+  ) {}
+
+  async execute(cmd: InviteMemberCommand) {
+    const { membership, events } = await this.uow.run(async () => {
+      const membership = Membership.invite(cmd)
+      const events = membership.pullEvents()
+      await this.memberships.save(membership)
+      // outbox rows written in same transaction when needed
+      return { membership, events }
+    })
+    this.eventBus.dispatch(events)
+    return membership
+  }
+}
+```
+
+## Cross-Context Reactions
+
+Prefer **domain events + outbox** over importing another context's domain:
+
+- `audit` / `notifications` subscribe to `MemberInvited`, `TenantCreated`
+- Contexts reference each other by ID only
+
+## In-Process vs Outbox
+
+| Need | Mechanism |
+|------|-----------|
+| Same-process reaction | EventBus after commit |
+| Must survive crash / other context / email | Outbox → BullMQ (`apps/worker`) |

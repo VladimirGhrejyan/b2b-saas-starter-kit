@@ -1,0 +1,19 @@
+# Dependencies & caches
+node_modules
+/dist
+/coverage
+/.nx/cache
+/.nx/workspace-data
+pnpm-lock.yaml
+
+# Build / generated
+*.tsbuildinfo
+**/*.gen.ts
+graph-check.html
+/static
+
+# Editor / agent tooling (vendor skills, not product code)
+.cursor/skills
+
+# Misc
+.DS_Store

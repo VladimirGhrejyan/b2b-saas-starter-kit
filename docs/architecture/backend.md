@@ -1,0 +1,141 @@
+# Backend Architecture
+
+Hexagonal + Clean architecture, organized layer-first (see [`workspace-topology.md`](./workspace-topology.md)), with NestJS confined to the outer ring.
+
+## Layers and the dependency rule
+
+```
+apps (api, worker)              ← transport + process entry
+      ↓ imports
+composition/<context>           ← NestJS modules: wire ports → adapters + use cases
+      ↓
+infrastructure/{postgres,redis,messaging}  ← adapters (implements ports)
+      ↓
+application/<context>           ← use cases (@Injectable), orchestration, transactions
+      ↓
+domain/<context>                ← pure business logic + PORTS (interfaces)
+      ↓
+shared-kernel-types             ← branded IDs, enums, primitives (leaf)
+
+platform                        ← capability PORTS (Cache/Lock/PubSub/UnitOfWork), inward leaf
+```
+
+**The rule:** dependencies always point _down/inward_. `domain` knows nothing about anything above it. This is enforced by Nx tags (see [`boundaries.md`](./boundaries.md)).
+
+## Domain layer (`packages/domain`)
+
+Pure business logic. **Zero framework dependencies** — no NestJS, no TypeORM, no HTTP, no Redis.
+
+Contains, per context folder:
+
+- **Aggregates / entities / value objects** — domain models (plain classes/types), independent of persistence.
+- **Domain events** — emitted by aggregates (event-driven pattern; see [`infrastructure.md`](./infrastructure.md)).
+- **Domain errors** — typed, meaningful failures.
+- **Repository ports** — interfaces such as `UserRepository`, `TenantRepository`. **Decision: repository ports live in the domain layer** (classic DDD). They are interface-only and reference domain models + `shared-kernel-types`, so the domain stays pure.
+- **`shared-kernel/`** — base `AggregateRoot`, `Entity`, `DomainEvent`, `Result` (backend-only primitives).
+
+Allowed imports: `shared-kernel-types`, `zod` (pure). Nothing else.
+
+## Application layer (`packages/application`)
+
+Use-case orchestration. This is where a request becomes a sequence of domain operations inside a transaction.
+
+- **Use cases** (a.k.a. application services / interactors), one responsibility each (e.g. `InviteMemberUseCase`, `AssignRoleUseCase`).
+- Use cases are **`@Injectable`** — this is the _only_ tolerated framework seam in the application layer (chosen for DI ergonomics). No controllers, no HTTP, no TypeORM, no Redis clients here.
+- Owns **transaction boundaries** via the `UnitOfWork` port (see [`persistence.md`](./persistence.md)).
+- Owns **fine-grained authorization** checks (see [`authorization.md`](./authorization.md)).
+- Consumes **repository ports** (from `domain`) and **capability ports** (from `platform`).
+- Receives **command inputs** (plain typed objects), _not_ wire DTOs. Mapping `contracts` DTO → command happens in `apps/api`.
+
+Allowed imports: `domain`, `platform`, `shared-kernel-types`, `utils`, `@nestjs/common` (decorator only).
+
+> Rationale for the `@Injectable` seam: a fully framework-free application layer (manual provider factories) adds wiring boilerplate that obscures the teaching intent of a starter kit. The domain — where purity truly matters — remains 100% framework-free. Recorded in [`decisions.md`](./decisions.md).
+
+## Platform layer (`packages/platform`)
+
+Generic **capability ports** that are technical, not domain concepts:
+
+- `CachePort`, `LockPort`, `PubSubPort` (Redis-backed; see [`infrastructure.md`](./infrastructure.md))
+- `UnitOfWork` / `TransactionManager` (see [`persistence.md`](./persistence.md))
+- `Clock`, `IdGenerator`, `Logger` (cross-cutting seams)
+
+These are **interfaces + contracts only**. Adapters live in `infrastructure`. The domain never imports `platform` for caching/locking (those aren't domain concerns); the **application** layer uses platform ports, and each context's application code decides _policy_ (what to cache, when to lock).
+
+## Infrastructure layer (`packages/infrastructure/*`)
+
+Adapters that implement ports, split by concern:
+
+- **`postgres`** — TypeORM entities, mappers, repository implementations (implement domain repository ports), `DataSource`, migrations, the tenant-aware base repository, the `UnitOfWork` implementation. See [`persistence.md`](./persistence.md).
+- **`redis`** — implementations of `CachePort`/`LockPort`/`PubSubPort`. See [`infrastructure.md`](./infrastructure.md).
+- **`messaging`** — BullMQ queues/processors and the outbox relay.
+
+Infrastructure may use NestJS (`@Injectable`, module providers) freely — it is the outer ring.
+
+## Composition layer (`packages/composition/*`)
+
+**The answer to a problem layer-first creates:** a context's NestJS module must assemble that context's `domain` + `application` + `infrastructure`, but there is no single "context project" to hold it. So a dedicated **composition layer** owns the wiring.
+
+Per context, `composition/src/<context>/<context>.module.ts`:
+
+- Binds each **port** to its **adapter** (`{ provide: UserRepository, useClass: TypeOrmUserRepository }`).
+- Registers the context's **use cases** as providers.
+- Registers **event handlers** / subscribers for the context.
+- Exports a NestJS module that apps import.
+
+Apps (`api`, `worker`) import composition modules and add only transport concerns. This keeps wiring written **once** and apps **thin**.
+
+```mermaid
+flowchart TB
+  subgraph app[apps/api]
+    ctrl[Controllers + guards]
+  end
+  subgraph comp[composition/identity]
+    mod[IdentityModule\nport→adapter bindings\nuse-case providers]
+  end
+  ctrl --> mod
+  mod --> uc[application/identity use cases]
+  mod --> repo[infrastructure/postgres UserRepository impl]
+  uc --> port[domain/identity UserRepository port]
+  repo -. implements .-> port
+```
+
+## The role of NestJS
+
+NestJS is the **delivery + composition framework**, nothing more:
+
+- **Controllers** live only in `apps/api` (and BullMQ processors in `apps/worker`). They validate input via `nestjs-zod` (see [`api-contracts.md`](./api-contracts.md)), map to commands, invoke use cases, and map results back to responses.
+- **Dependency injection / module composition** lives in `composition/*` (reusable) and is assembled by the apps.
+- **No NestJS in `domain`.** The only NestJS in `application` is the `@Injectable` decorator.
+
+This guarantees the domain and (almost all of) the application layer are unit-testable with plain Vitest, no Nest test harness required.
+
+## Request lifecycle (HTTP example)
+
+```
+HTTP request
+  → apps/api controller
+      → nestjs-zod validates body/query/params against a contracts schema
+      → coarse permission guard (authorization)
+      → map DTO → application command
+  → application use case (@Injectable)
+      → open UnitOfWork (transaction)
+      → fine-grained authorization / policy check
+      → load aggregates via repository ports
+      → execute domain logic (aggregates emit domain events)
+      → persist via repository ports; write outbox entries in the same tx
+      → commit UnitOfWork
+      → dispatch in-process events
+  → controller maps result → response DTO (contracts schema)
+HTTP response
+```
+
+Background work (`apps/worker`) follows the same inner path but is triggered by a BullMQ job instead of a controller, and re-establishes tenant context from the job payload (see [`multi-tenancy.md`](./multi-tenancy.md)).
+
+## Testing posture (design intent)
+
+- `domain`: pure unit tests, no I/O.
+- `application`: unit tests with in-memory port fakes + in-memory `UnitOfWork`.
+- `infrastructure`: integration tests against real Postgres/Redis.
+- `apps`: e2e tests over HTTP.
+
+(Testing is documented as intent here; test setup is out of scope for this design phase.)

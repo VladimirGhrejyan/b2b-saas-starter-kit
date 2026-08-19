@@ -1,0 +1,66 @@
+---
+description: Multi-tenancy — pool model, hybrid context, tenant-aware repositories
+globs:
+  - "packages/domain/**/*.ts"
+  - "packages/application/**/*.ts"
+  - "packages/platform/**/*.ts"
+  - "packages/infrastructure*/**/*.ts"
+  - "packages/composition*/**/*.ts"
+  - "apps/api/**/*.ts"
+  - "apps/worker/**/*.ts"
+alwaysApply: false
+---
+
+# Multi-Tenancy
+
+Source of truth: `docs/architecture/multi-tenancy.md`.
+
+## Model
+
+```
+User (identity) ─ Membership (tenancy) ─ Tenant (tenancy)
+                      └─ Role(s) (authorization, tenant-scoped)
+```
+
+**Pool isolation:** shared schema + `tenant_id` on tenant-owned tables.
+
+## Hybrid Context Flow
+
+1. **Explicit** — every use-case command includes `tenantId` (+ actor)
+2. **Ambient** — edge sets `TenantContext`; infrastructure asserts match + auto-filters
+
+```typescript
+await this.inviteMember.execute({
+  tenantId: cmd.tenantId, // explicit
+  email: cmd.email,
+  roleIds: cmd.roleIds,
+  actorUserId: cmd.actorUserId,
+})
+// TenantAwareRepository reads ambient TenantContext for WHERE tenant_id = …
+```
+
+## Workers
+
+Job payloads must include `tenantId`. Worker re-establishes `TenantContext` before running use cases.
+
+## Enforcement
+
+- Default: `TenantAwareRepository` stamps/filters `tenant_id`
+- Escape hatch for cross-tenant/admin ops must be explicit and rare
+- Optional Postgres RLS is a documented hardening profile, not the default
+
+## Redis
+
+Tenant-prefix all keys: `t:<tenantId>:…` (permissions cache, locks, etc.).
+
+## Forbidden
+
+```typescript
+// ❌ Use case with no tenant on a tenant-owned operation
+async execute(email: string) { /* … */ }
+
+// ❌ Raw query without tenant scope on tenant-owned table
+await repo.find({ where: { email } })
+
+// ❌ Cross-context FK to identity.users from tenancy tables
+```

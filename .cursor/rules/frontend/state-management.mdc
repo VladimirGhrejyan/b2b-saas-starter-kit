@@ -1,0 +1,84 @@
+---
+description: Redux Toolkit + RTK Query — server state, session, permissions
+globs:
+  - "packages/frontend-core/**/*.{ts,tsx}"
+  - "apps/web/src/features/**/api/**/*.ts"
+  - "apps/admin/src/features/**/api/**/*.ts"
+alwaysApply: false
+---
+
+# State Management
+
+Source of truth: `docs/architecture/frontend.md`, `docs/architecture/authorization.md`.
+
+## Split
+
+| Kind | Tool |
+|------|------|
+| Server state | RTK Query in `frontend-core` + feature endpoint injection |
+| Session (active tenant, token) | Thin RTK slice / `/me` query |
+| UI-only | Minimal slices |
+| Wire types | `@b2b-saas-starter-kit/contracts` (not OpenAPI codegen) |
+
+## Base API
+
+```typescript
+// packages/frontend-core/src/api.ts
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import type { RootState } from './store'
+
+export const api = createApi({
+  reducerPath: 'api',
+  baseQuery: fetchBaseQuery({
+    baseUrl: import.meta.env.VITE_API_URL,
+    prepareHeaders: (headers, { getState }) => {
+      const token = selectAccessToken(getState() as RootState)
+      const tenantId = selectActiveTenantId(getState() as RootState)
+      if (token) headers.set('authorization', `Bearer ${token}`)
+      if (tenantId) headers.set('x-tenant-id', tenantId)
+      return headers
+    },
+  }),
+  tagTypes: ['Me', 'Tenant', 'Membership', 'Role', 'Permission', 'AuditEvent', 'Notification'],
+  endpoints: () => ({}),
+})
+```
+
+## Feature Endpoints Use Contracts
+
+```typescript
+// apps/web/src/features/members/api/members-api.ts
+import { api } from '@b2b-saas-starter-kit/frontend-core'
+import type { InviteMemberInput, MembershipOutput } from '@b2b-saas-starter-kit/contracts'
+
+export const membersApi = api.injectEndpoints({
+  endpoints: (build) => ({
+    listMembers: build.query<MembershipOutput[], void>({
+      query: () => '/tenants/current/members',
+      providesTags: [{ type: 'Membership', id: 'LIST' }],
+    }),
+    inviteMember: build.mutation<MembershipOutput, InviteMemberInput>({
+      query: (body) => ({ url: '/tenants/current/invitations', method: 'POST', body }),
+      invalidatesTags: [{ type: 'Membership', id: 'LIST' }],
+    }),
+  }),
+})
+
+export const { useListMembersQuery, useInviteMemberMutation } = membersApi
+```
+
+## Permissions (UX only)
+
+```typescript
+// /me returns effective permissions for active tenant
+const canInvite = useCan('tenant.members.invite')
+// Backend remains authoritative — never treat FE can() as security
+```
+
+On tenant switch: refetch `/me` and invalidate tenant-scoped tags.
+
+## Do Not
+
+- Re-derive permissions from roles on the FE
+- Generate internal API types from OpenAPI (OpenAPI is for external consumers only)
+- Put API slices inside `frontend-ui`

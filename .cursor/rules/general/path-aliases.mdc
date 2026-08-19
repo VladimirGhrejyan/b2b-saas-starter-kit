@@ -1,0 +1,80 @@
+---
+description: Package import conventions for the layer-first Nx monorepo
+globs:
+  - "**/tsconfig*.json"
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: false
+---
+
+# Path & Package Imports
+
+## Workspace Model
+
+This is a **layer-first** monorepo. Import across projects via package names, not deep relative paths or old single-app aliases (`@/domains`, `@/core`, `@/secondary`).
+
+Canonical packages (see `docs/architecture/workspace-topology.md`):
+
+| Package | Scope |
+|---------|-------|
+| `@b2b-saas-starter-kit/shared-kernel-types` | Shared leaf (IDs, enums) |
+| `@b2b-saas-starter-kit/contracts` | Shared Zod API schemas |
+| `@b2b-saas-starter-kit/utils` | Shared pure helpers |
+| `@b2b-saas-starter-kit/config-validation` | Shared config schemas |
+| `@b2b-saas-starter-kit/domain` | Backend domain + repository ports |
+| `@b2b-saas-starter-kit/application` | Backend use cases |
+| `@b2b-saas-starter-kit/platform` | Capability ports (Cache, Lock, UoW, …) |
+| `@b2b-saas-starter-kit/infrastructure-*` | Adapters (postgres, redis, messaging) |
+| `@b2b-saas-starter-kit/composition-*` | NestJS DI wiring per context |
+| `@b2b-saas-starter-kit/frontend-ui` | Design system |
+| `@b2b-saas-starter-kit/frontend-core` | RTK store, auth/tenant/`can()` |
+
+## Backend Examples
+
+```typescript
+import type { TenantId, UserId } from '@b2b-saas-starter-kit/shared-kernel-types'
+import { Tenant } from '@b2b-saas-starter-kit/domain'
+import type { TenantRepository } from '@b2b-saas-starter-kit/domain'
+import { InviteMemberUseCase } from '@b2b-saas-starter-kit/application'
+import type { UnitOfWork } from '@b2b-saas-starter-kit/platform'
+```
+
+## Frontend Examples
+
+```typescript
+import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
+import { Button } from '@b2b-saas-starter-kit/frontend-ui'
+import { useCan, useActiveTenant } from '@b2b-saas-starter-kit/frontend-core'
+```
+
+## Frontend App-Local Aliases
+
+Inside `apps/web` and `apps/admin`, FSD folders may use local aliases:
+
+```json
+{
+  "paths": {
+    "@/app/*": ["src/app/*"],
+    "@/pages/*": ["src/pages/*"],
+    "@/features/*": ["src/features/*"],
+    "@/shared/*": ["src/shared/*"]
+  }
+}
+```
+
+## Forbidden
+
+```typescript
+// ❌ Old single-app aliases (do not reintroduce)
+import { X } from '@/domains/game/…'
+import { Y } from '@/core/…'
+import { Z } from '@/secondary/…'
+
+// ❌ Cross-layer deep relatives
+import { Tenant } from '../../../domain/src/tenancy/tenant'
+
+// ❌ Domain importing contracts
+import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
+```
+
+Relative imports are fine **within the same package/feature**.

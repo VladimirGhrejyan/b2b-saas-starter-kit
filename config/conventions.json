@@ -1,0 +1,5 @@
+{
+  "taskPrefix": "VC",
+  "types": ["feature", "fix", "hotfix", "refactor", "build", "chore", "docs", "test", "ci"],
+  "exemptBranches": ["main", "master", "develop", "release/*", "hotfix/*", "dependabot/**"]
+}

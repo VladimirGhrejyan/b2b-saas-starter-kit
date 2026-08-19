@@ -1,0 +1,62 @@
+---
+description: Authorization — RBAC + policies, API coarse + application fine, FE can()
+globs:
+  - "packages/domain/src/authorization/**/*.ts"
+  - "packages/application/**/*.ts"
+  - "packages/composition*/**/*.ts"
+  - "apps/api/**/*.ts"
+  - "packages/frontend-core/**/*.{ts,tsx}"
+  - "apps/web/**/*.{ts,tsx}"
+  - "apps/admin/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Authorization
+
+Source of truth: `docs/architecture/authorization.md`.
+
+## Model
+
+- **Permissions** are the check unit: `tenant.members.invite`, `authorization.roles.manage`
+- **Roles** are tenant-scoped permission bundles on a membership
+- **Policies** cover resource/attribute rules (“may edit *this* membership”)
+
+## Where Checks Live
+
+| Layer | Responsibility |
+|-------|----------------|
+| API | Coarse `@RequirePermission('…')` — fast reject |
+| Application | Authoritative check via `AuthorizationPort` (+ resource policies) |
+| Domain | Business invariants only (not permission strings) |
+| Frontend | `useCan` / `<Can>` — **UX only** |
+
+```typescript
+// API
+@RequirePermission('tenant.members.invite')
+@Post()
+invite(@Body() body: InviteMemberInputDto) { /* … */ }
+
+// Application
+await this.authz.require(cmd.actorUserId, 'tenant.members.invite', {
+  tenantId: cmd.tenantId,
+})
+```
+
+## Frontend
+
+Backend `/me` returns **effective permissions** for the active tenant. FE does not re-derive from roles.
+
+```typescript
+const canInvite = useCan('tenant.members.invite')
+return <Button disabled={!canInvite}>Invite</Button>
+```
+
+## Forbidden
+
+```typescript
+// ❌ Check role names in business logic
+if (user.role === 'Admin') { … }
+
+// ❌ FE-only security (hide button, skip backend check)
+// ❌ Permission checks only in controllers (workers bypass them)
+```

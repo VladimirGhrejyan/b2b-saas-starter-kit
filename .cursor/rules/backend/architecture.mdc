@@ -1,0 +1,121 @@
+---
+description: Layer-first hexagonal backend architecture for this monorepo
+globs:
+  - "packages/domain/**/*.ts"
+  - "packages/application/**/*.ts"
+  - "packages/platform/**/*.ts"
+  - "packages/infrastructure*/**/*.ts"
+  - "packages/composition*/**/*.ts"
+  - "apps/api/**/*.ts"
+  - "apps/worker/**/*.ts"
+alwaysApply: false
+---
+
+# Backend Architecture
+
+Source of truth: `docs/architecture/backend.md`, `docs/architecture/workspace-topology.md`.
+
+## Layers (dependency points inward)
+
+```
+apps/api, apps/worker          ← thin transport
+  → composition/<context>      ← Nest modules (port → adapter wiring)
+  → infrastructure/{postgres,redis,messaging}
+  → application/<context>      ← @Injectable use cases
+  → domain/<context>           ← pure models + repository PORTS
+  → shared-kernel-types
+
+platform                       ← capability ports (Cache, Lock, PubSub, UnitOfWork)
+```
+
+Bounded contexts are **folders** inside each layer: `identity`, `tenancy`, `authorization`, `audit`, `notifications`.
+
+## Apps (thin)
+
+Controllers/processors only: validate with contracts, map DTO → command, call use cases. No business logic, no TypeORM, no Redis.
+
+```typescript
+// apps/api — tenancy controller
+@Controller('tenants/:tenantId/invitations')
+export class InvitationsController {
+  constructor(private readonly inviteMember: InviteMemberUseCase) {}
+
+  @RequirePermission('tenant.members.invite')
+  @Post()
+  async invite(
+    @Param() { tenantId }: TenantIdParamDto,
+    @Body() body: InviteMemberInputDto,
+  ) {
+    return this.inviteMember.execute({
+      tenantId,
+      email: body.email,
+      roleIds: body.roleIds,
+      actorUserId: this.currentUser.id,
+    })
+  }
+}
+```
+
+## Application
+
+- `@Injectable` use cases only Nest seam allowed
+- Own transaction boundaries via `UnitOfWork`
+- Own fine-grained authorization
+- Depend on **ports** from `domain` / `platform`, never on infrastructure
+- Never import `@b2b-saas-starter-kit/contracts`
+
+```typescript
+@Injectable()
+export class InviteMemberUseCase {
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly authz: AuthorizationPort,
+    private readonly memberships: MembershipRepository,
+  ) {}
+
+  async execute(cmd: InviteMemberCommand) {
+    await this.authz.require(cmd.actorUserId, 'tenant.members.invite', {
+      tenantId: cmd.tenantId,
+    })
+    return this.uow.run(async () => {
+      const membership = Membership.invite(cmd)
+      await this.memberships.save(membership)
+      return membership
+    })
+  }
+}
+```
+
+## Domain
+
+Pure TypeScript. Repository **ports** live here. No Nest, TypeORM, Redis, or HTTP. See `domain-layer.mdc`.
+
+## Platform
+
+Capability ports only (`CachePort`, `LockPort`, `PubSubPort`, `UnitOfWork`). Adapters live in infrastructure.
+
+## Infrastructure
+
+Implements ports. TypeORM entities + mappers in `infrastructure-postgres`. Redis adapters in `infrastructure-redis`. Never export entities outside this layer.
+
+## Composition
+
+Per-context Nest modules bind ports → adapters and register use cases. Apps import composition modules.
+
+```typescript
+@Module({
+  providers: [
+    InviteMemberUseCase,
+    { provide: MembershipRepository, useClass: TypeOrmMembershipRepository },
+  ],
+  exports: [InviteMemberUseCase],
+})
+export class TenancyModule {}
+```
+
+## Forbidden
+
+- Domain/application importing infrastructure or Nest beyond `@Injectable`
+- Application importing `contracts`
+- Business logic in controllers
+- Cross-context imports of domain internals (use IDs + events)

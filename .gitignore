@@ -1,0 +1,76 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# Dependencies
+node_modules
+.pnpm-store
+
+# Compiled / generated output
+dist
+tmp
+out-tsc
+build
+coverage
+*.tsbuildinfo
+**/*.gen.ts
+
+# Nx
+.nx/cache
+.nx/workspace-data
+.nx/migrate-runs
+.nx/polygraph
+
+# Nx project graph HTML export (`nx graph --file=…`)
+graph-check.html
+/static
+
+# Vite / Vitest / Storybook / Next (future apps)
+.vite
+.vitest
+.turbo
+.next
+.nuxt
+.output
+storybook-static
+
+# Env / secrets (keep examples)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+testem.log
+/libpeerconnection.log
+
+# Test / scratch
+packages/__scratch__
+apps/__scratch__
+
+# IDEs and editors
+.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Claude / local agent state
+.claude/worktrees
+.claude/settings.local.json
+
+# Misc
+.DS_Store
+Thumbs.db
+/.sass-cache
+/connect.lock
+/typings

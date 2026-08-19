@@ -1,0 +1,62 @@
+---
+description: Import order reflecting layer-first package architecture
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: false
+---
+
+# Import Organization
+
+Use `eslint-plugin-simple-import-sort` + `consistent-type-imports`.
+
+## Backend Group Order
+
+1. `node:` builtins  
+2. External packages (`@nestjs/…`, `zod`, …)  
+3. Shared leaves (`shared-kernel-types`, `utils`, `config-validation`)  
+4. `domain`  
+5. `platform`  
+6. `application`  
+7. `infrastructure-*`  
+8. `composition-*` / `contracts` (apps only for contracts)  
+9. Relative
+
+```typescript
+import { randomUUID } from 'node:crypto'
+
+import { Injectable } from '@nestjs/common'
+
+import type { TenantId } from '@b2b-saas-starter-kit/shared-kernel-types'
+import { Tenant } from '@b2b-saas-starter-kit/domain'
+import type { UnitOfWork } from '@b2b-saas-starter-kit/platform'
+import { InviteMemberUseCase } from '@b2b-saas-starter-kit/application'
+
+import { helper } from './helper'
+```
+
+## Frontend Group Order
+
+1. `react` / `react-dom`  
+2. External  
+3. Workspace (`contracts`, `frontend-ui`, `frontend-core`, `utils`)  
+4. App aliases (`@/app`, `@/pages`, `@/features`, `@/shared`)  
+5. Relative  
+6. CSS
+
+```typescript
+import { useState } from 'react'
+
+import { Button } from '@b2b-saas-starter-kit/frontend-ui'
+import { useCan } from '@b2b-saas-starter-kit/frontend-core'
+import type { MembershipOutput } from '@b2b-saas-starter-kit/contracts'
+
+import { MemberCard } from '@/features/members'
+```
+
+## Rules
+
+- `import type` for types
+- Remove unused imports
+- Cross-package: package name. Same feature: relative
+- Never import `@/domains`, `@/core`, `@/secondary` (removed architecture)

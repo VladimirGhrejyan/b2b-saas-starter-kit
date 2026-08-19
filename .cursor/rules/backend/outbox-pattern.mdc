@@ -1,0 +1,74 @@
+---
+description: Transactional outbox for reliable background jobs (BullMQ)
+globs:
+  - "packages/infrastructure*/**/*.ts"
+  - "packages/application/**/*.ts"
+  - "packages/composition*/**/*.ts"
+  - "apps/worker/**/*.ts"
+alwaysApply: false
+---
+
+# Outbox Pattern
+
+Source of truth: `docs/architecture/infrastructure.md`.
+
+## Why
+
+Persist domain change + outbox row in the **same** `UnitOfWork` transaction, then relay to BullMQ so jobs are not lost on crash.
+
+```
+use case (UoW)
+  → save aggregates + insert outbox row
+  → commit
+outbox relay (apps/worker)
+  → publish to BullMQ
+  → mark processed
+processor (apps/worker)
+  → e.g. send invite email, write audit
+```
+
+## What Goes Through Outbox
+
+✅ Email / notifications, audit fan-out, cross-context reliable reactions  
+❌ Synchronous invariants, real-time UI (use EventBus / pub-sub)
+
+## Example Events
+
+- `MemberInvited` → notifications queue (invite email)
+- `TenantCreated` → audit + welcome notification
+- `RoleAssigned` → invalidate effective-permissions cache + audit
+
+## Outbox Row (persistence model)
+
+```typescript
+@Entity('outbox')
+export class OutboxEntryEntity {
+  @PrimaryColumn('uuid') id!: string
+  @Column() eventType!: string // e.g. 'MemberInvited'
+  @Column({ type: 'jsonb' }) payload!: Record<string, unknown>
+  @Column() status!: 'pending' | 'processed' | 'failed'
+  @Column({ type: 'uuid', nullable: true }) tenantId?: string
+  @Column({ type: 'timestamptz' }) createdAt!: Date
+}
+```
+
+Always include `tenantId` in the payload when the work is tenant-scoped so the worker can re-establish `TenantContext`.
+
+## Worker Must Restore Tenant Context
+
+```typescript
+@Processor('notifications')
+export class NotificationsProcessor extends WorkerHost {
+  async process(job: Job<{ tenantId: string; email: string }>) {
+    return TenantContext.run({ tenantId: job.data.tenantId }, async () => {
+      await this.sendInviteEmail.execute(job.data)
+    })
+  }
+}
+```
+
+## Placement
+
+- Outbox write: inside application use case / handler within UoW
+- Relay + BullMQ adapters: `infrastructure-messaging`
+- Processors: `apps/worker` (thin) calling application use cases
