@@ -2,5 +2,15 @@
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
   "files": [],
-  "references": [{"path": "./tsconfig.tooling.json"}, {"path": "./tsconfig.sandbox.json"}]
+  "references": [
+    {
+      "path": "./tsconfig.tooling.json"
+    },
+    {
+      "path": "./tsconfig.sandbox.json"
+    },
+    {
+      "path": "./packages/shared/utils"
+    }
+  ]
 }

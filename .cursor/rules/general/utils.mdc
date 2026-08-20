@@ -1,0 +1,68 @@
+---
+description: Always use @b2b-saas-starter-kit/utils for generic helpers; extend the package instead of forking
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: true
+---
+
+# Shared Utils Usage
+
+Source of truth: `packages/shared/utils` (`@b2b-saas-starter-kit/utils`) and `docs/architecture/shared-packages.md`.
+
+## Always import from the package
+
+Use shared helpers and utility types from `@b2b-saas-starter-kit/utils`:
+
+- Runtime: `ObjectUtils`, `ArrayUtils`, `StringUtils`, `NumberUtils`, `DateUtils`, `TypeScriptUtils`
+- Types: `ObjectValue`, `WithRequired`, `WithOptional`, `RequireAtLeastOne`, `RequireExactlyOne`, `Nullable`, `Nullish`, `NonEmptyArray`
+
+```typescript
+// ✅
+import {ObjectUtils, TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
+import type {WithRequired} from '@b2b-saas-starter-kit/utils'
+
+if (TypeScriptUtils.isNil(value)) {
+  return
+}
+
+const merged = ObjectUtils.merge(defaults, overrides)
+```
+
+## Do not fork helpers locally
+
+```typescript
+// ❌ Local utils / helpers that belong in the shared package
+export function isNil(value: unknown): value is null | undefined {
+  return value == null
+}
+
+// ❌ Copy-paste between apps/packages
+import {isEmpty} from '../helpers'
+```
+
+Do **not** invent project-local `utils.ts` / `helpers.ts` (or one-off `isNil` / `isEmpty` / `merge` / casing helpers) when the helper is generic and framework-free.
+
+## When a helper is missing — extend the package
+
+1. Add the method to the correct class under `packages/shared/utils/src/lib/...` (or a new utility type file).
+2. Export it from `packages/shared/utils/src/index.ts`.
+3. Add unit tests next to the implementation.
+4. Consume it via `@b2b-saas-starter-kit/utils`.
+
+Do **not** add a private duplicate in an app or feature package.
+
+## Extension criteria
+
+Only add to `utils` when the helper is:
+
+- Pure and deterministic (no I/O, no env, no side effects at import time)
+- Framework-free (no NestJS, React, DOM, Node-only APIs)
+- Genuinely useful across frontend and backend
+- Not domain/SaaS-specific (users, tenants, permissions, auth, API DTOs, TypeORM, Redis, …)
+
+When unsure: keep it context-local rather than dumping into `utils`.
+
+## Prefer existing methods for consistent semantics
+
+Prefer `TypeScriptUtils.isNil`, `TypeScriptUtils.isEmpty`, `ObjectUtils.merge`, typed `ObjectUtils.keys`, etc. over reimplementing with native APIs when the shared method exists for type-safety or documented semantics (e.g. UTC-only `DateUtils`).

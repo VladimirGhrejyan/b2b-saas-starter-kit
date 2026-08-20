@@ -1183,7 +1183,7 @@ Purpose: Pure functions, helpers
 Example:
 
 ```typescript
-// packages/utils/src/index.ts
+// packages/shared/utils/src/index.ts
 export function slugify(text: string): string {
   return text.toLowerCase().replace(/\s+/g, '-')
 }

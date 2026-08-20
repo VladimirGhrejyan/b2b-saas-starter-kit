@@ -57,7 +57,7 @@ The workspace is currently **empty by design**. No applications or libraries hav
 ```
 .
 ├── apps/              # Future applications (NestJS APIs, React frontends)
-├── packages/          # Future shared libraries (types, utils, schemas)
+├── packages/          # Shared + future libs (`packages/shared/utils`, …)
 ├── docs/              # Documentation (Nx guide + architecture)
 ├── .cursor/           # Cursor skills and engineering rules
 ├── AGENTS.md          # AI agent instructions (for Cursor, etc.)
@@ -227,10 +227,11 @@ This workspace is configured with the Nx MCP server and AI agent skills for enha
 
 1. **Read the Nx guide:** [docs/nx_guide.md](docs/nx_guide.md)
 2. **Read the architecture:** [docs/architecture/overview.md](docs/architecture/overview.md)
-3. **Generate applications** — Create backend and frontend apps when ready
-4. **Create shared libraries** — Set up types, utilities, and shared code
-5. **Tighten ESLint TODOs** — Enable package tags / context-isolation once projects exist
-6. **Set up CI/CD** — Configure GitHub Actions after architecture scaffolding
+3. **Shared utils:** import generic helpers from `@b2b-saas-starter-kit/utils` (`packages/shared/utils`); extend in-package when needed
+4. **Generate applications** — Create backend and frontend apps when ready
+5. **Create more shared libraries** — contracts, shared-kernel-types, config-validation
+6. **Tighten ESLint TODOs** — Enable package tags / context-isolation once projects exist
+7. **Set up CI/CD** — Configure GitHub Actions after architecture scaffolding
 
 ## Learn More
 

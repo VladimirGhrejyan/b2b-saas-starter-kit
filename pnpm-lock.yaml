@@ -37,10 +37,13 @@ importers:
         version: 23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@types/node@24.13.3)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(eslint@10.8.1(jiti@2.6.1))(express@4.22.2)(nx@23.1.1)(prettier@3.6.2)(rxjs@7.8.1)(typescript@6.0.3)
       '@nx/react':
         specifier: ^23.1.1
-        version: 23.1.1(@babel/core@7.29.7)(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@swc/helpers@0.5.23)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1)(postcss@8.5.26)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)))
+        version: 23.1.1(@babel/core@7.29.7)(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@swc/helpers@0.5.23)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1)(postcss@8.5.26)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)
       '@nx/vite':
         specifier: ^23.1.1
-        version: 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)))
+        version: 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)
+      '@nx/vitest':
+        specifier: 23.1.1
+        version: 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)
       '@swc/helpers':
         specifier: ~0.5.18
         version: 0.5.23
@@ -53,6 +56,9 @@ importers:
       '@typescript-eslint/utils':
         specifier: ^8.67.0
         version: 8.67.0(eslint@10.8.1(jiti@2.6.1))(typescript@6.0.3)
+      '@vitest/coverage-v8':
+        specifier: ~4.1.0
+        version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: ^10.8.1
         version: 10.8.1(jiti@2.6.1)
@@ -104,9 +110,14 @@ importers:
       typescript-eslint:
         specifier: ^8.67.0
         version: 8.67.0(eslint@10.8.1(jiti@2.6.1))(typescript@6.0.3)
+      vite:
+        specifier: ^8.0.0
+        version: 8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))
+        version: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))
+
+  packages/shared/utils: {}
 
 packages:
 
@@ -777,6 +788,10 @@ packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
+
+  '@bcoe/v8-coverage@1.0.2':
+    resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
+    engines: {node: '>=18'}
 
   '@commitlint/cli@21.2.2':
     resolution: {integrity: sha512-a+6hQxIxnpdvSvS2apvttPNbEliYsVC3PqFYDiiB2kjbwIsQsj1urvQ4Tkf70pKYozPalKAuRQmm/GHwndduqA==}
@@ -1935,6 +1950,15 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@vitest/coverage-v8@4.1.11':
+    resolution: {integrity: sha512-8MVGEFnJIcdGjcbfKmeq8z0pZHH0JlVtoVZH9Q/qwUp6wyFnEJUBMrw9DCaj+ra3vShGmhavjalMIhPNxZAUcw==}
+    peerDependencies:
+      '@vitest/browser': 4.1.11
+      vitest: 4.1.11
+    peerDependenciesMeta:
+      '@vitest/browser':
+        optional: true
+
   '@vitest/expect@4.1.11':
     resolution: {integrity: sha512-VX2x5vNJXET47KAFzwERI+KRMtTTCSWTfSMKsW7JsUsXV4psq++e3DvZpuTDOpHcxytiDs6p2nhVb2tVDiiUYw==}
 
@@ -2131,6 +2155,9 @@ packages:
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
     engines: {node: '>=12'}
+
+  ast-v8-to-istanbul@1.0.5:
+    resolution: {integrity: sha512-UPAgKJFSEGMWSDr3LX4tqnAb4f7KGT8O40Tyx8wbYmmZ/yn58lNCm8h3svs3eXgiGd5AXxz8NDOvXWvicq+rJA==}
 
   async@3.2.6:
     resolution: {integrity: sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA==}
@@ -3360,6 +3387,9 @@ packages:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
 
+  js-tokens@10.0.0:
+    resolution: {integrity: sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==}
+
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -3551,6 +3581,9 @@ packages:
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
+
+  magicast@0.5.4:
+    resolution: {integrity: sha512-llBEhWm1SacoRwgHUoQJYtwp4PBLF4faQi5TCpIGyGs9n4y5+juI0tDgyKIfpqxckRHaHzouUEph3THklWh03w==}
 
   make-asynchronous@1.1.0:
     resolution: {integrity: sha512-ayF7iT+44LXdxJLTrTd3TLQpFDDvPCBxXxbv+pMUSuHA5Q8zyAfwkRP6aHHwNVFBUFWtxAHqwNJxF8vMZLAbVg==}
@@ -5491,6 +5524,8 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
+  '@bcoe/v8-coverage@1.0.2': {}
+
   '@commitlint/cli@21.2.2(@types/node@24.13.3)(conventional-commits-parser@7.1.2)(typescript@6.0.3)':
     dependencies:
       '@commitlint/config-conventional': 21.2.2
@@ -6066,11 +6101,11 @@ snapshots:
       - nx
       - supports-color
 
-  '@nx/module-federation@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))))(@swc/helpers@0.5.23)(nx@23.1.1)(postcss@8.5.26)':
+  '@nx/module-federation@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11))(@swc/helpers@0.5.23)(nx@23.1.1)(postcss@8.5.26)':
     dependencies:
       '@nx/devkit': 23.1.1(nx@23.1.1)
       '@nx/js': 23.1.1(@babel/traverse@7.29.8)(nx@23.1.1)
-      '@nx/web': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))))(nx@23.1.1)
+      '@nx/web': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11))(nx@23.1.1)
       '@rspack/core': 2.1.10(@swc/helpers@0.5.23)
       express: 4.22.2
       http-proxy-middleware: 3.0.7
@@ -6205,14 +6240,14 @@ snapshots:
   '@nx/nx-win32-x64-msvc@23.1.1':
     optional: true
 
-  '@nx/react@23.1.1(@babel/core@7.29.7)(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@swc/helpers@0.5.23)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1)(postcss@8.5.26)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)))':
+  '@nx/react@23.1.1(@babel/core@7.29.7)(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@swc/helpers@0.5.23)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1)(postcss@8.5.26)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
       '@nx/devkit': 23.1.1(nx@23.1.1)
       '@nx/eslint': 23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1)
       '@nx/js': 23.1.1(@babel/traverse@7.29.8)(nx@23.1.1)
-      '@nx/module-federation': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))))(@swc/helpers@0.5.23)(nx@23.1.1)(postcss@8.5.26)
+      '@nx/module-federation': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11))(@swc/helpers@0.5.23)(nx@23.1.1)(postcss@8.5.26)
       '@nx/rollup': 23.1.1(@babel/core@7.29.7)(@babel/traverse@7.29.8)(@types/babel__core@7.20.5)(nx@23.1.1)(typescript@6.0.3)
-      '@nx/web': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))))(nx@23.1.1)
+      '@nx/web': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11))(nx@23.1.1)
       '@phenomnomnominal/tsquery': 6.2.0(typescript@6.0.3)
       '@svgr/webpack': 8.1.0(typescript@6.0.3)
       express: 4.22.2
@@ -6223,7 +6258,7 @@ snapshots:
       semver: 7.8.5
       tslib: 2.8.1
     optionalDependencies:
-      '@nx/vite': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)))
+      '@nx/vite': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)
     transitivePeerDependencies:
       - '@babel/core'
       - '@babel/traverse'
@@ -6292,11 +6327,11 @@ snapshots:
       - typescript
       - verdaccio
 
-  '@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)))':
+  '@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
       '@nx/devkit': 23.1.1(nx@23.1.1)
       '@nx/js': 23.1.1(@babel/traverse@7.29.8)(nx@23.1.1)
-      '@nx/vitest': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)))
+      '@nx/vitest': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)
       '@phenomnomnominal/tsquery': 6.2.0(typescript@6.0.3)
       ajv: 8.20.0
       enquirer: 2.3.6
@@ -6317,7 +6352,7 @@ snapshots:
       - verdaccio
       - vitest
 
-  '@nx/vitest@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)))':
+  '@nx/vitest@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
       '@nx/devkit': 23.1.1(nx@23.1.1)
       '@nx/js': 23.1.1(@babel/traverse@7.29.8)(nx@23.1.1)
@@ -6327,7 +6362,7 @@ snapshots:
     optionalDependencies:
       '@nx/eslint': 23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1)
       vite: 8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)
-      vitest: 4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))
+      vitest: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))
     transitivePeerDependencies:
       - '@babel/traverse'
       - '@swc-node/register'
@@ -6338,7 +6373,7 @@ snapshots:
       - typescript
       - verdaccio
 
-  '@nx/web@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))))(nx@23.1.1)':
+  '@nx/web@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@nx/vite@23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11))(nx@23.1.1)':
     dependencies:
       '@nx/devkit': 23.1.1(nx@23.1.1)
       '@nx/js': 23.1.1(@babel/traverse@7.29.8)(nx@23.1.1)
@@ -6349,7 +6384,7 @@ snapshots:
     optionalDependencies:
       '@nx/eslint': 23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1)
       '@nx/jest': 23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3)
-      '@nx/vite': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)))
+      '@nx/vite': 23.1.1(@babel/traverse@7.29.8)(@nx/eslint@23.1.1(@babel/traverse@7.29.8)(@nx/jest@23.1.1(@babel/traverse@7.29.8)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.1)(typescript@6.0.3))(@zkochan/js-yaml@0.0.7)(eslint@10.8.1(jiti@2.6.1))(nx@23.1.1))(nx@23.1.1)(typescript@6.0.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))(vitest@4.1.11)
     transitivePeerDependencies:
       - '@babel/traverse'
       - '@swc-node/register'
@@ -6934,6 +6969,20 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
 
+  '@vitest/coverage-v8@4.1.11(vitest@4.1.11)':
+    dependencies:
+      '@bcoe/v8-coverage': 1.0.2
+      '@vitest/utils': 4.1.11
+      ast-v8-to-istanbul: 1.0.5
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-reports: 3.2.0
+      magicast: 0.5.4
+      obug: 2.1.4
+      std-env: 4.2.0
+      tinyrainbow: 3.1.1
+      vitest: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))
+
   '@vitest/expect@4.1.11':
     dependencies:
       '@standard-schema/spec': 1.1.0
@@ -7154,6 +7203,12 @@ snapshots:
   array-timsort@1.0.3: {}
 
   assertion-error@2.0.1: {}
+
+  ast-v8-to-istanbul@1.0.5:
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      estree-walker: 3.0.3
+      js-tokens: 10.0.0
 
   async@3.2.6: {}
 
@@ -8604,6 +8659,8 @@ snapshots:
 
   jiti@2.6.1: {}
 
+  js-tokens@10.0.0: {}
+
   js-tokens@4.0.0: {}
 
   js-yaml@3.15.1:
@@ -8757,6 +8814,12 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  magicast@0.5.4:
+    dependencies:
+      '@babel/parser': 7.29.8
+      '@babel/types': 7.29.8
+      source-map-js: 1.2.1
 
   make-asynchronous@1.1.0:
     dependencies:
@@ -9719,7 +9782,7 @@ snapshots:
       terser: 5.50.0
       yaml: 2.9.0
 
-  vitest@4.1.11(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)):
+  vitest@4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.11
       '@vitest/mocker': 4.1.11(vite@8.2.1(@types/node@24.13.3)(jiti@2.6.1)(terser@5.50.0)(yaml@2.9.0))
@@ -9743,6 +9806,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.13.3
+      '@vitest/coverage-v8': 4.1.11(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
 

@@ -8,12 +8,12 @@ Related: [`workspace-topology.md`](./workspace-topology.md), [`api-contracts.md`
 
 Only these cross the frontend/backend boundary. Each is pure and framework-free.
 
-| Package               | Purpose                                                                                  | Depends on                    |
-| --------------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
-| `shared-kernel-types` | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types | — (leaf)                      |
-| `contracts`           | Zod API request/response schemas + inferred types                                        | `shared-kernel-types` (+ Zod) |
-| `utils`               | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …         | — (leaf)                      |
-| `config-validation`   | YAML parsing + Zod config schemas usable by BE and FE                                    | `shared-kernel-types` (+ Zod) |
+| Package                           | Purpose                                                                                  | Depends on                    |
+| --------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
+| `shared-kernel-types`             | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types | — (leaf)                      |
+| `contracts`                       | Zod API request/response schemas + inferred types                                        | `shared-kernel-types` (+ Zod) |
+| `utils` (`packages/shared/utils`) | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …         | — (leaf)                      |
+| `config-validation`               | YAML parsing + Zod config schemas usable by BE and FE                                    | `shared-kernel-types` (+ Zod) |
 
 There is intentionally **no `constants` package** — cross-cutting enums live in `shared-kernel-types`; anything else that looks like a "constant" belongs to a context, not to shared.
 
@@ -64,4 +64,11 @@ Sharing anything from these across the FE/BE line is a boundary violation (see [
 
 - Adding to a shared package requires that the item is _genuinely_ shared and _pure_. If in doubt, keep it context-local and duplicate the tiny surface rather than sharing impure/eager code.
 - `utils` is split by concern internally (`ObjectUtils`, `ArrayUtils`, …) rather than a flat grab-bag, to keep tree-shaking and discovery clean.
+- Extend `utils` **in-package** (correct class + tests + public export); do not fork generic helpers into local `utils.ts` / `helpers.ts` files. Prefer importing from `@b2b-saas-starter-kit/utils`.
 - The Nx dependency constraints (scope tags) mechanically prevent shared packages from importing backend/frontend-scoped code, so a shared package physically cannot pull in framework or infra code.
+
+### `utils` leaf policy
+
+- Zero runtime dependencies initially (no Zod, no date library).
+- `DateUtils` is **UTC/ISO-only**; display formatting / IANA timezones can justify `date-fns` later.
+- Zod schemas belong in `contracts`, `config-validation`, or `shared-kernel-types` — not in `utils`.

@@ -9,7 +9,9 @@ export class EslintIgnores {
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      '**/out-tsc/**',
       '**/coverage/**',
+      '**/test-output/**',
       '**/.nx/**',
       '**/.cursor/**',
       '**/static/**',

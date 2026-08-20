@@ -3,7 +3,7 @@ description: Shared package allow/forbid rules — contracts, kernel types, util
 globs:
   - "packages/shared-kernel-types/**/*.ts"
   - "packages/contracts/**/*.ts"
-  - "packages/utils/**/*.ts"
+  - "packages/shared/utils/**/*.ts"
   - "packages/config-validation/**/*.ts"
 alwaysApply: false
 ---
@@ -20,6 +20,8 @@ Source of truth: `docs/architecture/shared-packages.md`.
 | `contracts` | Zod API schemas + inferred types |
 | `utils` | Pure helpers (`ObjectUtils`, `ArrayUtils`, `DateUtils`, …) |
 | `config-validation` | YAML + Zod config schemas (BE + FE) |
+
+**Utils consumption / extension:** always import from `@b2b-saas-starter-kit/utils`. When a generic helper is missing, extend `packages/shared/utils` (class + tests + barrel) — do not fork local helpers. See `general/utils.mdc`.
 
 No `constants` package. Domain base classes (`AggregateRoot`, `DomainEvent`) stay in `domain/shared-kernel` (backend-only).
 
