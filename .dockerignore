@@ -1,0 +1,49 @@
+# Build context is the repo root (future app images need pnpm-lock.yaml,
+# pnpm-workspace.yaml and every package.json). Keep everything else out to
+# stay small, deterministic, and cache-friendly.
+
+# Dependencies (reinstalled inside the image from the lockfile)
+**/node_modules
+.pnpm-store
+
+# Build / test output
+**/dist
+**/build
+**/out-tsc
+**/coverage
+**/*.tsbuildinfo
+**/*.gen.ts
+
+# Nx local state
+.nx
+
+# Version control & CI
+.git
+.gitignore
+.github
+
+# Editors / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Agent / tooling state
+.cursor
+.claude
+
+# Docs & markdown (not needed at build or runtime)
+docs
+**/*.md
+
+# Infra config (compose/env live outside the image build)
+infra
+
+# Tests (not shipped in runtime images)
+**/*.spec.ts
+**/*.test.ts
+
+# Env / secrets (never copy into build context)
+**/.env
+**/.env.*
+!**/.env.example

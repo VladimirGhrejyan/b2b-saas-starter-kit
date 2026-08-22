@@ -36,7 +36,7 @@ const config = ConfigLoader.load(ApiRootSchema, {
 })
 ```
 
-`LoadConfigOptions` is a **discriminated union** on `source`. Today only `source: 'yaml'` is implemented.
+`LoadConfigOptions` is a **discriminated union** on `source`. Implemented: `source: 'yaml'` and `source: 'env'`.
 
 ### YAML options
 
@@ -48,9 +48,33 @@ const config = ConfigLoader.load(ApiRootSchema, {
 
 Copy `config.dist.yml` → `config.yml` per app (gitignored values). Do not commit secrets to git.
 
+### Env options
+
+The env source is the container/12-factor contract (`DATABASE_URL`, `REDIS_URL`, …). Values are raw strings, so use coercing schemas.
+
+| Field           | Meaning                                                                                      |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| `source: 'env'` | Discriminant                                                                                 |
+| `prefix?`       | Only include vars starting with this prefix; the prefix is stripped from result keys         |
+| `keys?`         | Restrict to these variable names (looked up with `prefix` applied); default all defined vars |
+| `env?`          | Environment to read from; defaults to `process.env`                                          |
+
+```typescript
+import {ConfigLoader} from '@b2b-saas-starter-kit/config'
+import {z} from 'zod'
+
+const EnvSchema = z.object({
+  DATABASE_URL: z.url(),
+  REDIS_URL: z.url(),
+  PORT: z.coerce.number().int(),
+})
+
+const config = ConfigLoader.load(EnvSchema, {source: 'env', keys: ['DATABASE_URL', 'REDIS_URL', 'PORT']})
+```
+
 ## Extending sources later
 
-Add a new union member (e.g. `{ source: 'env', … }`) and a branch in `ConfigLoader`. Existing `source: 'yaml'` call sites stay valid.
+Add a new union member (e.g. `{ source: 'secrets', … }`) and a branch in `ConfigLoader`. Existing `source: 'yaml' | 'env'` call sites stay valid.
 
 ## Commands
 

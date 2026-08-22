@@ -22,7 +22,12 @@ const config = ConfigLoader.load(AppRootSchema, {
 })
 ```
 
-`LoadConfigOptions` is a discriminated union on `source`. Today: `source: 'yaml'`. Future sources (env, secrets manager) extend the same union.
+`LoadConfigOptions` is a discriminated union on `source`. Implemented: `source: 'yaml'` and `source: 'env'` (the container/12-factor contract — raw strings, use coercing schemas). Future sources (secrets manager) extend the same union.
+
+```typescript
+// ✅ Env-driven config in containers (DATABASE_URL / REDIS_URL / PORT …)
+const config = ConfigLoader.load(EnvSchema, {source: 'env', keys: ['DATABASE_URL', 'REDIS_URL', 'PORT']})
+```
 
 ## Do not
 

@@ -1,5 +1,6 @@
 import type {ZodType} from 'zod'
 
+import {EnvConfigSource} from './sources/env-config.source'
 import {YamlConfigSource} from './sources/yaml-config.source'
 import type {LoadConfigOptions} from './config-loader.types'
 import {ConfigValidationError} from './config-validation.error'
@@ -10,15 +11,15 @@ import {ConfigValidationError} from './config-validation.error'
  * Apps own schemas and value files; this class owns how values are obtained.
  * Call explicitly from bootstrap / Vite plugins — do not load at module import time.
  *
- * `options` is a discriminated union on `source`. Today only `source: 'yaml'` exists;
- * when more sources are added, branch on `options.source` before calling the matching source.
+ * `options` is a discriminated union on `source` (`'yaml' | 'env'`); the loader branches
+ * on `options.source` and delegates to the matching source.
  */
 export class ConfigLoader {
   /**
    * Loads raw config from `options.source`, then validates against `schema`.
    *
    * @param schema - Zod schema describing the expected config shape.
-   * @param options - Discriminated load options (`source: 'yaml'` today).
+   * @param options - Discriminated load options (`source: 'yaml' | 'env'`).
    * @returns Validated, typed configuration.
    * @throws {ConfigValidationError} If Zod validation fails.
    * @throws {Error} If the source cannot load (missing dir/files, invalid YAML shape, …).
@@ -35,7 +36,10 @@ export class ConfigLoader {
   }
 
   private static loadRaw(options: LoadConfigOptions): Record<string, unknown> {
-    // Single source today; TypeScript will force a discriminant branch once the union grows.
-    return YamlConfigSource.load(options)
+    if (options.source === 'yaml') {
+      return YamlConfigSource.load(options)
+    }
+
+    return EnvConfigSource.load(options)
   }
 }

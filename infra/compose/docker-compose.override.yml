@@ -1,0 +1,14 @@
+# Local development overlay (auto-included by the root `infra:*` scripts).
+#
+# Publishes Postgres/Redis on the loopback interface only, so host-run apps
+# (`pnpm nx serve api`, etc.) and psql/redis-cli can connect, without exposing
+# the services to the local network. Staging does NOT use this file.
+
+services:
+  postgres:
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+
+  redis:
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'

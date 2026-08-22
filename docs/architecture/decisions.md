@@ -148,6 +148,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Decision:** Four thin apps; a realtime WebSocket `gateway` is deferred (realtime can ride on `api` + Redis pub/sub initially).
 **Rationale:** Covers the core SaaS shape without over-provisioning. See [`workspace-topology.md`](./workspace-topology.md).
 
+## ADR-026 — Containerized infra baseline (Compose for Postgres+Redis; apps on host in dev)
+
+**Decision:** Docker Compose provides only PostgreSQL and Redis for local dev and single-VPS staging; apps run on the host in dev and (later) ship as per-app multi-stage images built inside Docker (`pnpm nx build` + `pnpm deploy --prod`). Postgres is pinned to 17.x with a named volume; Redis is 7.2 standalone, **fully ephemeral** (no RDB/AOF, no volume) with `maxmemory-policy noeviction`. Containers are **env-driven** (`DATABASE_URL`/`REDIS_URL`, via a new `source: 'env'` in `@b2b-saas-starter-kit/config`), **NGINX** is the staging reverse proxy and frontend static server, and a Node-version guard keeps `.nvmrc` / `engines` / Dockerfile `ARG NODE_VERSION` in sync.
+**Options:** (A) infra-only Compose + apps on host ✓; (B) full app containers (with `Dockerfile.dev` + bind mounts) in dev; (C) Kubernetes/Terraform now.
+**Rationale:** Cheapest, simplest workflow with the best HMR, a production-like staging, and a clean portability path to GCP managed services (Cloud SQL, Memorystore) with **no Compose dependency in production**. Redis durability is delegated to Postgres + the outbox, so it can stay ephemeral. See [`../infrastructure/README.md`](../infrastructure/README.md) and [`infrastructure.md`](./infrastructure.md). (Numbered ADR-026; the plan's provisional "ADR-015" collided with the existing pool-multi-tenancy ADR.)
+
 ---
 
 ## Deferred decisions

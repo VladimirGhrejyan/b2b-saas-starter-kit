@@ -1,0 +1,62 @@
+# Base infrastructure shared by local dev and staging.
+# Runs ONLY Postgres + Redis. Application containers are added by the (deferred)
+# docker-compose.staging.yml overlay once apps exist. In dev, apps run on the host.
+#
+# Invoke via the root pnpm scripts (they pass --env-file and both -f files):
+#   pnpm infra:up | infra:down | infra:reset | infra:logs
+#
+# No host ports are published here; the dev override exposes them on localhost.
+
+name: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}
+
+services:
+  postgres:
+    image: postgres:17.5-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (see infra/env/.env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # $$ escapes Compose interpolation so the container shell reads its own env.
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - appnet
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    # Standalone, fully ephemeral (no RDB/AOF, no volume). One instance serves
+    # cache + locks + pub/sub + BullMQ, so the policy MUST be noeviction (BullMQ
+    # requirement); cache correctness relies on per-key TTLs, not LRU eviction.
+    command:
+      - redis-server
+      - --save
+      - ''
+      - --appendonly
+      - 'no'
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-256mb}
+      - --maxmemory-policy
+      - noeviction
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - appnet
+
+volumes:
+  pgdata:
+
+networks:
+  appnet:
+    driver: bridge

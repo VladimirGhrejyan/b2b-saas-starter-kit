@@ -2,7 +2,7 @@
 
 Technical capabilities that support the contexts without being domain concepts. All are reached through **ports** so the domain and application layers never depend on a concrete technology.
 
-Related: [`backend.md`](./backend.md), [`persistence.md`](./persistence.md), [`multi-tenancy.md`](./multi-tenancy.md).
+Related: [`backend.md`](./backend.md), [`persistence.md`](./persistence.md), [`multi-tenancy.md`](./multi-tenancy.md). Operational setup (Docker, local & staging): [`../infrastructure/README.md`](../infrastructure/README.md) ([ADR-026](./decisions.md)).
 
 ## Redis
 
@@ -64,10 +64,10 @@ This prevents the classic "saved to DB but the job never fired" (or vice-versa) 
 ## Configuration
 
 - **`@b2b-saas-starter-kit/config`** (`packages/shared/config`) exposes `ConfigLoader`: load from a pluggable `source`, validate with **Zod**, return a typed object.
-- **v1 source:** `source: 'yaml'` — merge YAML files from an app `config/` directory (see `config.dist.yml` templates when apps exist).
+- **Sources:** `source: 'yaml'` (merge YAML files from an app `config/` directory; see `config.dist.yml` templates when apps exist) and `source: 'env'` — the container/12-factor contract that reads/validates `process.env` (raw strings; use coercing schemas). Containers use the env source (see [ADR-026](./decisions.md), [`../infrastructure/README.md`](../infrastructure/README.md)).
 - Apps own schemas and values; the shared package owns the load pipeline. Call `ConfigLoader.load` explicitly at bootstrap / Vite plugin time (no import-time load).
 - Invalid config **fails fast** (`ConfigValidationError`).
-- Secrets must not be committed. Today they may live in gitignored YAML; before production, prefer env/secret-manager overlays behind new `source` variants without changing app facades.
+- Secrets must not be committed. In containers they arrive as env vars (`DATABASE_URL`, `REDIS_URL`, …); locally they may live in gitignored YAML. Before production, prefer a secret-manager overlay behind a new `source` variant without changing app facades.
 
 ## Logging & observability (design intent)
 

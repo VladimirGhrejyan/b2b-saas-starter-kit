@@ -116,6 +116,51 @@ app:
   })
 })
 
+const EnvSchema = z.object({
+  DATABASE_URL: z.url(),
+  PORT: z.coerce.number().int(),
+})
+
+describe('ConfigLoader (env source)', () => {
+  it('reads and validates variables from an explicit env, coercing strings', () => {
+    const config = ConfigLoader.load(EnvSchema, {
+      source: 'env',
+      env: {DATABASE_URL: 'postgres://app@postgres:5432/app', PORT: '3000', UNUSED: 'x'},
+    })
+
+    expect(config).toEqual({DATABASE_URL: 'postgres://app@postgres:5432/app', PORT: 3000})
+  })
+
+  it('filters by prefix and strips it from result keys', () => {
+    const config = ConfigLoader.load(EnvSchema, {
+      source: 'env',
+      prefix: 'APP_',
+      env: {APP_DATABASE_URL: 'postgres://app@postgres:5432/app', APP_PORT: '4000', OTHER: 'ignored'},
+    })
+
+    expect(config).toEqual({DATABASE_URL: 'postgres://app@postgres:5432/app', PORT: 4000})
+  })
+
+  it('restricts to an explicit key list', () => {
+    const raw = ConfigLoader.load(z.object({PORT: z.coerce.number()}), {
+      source: 'env',
+      keys: ['PORT'],
+      env: {PORT: '5000', DATABASE_URL: 'postgres://app@postgres:5432/app'},
+    })
+
+    expect(raw).toEqual({PORT: 5000})
+  })
+
+  it('drops undefined variables (missing required key fails validation)', () => {
+    expect(() =>
+      ConfigLoader.load(EnvSchema, {
+        source: 'env',
+        env: {PORT: '3000'},
+      }),
+    ).toThrow(ConfigValidationError)
+  })
+})
+
 function createConfigDir(files: Record<string, string>): string {
   const directory = mkdtempSync(join(tmpdir(), 'config-fixtures-'))
 

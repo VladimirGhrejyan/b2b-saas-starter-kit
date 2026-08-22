@@ -1,4 +1,5 @@
 {
   "*.{ts,tsx,js,jsx,mts,cts,mjs}": ["pnpm exec eslint --fix --no-warn-ignored", "pnpm exec prettier --write"],
-  "*.{json,md,css,yml,yaml}": ["pnpm exec prettier --write"]
+  "*.{json,md,css,yml,yaml}": ["pnpm exec prettier --write"],
+  "{.nvmrc,package.json,infra/docker/*.Dockerfile}": ["pnpm check:node-version"]
 }
