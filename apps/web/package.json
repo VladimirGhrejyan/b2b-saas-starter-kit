@@ -1,0 +1,21 @@
+{
+  "name": "@b2b-saas-starter-kit/web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "nx": {
+    "name": "web",
+    "tags": [
+      "scope:frontend",
+      "type:app"
+    ]
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.0",
+    "jsdom": "^27.4.0"
+  }
+}

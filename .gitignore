@@ -76,3 +76,4 @@ Thumbs.db
 /typings
 
 vitest.config.*.timestamp*
+vite.config.*.timestamp*

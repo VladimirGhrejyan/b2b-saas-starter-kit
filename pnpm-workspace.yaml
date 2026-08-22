@@ -5,5 +5,10 @@ packages:
 
 autoInstallPeers: true
 allowBuilds:
+  '@parcel/watcher': true
+  less: false
   nx: true
   unrs-resolver: true
+  '@nestjs/core': false
+  esbuild: false
+  '@swc/core': true

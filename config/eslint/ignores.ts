@@ -19,6 +19,7 @@ export class EslintIgnores {
       'graph-check.html',
       '**/*.gen.ts',
       'eslint.config.mts',
+      '**/webpack.config.js',
     ],
   }
 }
