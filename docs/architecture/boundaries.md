@@ -26,7 +26,7 @@ Every Nx project carries a **scope** tag and a **layer** tag.
 | `shared-kernel-types`    | `scope:shared`, `layer:shared-types`    |
 | `contracts`              | `scope:shared`, `layer:contracts`       |
 | `utils`                  | `scope:shared`, `layer:utils`           |
-| `config-validation`      | `scope:shared`, `layer:config`          |
+| `config`                 | `scope:shared`, `layer:config`          |
 | `domain`                 | `scope:backend`, `layer:domain`         |
 | `application`            | `scope:backend`, `layer:application`    |
 | `platform`               | `scope:backend`, `layer:platform`       |

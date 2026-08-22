@@ -20,7 +20,7 @@ Canonical packages (see `docs/architecture/workspace-topology.md`):
 | `@b2b-saas-starter-kit/shared-kernel-types` | Shared leaf (IDs, enums) |
 | `@b2b-saas-starter-kit/contracts` | Shared Zod API schemas |
 | `@b2b-saas-starter-kit/utils` | Shared pure helpers |
-| `@b2b-saas-starter-kit/config-validation` | Shared config schemas |
+| `@b2b-saas-starter-kit/config` | Shared `ConfigLoader` (YAML + Zod) |
 | `@b2b-saas-starter-kit/domain` | Backend domain + repository ports |
 | `@b2b-saas-starter-kit/application` | Backend use cases |
 | `@b2b-saas-starter-kit/platform` | Capability ports (Cache, Lock, UoW, …) |

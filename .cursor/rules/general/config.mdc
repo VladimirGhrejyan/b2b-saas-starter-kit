@@ -1,0 +1,45 @@
+---
+description: Always load app config via ConfigLoader from @b2b-saas-starter-kit/config
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: false
+---
+
+# Shared Config Usage
+
+Source of truth: `packages/shared/config` (`@b2b-saas-starter-kit/config`) and `docs/architecture/infrastructure.md`.
+
+## Always use ConfigLoader
+
+```typescript
+// ✅
+import {ConfigLoader} from '@b2b-saas-starter-kit/config'
+
+const config = ConfigLoader.load(AppRootSchema, {
+  source: 'yaml',
+  directory: resolve('config'),
+})
+```
+
+`LoadConfigOptions` is a discriminated union on `source`. Today: `source: 'yaml'`. Future sources (env, secrets manager) extend the same union.
+
+## Do not
+
+```typescript
+// ❌ Raw YAML / dotenv sprawl for structured app config
+import {load} from 'js-yaml'
+import {readFileSync} from 'node:fs'
+
+// ❌ process.env for nested app settings (except thin process identity like APP_TYPE / NODE_ENV)
+const port = Number(process.env.PORT)
+
+// ❌ Load at module import time inside shared packages
+export const config = ConfigLoader.load(...)
+```
+
+## Ownership
+
+- **Apps** own Zod schemas and `config/*.yml` values (`config.dist.yml` templates; gitignore real `config.yml`).
+- **`@b2b-saas-starter-kit/config`** owns how values are loaded and validated.
+- Call `ConfigLoader.load` explicitly from bootstrap / Vite plugins — no import-time singleton.

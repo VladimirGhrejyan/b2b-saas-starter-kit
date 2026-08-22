@@ -4,7 +4,7 @@ globs:
   - "packages/shared-kernel-types/**/*.ts"
   - "packages/contracts/**/*.ts"
   - "packages/shared/utils/**/*.ts"
-  - "packages/config-validation/**/*.ts"
+  - "packages/shared/config/**/*.ts"
 alwaysApply: false
 ---
 
@@ -19,9 +19,11 @@ Source of truth: `docs/architecture/shared-packages.md`.
 | `shared-kernel-types` | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums |
 | `contracts` | Zod API schemas + inferred types |
 | `utils` | Pure helpers (`ObjectUtils`, `ArrayUtils`, `DateUtils`, …) |
-| `config-validation` | YAML + Zod config schemas (BE + FE) |
+| `config` | `ConfigLoader` (YAML + Zod; pluggable `source`) |
 
 **Utils consumption / extension:** always import from `@b2b-saas-starter-kit/utils`. When a generic helper is missing, extend `packages/shared/utils` (class + tests + barrel) — do not fork local helpers. See `general/utils.mdc`.
+
+**Config:** always load via `ConfigLoader` from `@b2b-saas-starter-kit/config`. Apps own schemas and value files. See `general/config.mdc`.
 
 No `constants` package. Domain base classes (`AggregateRoot`, `DomainEvent`) stay in `domain/shared-kernel` (backend-only).
 
@@ -32,12 +34,14 @@ shared-kernel-types  ← leaf
 contracts            → shared-kernel-types
 domain               → shared-kernel-types   (NOT contracts)
 frontend / api       → contracts + shared-kernel-types
+config               → utils (+ Zod)
 ```
 
 ```typescript
 // ✅
 import type { TenantId } from '@b2b-saas-starter-kit/shared-kernel-types'
 import { InviteMemberInputSchema } from '@b2b-saas-starter-kit/contracts'
+import { ConfigLoader } from '@b2b-saas-starter-kit/config'
 
 // ❌ domain must never import contracts
 import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
@@ -50,4 +54,4 @@ import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
 - Context-internal types that are not wire contracts
 - Side effects at import time
 
-When unsure: keep it context-local rather than dumping into `utils`.
+When unsure: keep it context-local rather than dumping into `utils` / `config`.

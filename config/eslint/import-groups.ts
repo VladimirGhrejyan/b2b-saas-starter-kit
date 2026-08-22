@@ -9,7 +9,7 @@ export class ImportGroups {
     [
       '^@b2b-saas-starter-kit/shared-kernel-types',
       '^@b2b-saas-starter-kit/utils',
-      '^@b2b-saas-starter-kit/config-validation',
+      '^@b2b-saas-starter-kit/config',
       '^@b2b-saas-starter-kit/contracts',
     ],
     ['^@b2b-saas-starter-kit/domain'],
@@ -30,7 +30,7 @@ export class ImportGroups {
       '^@b2b-saas-starter-kit/contracts',
       '^@b2b-saas-starter-kit/shared-kernel-types',
       '^@b2b-saas-starter-kit/utils',
-      '^@b2b-saas-starter-kit/config-validation',
+      '^@b2b-saas-starter-kit/config',
       '^@b2b-saas-starter-kit/frontend-ui',
       '^@b2b-saas-starter-kit/frontend-core',
     ],

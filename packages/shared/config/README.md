@@ -1,0 +1,61 @@
+# `@b2b-saas-starter-kit/config`
+
+Shared configuration loader for the monorepo. Apps call `ConfigLoader`; YAML is the current source and can be extended later (env, secrets manager) without changing call-site shape.
+
+**Path:** `packages/shared/config`  
+**Nx project:** `config`  
+**Tags:** `scope:shared`, `layer:config`
+
+## Purpose
+
+- Load structured config from a pluggable **source**
+- Validate with **Zod** (fail fast)
+- Stay framework-free (no Nest, no React)
+
+Apps own Zod **schemas** and config **values** (`apps/*/config/`). This package owns **how** values are obtained.
+
+Architecture: [`docs/architecture/shared-packages.md`](../../../docs/architecture/shared-packages.md), [`docs/architecture/infrastructure.md`](../../../docs/architecture/infrastructure.md).
+
+## Usage
+
+```typescript
+import {resolve} from 'node:path'
+
+import {ConfigLoader} from '@b2b-saas-starter-kit/config'
+import {z} from 'zod'
+
+const ApiRootSchema = z.object({
+  app: z.object({
+    port: z.number().int(),
+  }),
+})
+
+const config = ConfigLoader.load(ApiRootSchema, {
+  source: 'yaml',
+  directory: resolve('config'),
+})
+```
+
+`LoadConfigOptions` is a **discriminated union** on `source`. Today only `source: 'yaml'` is implemented.
+
+### YAML options
+
+| Field            | Meaning                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `source: 'yaml'` | Discriminant                                                                                   |
+| `directory`      | Folder containing YAML files                                                                   |
+| `files?`         | Explicit file names; default all `*.yml` / `*.yaml` (sorted; later files win on shallow merge) |
+
+Copy `config.dist.yml` → `config.yml` per app (gitignored values). Do not commit secrets to git.
+
+## Extending sources later
+
+Add a new union member (e.g. `{ source: 'env', … }`) and a branch in `ConfigLoader`. Existing `source: 'yaml'` call sites stay valid.
+
+## Commands
+
+```bash
+pnpm nx run config:typecheck
+pnpm nx run config:test
+pnpm nx run config:lint
+```

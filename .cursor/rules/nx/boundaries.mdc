@@ -18,7 +18,7 @@ Every project: `scope:*` + `layer:*` (apps also `type:app`).
 
 | Project | Tags |
 |---------|------|
-| `shared-kernel-types`, `contracts`, `utils`, `config-validation` | `scope:shared`, matching `layer:*` |
+| `shared-kernel-types`, `contracts`, `utils`, `config` | `scope:shared`, matching `layer:*` |
 | `domain` | `scope:backend`, `layer:domain` |
 | `application` | `scope:backend`, `layer:application` |
 | `platform` | `scope:backend`, `layer:platform` |

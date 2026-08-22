@@ -73,10 +73,10 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Decision:** `packages/contracts` holds Zod request/response schemas + inferred types, consumed by backend (`createZodDto`) and frontend directly. OpenAPI is generated for external consumers only.
 **Rationale:** In a monorepo, a shared contract is the single biggest consistency/DX win and removes codegen drift; the prior decision was a multi-repo artifact. Application layer still does **not** depend on contracts (mapping in `apps/api`). See [`api-contracts.md`](./api-contracts.md).
 
-## ADR-013 — Shared library set: contracts, shared-kernel-types, utils, config-validation (no constants lib)
+## ADR-013 — Shared library set: contracts, shared-kernel-types, utils, config (no constants lib)
 
-**Decision:** Exactly these shared (`scope:shared`) packages cross the FE/BE line.
-**Rationale:** Broader than "contracts-only" (utils + shared config validation are genuinely shared) but governed by strict allow/forbid rules to avoid a dumping ground. See [`shared-packages.md`](./shared-packages.md).
+**Decision:** Exactly these shared (`scope:shared`) packages cross the FE/BE line (`config` was formerly referred to as `config-validation`).
+**Rationale:** Broader than "contracts-only" (utils + shared config loading are genuinely shared) but governed by strict allow/forbid rules to avoid a dumping ground. See [`shared-packages.md`](./shared-packages.md).
 
 ## ADR-014 — `shared-kernel-types` leaf for IDs/enums (domain must not import contracts)
 

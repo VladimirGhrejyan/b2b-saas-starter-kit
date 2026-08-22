@@ -1,0 +1,31 @@
+{
+  "name": "@b2b-saas-starter-kit/config",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "nx": {
+    "name": "config",
+    "tags": [
+      "scope:shared",
+      "layer:config"
+    ]
+  },
+  "dependencies": {
+    "@b2b-saas-starter-kit/utils": "workspace:*",
+    "js-yaml": "^5.3.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
+  }
+}

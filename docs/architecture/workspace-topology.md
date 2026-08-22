@@ -13,9 +13,9 @@ packages/
   # ── shared (scope:shared) — pure, framework-free, usable by BE and FE ──
   shared/
     utils/                 # ObjectUtils, ArrayUtils, DateUtils, …  → @b2b-saas-starter-kit/utils
+    config/                # ConfigLoader (YAML + Zod)               → @b2b-saas-starter-kit/config
   shared-kernel-types/     # branded IDs, cross-cutting enums, primitive scalars     [leaf]
   contracts/               # Zod API request/response schemas + inferred types
-  config-validation/       # YAML parsing + Zod config schemas (BE + FE)
 
   # ── backend (scope:backend) ──
   domain/                  # layer:domain — pure business logic + repository ports
@@ -73,23 +73,23 @@ Default recommendation: **(a)** for postgres/messaging (heaviest, most-coupled) 
 
 ## Project roles
 
-| Project               | Type | Layer          | Depends on (allowed)                                                      |
-| --------------------- | ---- | -------------- | ------------------------------------------------------------------------- |
-| `shared-kernel-types` | lib  | shared         | — (leaf; +Zod)                                                            |
-| `contracts`           | lib  | shared         | `shared-kernel-types`                                                     |
-| `utils`               | lib  | shared         | —                                                                         |
-| `config-validation`   | lib  | shared         | `shared-kernel-types`                                                     |
-| `domain`              | lib  | domain         | `shared-kernel-types`                                                     |
-| `application`         | lib  | application    | `domain`, `platform`, `shared-kernel-types`, `utils`                      |
-| `platform`            | lib  | platform       | `shared-kernel-types`                                                     |
-| `infrastructure/*`    | lib  | infrastructure | `domain`, `application`, `platform`, shared libs                          |
-| `composition/*`       | lib  | composition    | `domain`, `application`, `infrastructure`, `platform`                     |
-| `frontend/ui`         | lib  | ui             | `utils` (+ React/Radix/Tailwind)                                          |
-| `frontend/core`       | lib  | feature/core   | `contracts`, `shared-kernel-types`, `utils`                               |
-| `apps/api`            | app  | app            | `composition`, `contracts`, `config-validation`, `utils`                  |
-| `apps/worker`         | app  | app            | `composition`, `config-validation`, `utils`                               |
-| `apps/web`            | app  | app            | `frontend/ui`, `frontend/core`, `contracts`, `utils`, `config-validation` |
-| `apps/admin`          | app  | app            | same as `web`                                                             |
+| Project               | Type | Layer          | Depends on (allowed)                                           |
+| --------------------- | ---- | -------------- | -------------------------------------------------------------- |
+| `shared-kernel-types` | lib  | shared         | — (leaf; +Zod)                                                 |
+| `contracts`           | lib  | shared         | `shared-kernel-types`                                          |
+| `utils`               | lib  | shared         | —                                                              |
+| `config`              | lib  | shared         | `utils` (+ Zod, js-yaml)                                       |
+| `domain`              | lib  | domain         | `shared-kernel-types`                                          |
+| `application`         | lib  | application    | `domain`, `platform`, `shared-kernel-types`, `utils`           |
+| `platform`            | lib  | platform       | `shared-kernel-types`                                          |
+| `infrastructure/*`    | lib  | infrastructure | `domain`, `application`, `platform`, shared libs               |
+| `composition/*`       | lib  | composition    | `domain`, `application`, `infrastructure`, `platform`          |
+| `frontend/ui`         | lib  | ui             | `utils` (+ React/Radix/Tailwind)                               |
+| `frontend/core`       | lib  | feature/core   | `contracts`, `shared-kernel-types`, `utils`                    |
+| `apps/api`            | app  | app            | `composition`, `contracts`, `config`, `utils`                  |
+| `apps/worker`         | app  | app            | `composition`, `config`, `utils`                               |
+| `apps/web`            | app  | app            | `frontend/ui`, `frontend/core`, `contracts`, `utils`, `config` |
+| `apps/admin`          | app  | app            | same as `web`                                                  |
 
 ## Dependency graph (the DAG)
 
@@ -98,7 +98,7 @@ flowchart TB
   skt[shared-kernel-types]
   utils[utils]
   contracts[contracts]
-  cfg[config-validation]
+  cfg[config]
 
   domain[domain]
   platform[platform]
@@ -115,7 +115,7 @@ flowchart TB
   admin[apps/admin]
 
   contracts --> skt
-  cfg --> skt
+  cfg --> utils
   domain --> skt
   platform --> skt
   application --> domain
@@ -148,7 +148,7 @@ flowchart TB
 
 - `domain` depends on **nothing** except `shared-kernel-types` (and Zod). It never imports `contracts`, `application`, `infrastructure`, or any framework.
 - `application` never imports `contracts` or `infrastructure`. It receives **command inputs**, not wire DTOs (mapping happens in `apps/api`). See [`api-contracts.md`](./api-contracts.md).
-- Frontend and backend never import each other. They meet only at `contracts`, `shared-kernel-types`, `utils`, `config-validation`.
+- Frontend and backend never import each other. They meet only at `contracts`, `shared-kernel-types`, `utils`, `config`.
 
 ## What is a project vs. a folder
 

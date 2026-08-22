@@ -8,12 +8,12 @@ Related: [`workspace-topology.md`](./workspace-topology.md), [`api-contracts.md`
 
 Only these cross the frontend/backend boundary. Each is pure and framework-free.
 
-| Package                           | Purpose                                                                                  | Depends on                    |
-| --------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
-| `shared-kernel-types`             | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types | — (leaf)                      |
-| `contracts`                       | Zod API request/response schemas + inferred types                                        | `shared-kernel-types` (+ Zod) |
-| `utils` (`packages/shared/utils`) | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …         | — (leaf)                      |
-| `config-validation`               | YAML parsing + Zod config schemas usable by BE and FE                                    | `shared-kernel-types` (+ Zod) |
+| Package                             | Purpose                                                                                  | Depends on                    |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
+| `shared-kernel-types`               | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types | — (leaf)                      |
+| `contracts`                         | Zod API request/response schemas + inferred types                                        | `shared-kernel-types` (+ Zod) |
+| `utils` (`packages/shared/utils`)   | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …         | — (leaf; no Zod)              |
+| `config` (`packages/shared/config`) | `ConfigLoader` — pluggable sources (YAML today) + Zod validation                         | `utils` (+ Zod, js-yaml)      |
 
 There is intentionally **no `constants` package** — cross-cutting enums live in `shared-kernel-types`; anything else that looks like a "constant" belongs to a context, not to shared.
 
@@ -37,15 +37,15 @@ It has **zero dependencies** (aside from Zod for the schemas) and **no framework
 - Pure, deterministic functions with no I/O (`utils`).
 - API contract schemas + inferred types (`contracts`).
 - Branded IDs, cross-cutting enums, primitives (`shared-kernel-types`).
-- Config schemas/parsing shared by BE and FE (`config-validation`).
+- Config loading via `ConfigLoader` (`config`); apps own schemas and value files.
 
 ## What MUST NEVER go into shared packages
 
 - **Domain/business logic** — belongs to a context in `domain`/`application`.
-- **Infrastructure** — no TypeORM, Redis, HTTP, file system, env access.
+- **Infrastructure** — no TypeORM, Redis, HTTP adapters in shared leaves (exception: `config` may read files / sources only inside an explicit `ConfigLoader.load` call).
 - **Framework code** — no NestJS, no React/DOM.
 - **Context-specific types** that aren't part of an API contract.
-- **Stateful singletons** or anything with side effects at import time.
+- **Stateful singletons** or anything with side effects at import time (including eager config load).
 - **Backend-only domain primitives** (`AggregateRoot`, etc.) — those stay in `domain/shared-kernel`.
 
 ## Backend-only vs. frontend-only vs. domain-only
@@ -71,4 +71,11 @@ Sharing anything from these across the FE/BE line is a boundary violation (see [
 
 - Zero runtime dependencies initially (no Zod, no date library).
 - `DateUtils` is **UTC/ISO-only**; display formatting / IANA timezones can justify `date-fns` later.
-- Zod schemas belong in `contracts`, `config-validation`, or `shared-kernel-types` — not in `utils`.
+- Zod schemas belong in `contracts`, `shared-kernel-types`, or **app-owned** config schemas — not in `utils`. Use `@b2b-saas-starter-kit/config` only for loading/validation.
+
+### `config` leaf policy
+
+- Public entry: `ConfigLoader.load(schema, options)` with `options` discriminated by `source` (`yaml` today).
+- Apps own Zod schemas and `config/*.yml` values; do not commit secrets.
+- No Nest/React inside this package. No load-at-import-time singleton.
+- Future sources (env, secrets manager) extend the `LoadConfigOptions` union without changing existing call sites.

@@ -14,7 +14,7 @@ Use `eslint-plugin-simple-import-sort` + `consistent-type-imports`.
 
 1. `node:` builtins  
 2. External packages (`@nestjs/…`, `zod`, …)  
-3. Shared leaves (`shared-kernel-types`, `utils`, `config-validation`)  
+3. Shared leaves (`shared-kernel-types`, `utils`, `config`)
 4. `domain`  
 5. `platform`  
 6. `application`  

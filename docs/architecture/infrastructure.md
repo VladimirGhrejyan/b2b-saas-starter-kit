@@ -63,9 +63,11 @@ This prevents the classic "saved to DB but the job never fired" (or vice-versa) 
 
 ## Configuration
 
-- **`config-validation`** (shared lib) parses config (including YAML) and validates it with **Zod**, producing a typed, validated config object. Usable by both backend and frontend (e.g. shared enums/limits, environment schema shapes).
-- Backend loads and validates config at startup; invalid config **fails fast**.
-- Secrets come from the environment, never committed. Config schemas live with `config-validation`; environment-specific _values_ do not.
+- **`@b2b-saas-starter-kit/config`** (`packages/shared/config`) exposes `ConfigLoader`: load from a pluggable `source`, validate with **Zod**, return a typed object.
+- **v1 source:** `source: 'yaml'` — merge YAML files from an app `config/` directory (see `config.dist.yml` templates when apps exist).
+- Apps own schemas and values; the shared package owns the load pipeline. Call `ConfigLoader.load` explicitly at bootstrap / Vite plugin time (no import-time load).
+- Invalid config **fails fast** (`ConfigValidationError`).
+- Secrets must not be committed. Today they may live in gitignored YAML; before production, prefer env/secret-manager overlays behind new `source` variants without changing app facades.
 
 ## Logging & observability (design intent)
 

@@ -20,7 +20,7 @@ Both are thin shells composing shared libraries. Splitting them keeps audiences,
 - **Shared libraries** (Nx projects), reused by both apps:
   - `frontend/ui` — the design system (see [`design-system.md`](./design-system.md)).
   - `frontend/core` — RTK store setup, RTK Query base API, auth/tenant/permission state, the `can()` helper, API client wiring, shared hooks.
-  - `contracts`, `shared-kernel-types`, `utils`, `config-validation` — shared with the backend.
+  - `contracts`, `shared-kernel-types`, `utils`, `config` — shared with the backend.
 - **Features live as FSD folders inside each app** (`apps/web/src/{app,pages,features,shared}`), and are **promoted to a `frontend/feature-*` library only when a second app needs them.** This avoids premature libraries while keeping the door open.
 
 ```
@@ -92,7 +92,7 @@ Both apps share a shell pattern (from `frontend/core` + `frontend/ui`): provider
 
 ## Boundaries recap
 
-- Frontend never imports backend layers; they meet only at `contracts`, `shared-kernel-types`, `utils`, `config-validation`.
+- Frontend never imports backend layers; they meet only at `contracts`, `shared-kernel-types`, `utils`, `config`.
 - `ui` contains **no** data-fetching or business logic (presentation only).
 - `core` contains **no** presentational components (state/data only).
 - Features compose `ui` + `core` + `contracts`.
