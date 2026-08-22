@@ -1,8 +1,8 @@
 ---
 description: Shared package allow/forbid rules — contracts, kernel types, utils, config
 globs:
-  - "packages/shared-kernel-types/**/*.ts"
-  - "packages/contracts/**/*.ts"
+  - "packages/shared/kernel-types/**/*.ts"
+  - "packages/shared/contracts/**/*.ts"
   - "packages/shared/utils/**/*.ts"
   - "packages/shared/config/**/*.ts"
 alwaysApply: false
@@ -16,10 +16,10 @@ Source of truth: `docs/architecture/shared-packages.md`.
 
 | Package | Contents |
 |---------|----------|
-| `shared-kernel-types` | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums |
-| `contracts` | Zod API schemas + inferred types |
-| `utils` | Pure helpers (`ObjectUtils`, `ArrayUtils`, `DateUtils`, …) |
-| `config` | `ConfigLoader` (YAML + Zod; pluggable `source`) |
+| `shared-kernel-types` (`packages/shared/kernel-types`) | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums |
+| `contracts` (`packages/shared/contracts`) | Zod API schemas + inferred types |
+| `utils` (`packages/shared/utils`) | Pure helpers (`ObjectUtils`, `ArrayUtils`, `DateUtils`, …) |
+| `config` (`packages/shared/config`) | `ConfigLoader` (YAML + Zod; pluggable `source`) |
 
 **Utils consumption / extension:** always import from `@b2b-saas-starter-kit/utils`. When a generic helper is missing, extend `packages/shared/utils` (class + tests + barrel) — do not fork local helpers. See `general/utils.mdc`.
 

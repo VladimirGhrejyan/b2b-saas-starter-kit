@@ -1,7 +1,7 @@
 ---
 description: Shared Zod contracts — single source of truth for API shapes
 globs:
-  - "packages/contracts/**/*.ts"
+  - "packages/shared/contracts/**/*.ts"
   - "apps/api/**/*.ts"
 alwaysApply: false
 ---
@@ -12,7 +12,7 @@ Source of truth: `docs/architecture/api-contracts.md`.
 
 ## Decision
 
-`packages/contracts` holds Zod request/response schemas + inferred types. Backend wraps with `nestjs-zod`; frontend imports the same schemas. **Application does not import contracts** — controllers map DTO → command.
+`packages/shared/contracts` holds Zod request/response schemas + inferred types. Backend wraps with `nestjs-zod`; frontend imports the same schemas through `@b2b-saas-starter-kit/contracts`. **Application does not import contracts** — controllers map DTO → command.
 
 ## File Naming
 
@@ -20,12 +20,12 @@ Source of truth: `docs/architecture/api-contracts.md`.
 - `*.output.ts` — responses
 - `*.param.ts` — path params
 
-Organize by context: `contracts/tenancy/`, `contracts/authorization/`, …
+Organize by context under `packages/shared/contracts/src`: `tenancy/`, `authorization/`, …
 
 ## Example
 
 ```typescript
-// packages/contracts/src/tenancy/invite-member.input.ts
+// packages/shared/contracts/src/tenancy/invite-member.input.ts
 import { z } from 'zod'
 
 export const InviteMemberInputSchema = z.object({
@@ -37,7 +37,7 @@ export type InviteMemberInput = z.infer<typeof InviteMemberInputSchema>
 ```
 
 ```typescript
-// packages/contracts/src/tenancy/membership.output.ts
+// packages/shared/contracts/src/tenancy/membership.output.ts
 import { z } from 'zod'
 
 export const MembershipOutputSchema = z.object({

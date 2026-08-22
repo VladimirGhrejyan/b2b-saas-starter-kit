@@ -8,7 +8,7 @@ Related: [`shared-packages.md`](./shared-packages.md), [`backend.md`](./backend.
 
 **This revises an earlier decision.** In the prior (Cursor-rules) phase — derived from the investigated _multi-repo_ projects — the choice was _independent_ frontend/backend types connected via OpenAPI codegen, with **no** shared contract package. In a **monorepo**, that trade-off inverts: a shared contracts package is the single biggest consistency/DX win and removes codegen drift.
 
-**`packages/contracts`** holds the Zod schemas for API requests and responses, plus their inferred TypeScript types. Both sides consume it:
+**`packages/shared/contracts`** holds the Zod schemas for API requests and responses, plus their inferred TypeScript types. Both sides consume it through `@b2b-saas-starter-kit/contracts`:
 
 - **Backend** wraps schemas with `nestjs-zod` (`createZodDto`) for validation + Swagger.
 - **Frontend** imports the same schemas for RTK Query request/response types and (where useful) client-side validation.
@@ -16,9 +16,9 @@ Related: [`shared-packages.md`](./shared-packages.md), [`backend.md`](./backend.
 Result: **one source of truth**, zero drift, no codegen step.
 
 ```typescript
-// packages/contracts/tenancy/invite-member.ts
+// packages/shared/contracts/src/tenancy/invite-member.ts
 import {z} from 'zod'
-import {TenantId, UserId} from '@kit/shared-kernel-types'
+import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 export const InviteMemberInput = z.object({
   email: z.string().email(),
@@ -76,7 +76,7 @@ Retained from the established convention:
 - `*.output.ts` — response DTOs
 - `*.param.ts` — path parameters
 
-Organized by context inside `contracts` (`contracts/tenancy/…`, `contracts/authorization/…`).
+Organized by context inside `packages/shared/contracts/src` (`tenancy/…`, `authorization/…`).
 
 ## Validation
 

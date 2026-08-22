@@ -8,12 +8,12 @@ Related: [`workspace-topology.md`](./workspace-topology.md), [`api-contracts.md`
 
 Only these cross the frontend/backend boundary. Each is pure and framework-free.
 
-| Package                             | Purpose                                                                                  | Depends on                    |
-| ----------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
-| `shared-kernel-types`               | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types | — (leaf)                      |
-| `contracts`                         | Zod API request/response schemas + inferred types                                        | `shared-kernel-types` (+ Zod) |
-| `utils` (`packages/shared/utils`)   | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …         | — (leaf; no Zod)              |
-| `config` (`packages/shared/config`) | `ConfigLoader` — pluggable sources (YAML today) + Zod validation                         | `utils` (+ Zod, js-yaml)      |
+| Package                                                | Purpose                                                                                  | Depends on                    |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------- | ----------------------------- |
+| `shared-kernel-types` (`packages/shared/kernel-types`) | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types | — (leaf)                      |
+| `contracts` (`packages/shared/contracts`)              | Zod API request/response schemas + inferred types                                        | `shared-kernel-types` (+ Zod) |
+| `utils` (`packages/shared/utils`)                      | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …         | — (leaf; no Zod)              |
+| `config` (`packages/shared/config`)                    | `ConfigLoader` — pluggable sources (YAML today) + Zod validation                         | `utils` (+ Zod, js-yaml)      |
 
 There is intentionally **no `constants` package** — cross-cutting enums live in `shared-kernel-types`; anything else that looks like a "constant" belongs to a context, not to shared.
 

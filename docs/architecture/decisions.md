@@ -70,17 +70,17 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-012 — Shared Zod `contracts` package · **Supersedes** the earlier "independent types + OpenAPI codegen" decision
 
-**Decision:** `packages/contracts` holds Zod request/response schemas + inferred types, consumed by backend (`createZodDto`) and frontend directly. OpenAPI is generated for external consumers only.
+**Decision:** `packages/shared/contracts` holds Zod request/response schemas + inferred types, consumed as `@b2b-saas-starter-kit/contracts` by backend (`createZodDto`) and frontend directly. OpenAPI is generated for external consumers only.
 **Rationale:** In a monorepo, a shared contract is the single biggest consistency/DX win and removes codegen drift; the prior decision was a multi-repo artifact. Application layer still does **not** depend on contracts (mapping in `apps/api`). See [`api-contracts.md`](./api-contracts.md).
 
 ## ADR-013 — Shared library set: contracts, shared-kernel-types, utils, config (no constants lib)
 
-**Decision:** Exactly these shared (`scope:shared`) packages cross the FE/BE line (`config` was formerly referred to as `config-validation`).
+**Decision:** Exactly these shared (`scope:shared`) packages cross the FE/BE line and physically live under `packages/shared/*` (`config` was formerly referred to as `config-validation`).
 **Rationale:** Broader than "contracts-only" (utils + shared config loading are genuinely shared) but governed by strict allow/forbid rules to avoid a dumping ground. See [`shared-packages.md`](./shared-packages.md).
 
 ## ADR-014 — `shared-kernel-types` leaf for IDs/enums (domain must not import contracts)
 
-**Decision:** Branded IDs + cross-cutting enums live in a zero-dependency `shared-kernel-types` leaf that both `contracts` and `domain` depend on.
+**Decision:** Branded IDs + cross-cutting enums live in `packages/shared/kernel-types` as the `@b2b-saas-starter-kit/shared-kernel-types` leaf that both `contracts` and `domain` depend on.
 **Options:** (A) IDs in contracts, domain imports contracts; (B) dedicated leaf ✓; (C) duplicate + map.
 **Rationale:** Avoids `domain → contracts` coupling _and_ duplication. Backend domain base classes stay in `domain/shared-kernel`. See [`shared-packages.md`](./shared-packages.md).
 

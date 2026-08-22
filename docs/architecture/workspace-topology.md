@@ -12,10 +12,10 @@ See also: [`boundaries.md`](./boundaries.md) for the tags/constraints that enfor
 packages/
   # ── shared (scope:shared) — pure, framework-free, usable by BE and FE ──
   shared/
+    kernel-types/          # branded IDs, cross-cutting enums, primitive scalars     → @b2b-saas-starter-kit/shared-kernel-types
+    contracts/             # Zod API request/response schemas + inferred types       → @b2b-saas-starter-kit/contracts
     utils/                 # ObjectUtils, ArrayUtils, DateUtils, …  → @b2b-saas-starter-kit/utils
     config/                # ConfigLoader (YAML + Zod)               → @b2b-saas-starter-kit/config
-  shared-kernel-types/     # branded IDs, cross-cutting enums, primitive scalars     [leaf]
-  contracts/               # Zod API request/response schemas + inferred types
 
   # ── backend (scope:backend) ──
   domain/                  # layer:domain — pure business logic + repository ports
