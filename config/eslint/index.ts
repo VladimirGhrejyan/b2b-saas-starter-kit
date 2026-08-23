@@ -6,6 +6,7 @@ import {EslintBase} from './base'
 import {DomainEslintConfig} from './domain'
 import {FrontendEslintConfig} from './frontend'
 import {EslintIgnores} from './ignores'
+import {PlatformEslintConfig} from './platform'
 import {TestsEslintConfig} from './tests'
 import {ToolingEslintConfig} from './tooling'
 
@@ -19,6 +20,7 @@ export class EslintFlatConfig {
     ...EslintBase.configs,
     BackendEslintConfig.config,
     DomainEslintConfig.config,
+    PlatformEslintConfig.config,
     FrontendEslintConfig.config,
     TestsEslintConfig.config,
     ToolingEslintConfig.config,

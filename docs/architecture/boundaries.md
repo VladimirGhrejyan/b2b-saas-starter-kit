@@ -1,6 +1,6 @@
 # Nx Boundaries & Enforcement
 
-The source of truth for how the architecture is enforced mechanically. Scope/layer tags, `@nx/enforce-module-boundaries`, folder-level context isolation (`@b2b-saas-starter-kit/no-cross-context-imports`), and domain-purity `no-restricted-imports` are active.
+The source of truth for how the architecture is enforced mechanically. Scope/layer tags, `@nx/enforce-module-boundaries`, folder-level context isolation (`@b2b-saas-starter-kit/no-cross-context-imports`), domain-purity `no-restricted-imports`, and platform-purity `no-restricted-imports` are active.
 
 Related: [`workspace-topology.md`](./workspace-topology.md), [`bounded-contexts.md`](./bounded-contexts.md).
 
@@ -146,12 +146,13 @@ Frontend FSD layering (`app → pages → features → shared`) is enforced by t
 
 ## Enforcement responsibility matrix
 
-| Rule                               | Enforced by                                                |
-| ---------------------------------- | ---------------------------------------------------------- |
-| Layer dependency direction         | Nx `@nx/enforce-module-boundaries` (tags)                  |
-| Frontend/backend separation        | Nx scope tags                                              |
-| Shared purity (no framework/infra) | Nx scope tags                                              |
-| Context isolation                  | Folder-level ESLint import boundaries                      |
-| FSD layering within apps           | Folder-level ESLint import boundaries                      |
-| Domain purity (no TypeORM/Nest)    | Nx tags + ESLint `no-restricted-imports` on `layer:domain` |
-| Import order / type imports        | `simple-import-sort` + `consistent-type-imports`           |
+| Rule                               | Enforced by                                                  |
+| ---------------------------------- | ------------------------------------------------------------ |
+| Layer dependency direction         | Nx `@nx/enforce-module-boundaries` (tags)                    |
+| Frontend/backend separation        | Nx scope tags                                                |
+| Shared purity (no framework/infra) | Nx scope tags                                                |
+| Context isolation                  | Folder-level ESLint import boundaries                        |
+| FSD layering within apps           | Folder-level ESLint import boundaries                        |
+| Domain purity (no TypeORM/Nest)    | Nx tags + ESLint `no-restricted-imports` on `layer:domain`   |
+| Platform purity (no TypeORM/Nest)  | Nx tags + ESLint `no-restricted-imports` on `layer:platform` |
+| Import order / type imports        | `simple-import-sort` + `consistent-type-imports`             |
