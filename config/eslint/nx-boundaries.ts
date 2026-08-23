@@ -1,10 +1,9 @@
 /**
  * Nx module-boundary constraints (docs/architecture/boundaries.md).
  *
- * Active: `@nx/enforce-module-boundaries` (this file) and folder-level context isolation
- *   (`@b2b-saas-starter-kit/no-cross-context-imports`).
- * TODO(architecture): domain purity no-restricted-imports (Phase 2)
- *   (no @nestjs/*, typeorm, ioredis inside packages/domain)
+ * Active: `@nx/enforce-module-boundaries` (this file), folder-level context isolation
+ *   (`@b2b-saas-starter-kit/no-cross-context-imports`), and domain-purity
+ *   `no-restricted-imports` (`config/eslint/domain.ts`).
  */
 export class NxBoundaries {
   static readonly depConstraints = [

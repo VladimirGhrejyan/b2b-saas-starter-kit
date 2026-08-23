@@ -3,6 +3,7 @@ import prettier from 'eslint-config-prettier'
 
 import {BackendEslintConfig} from './backend'
 import {EslintBase} from './base'
+import {DomainEslintConfig} from './domain'
 import {FrontendEslintConfig} from './frontend'
 import {EslintIgnores} from './ignores'
 import {TestsEslintConfig} from './tests'
@@ -17,6 +18,7 @@ export class EslintFlatConfig {
     EslintIgnores.config,
     ...EslintBase.configs,
     BackendEslintConfig.config,
+    DomainEslintConfig.config,
     FrontendEslintConfig.config,
     TestsEslintConfig.config,
     ToolingEslintConfig.config,

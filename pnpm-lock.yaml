@@ -281,6 +281,12 @@ importers:
         specifier: ^11.0.0
         version: 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@11.2.1)(@nestjs/platform-express@11.2.1)
 
+  packages/domain:
+    dependencies:
+      '@b2b-saas-starter-kit/shared-kernel-types':
+        specifier: workspace:*
+        version: link:../shared/kernel-types
+
   packages/shared/config:
     dependencies:
       '@b2b-saas-starter-kit/utils':

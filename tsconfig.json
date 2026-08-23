@@ -29,6 +29,9 @@
     },
     {
       "path": "./packages/shared/kernel-types"
+    },
+    {
+      "path": "./packages/domain"
     }
   ]
 }

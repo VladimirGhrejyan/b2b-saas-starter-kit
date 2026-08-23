@@ -1,0 +1,26 @@
+{
+  "name": "@b2b-saas-starter-kit/domain",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "nx": {
+    "name": "domain",
+    "tags": [
+      "scope:backend",
+      "layer:domain"
+    ]
+  },
+  "dependencies": {
+    "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*"
+  }
+}

@@ -1,0 +1,7 @@
+export {AggregateRoot} from './shared-kernel/aggregate-root'
+export {DomainError} from './shared-kernel/domain-error'
+export type {DomainEvent} from './shared-kernel/domain-event'
+export {Entity} from './shared-kernel/entity'
+export {Guard} from './shared-kernel/guard'
+export {Result} from './shared-kernel/result'
+export type {Fail, Ok, Result as ResultType} from './shared-kernel/result.types'
