@@ -1,6 +1,6 @@
 # Nx Boundaries & Enforcement
 
-The source of truth for how the architecture is enforced mechanically. Nothing here is implemented yet — this documents the intended tags, constraints, and lints to be added in the implementation phase.
+The source of truth for how the architecture is enforced mechanically. Scope/layer tags, `@nx/enforce-module-boundaries`, and folder-level context isolation (`@b2b-saas-starter-kit/no-cross-context-imports`) are active. Domain-purity `no-restricted-imports` is added with the domain project (Phase 2).
 
 Related: [`workspace-topology.md`](./workspace-topology.md), [`bounded-contexts.md`](./bounded-contexts.md).
 

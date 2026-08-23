@@ -26,6 +26,9 @@
     },
     {
       "path": "./apps/admin"
+    },
+    {
+      "path": "./packages/shared/kernel-types"
     }
   ]
 }

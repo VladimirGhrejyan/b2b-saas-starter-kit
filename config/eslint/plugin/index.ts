@@ -2,6 +2,7 @@ import type {ESLint} from 'eslint'
 
 import {maxClassesPerFileRule} from './rules/max-classes-per-file'
 import {maxStandaloneFunctionsRule} from './rules/max-standalone-functions'
+import {noCrossContextImportsRule} from './rules/no-cross-context-imports'
 import {noMixedFileDeclarationsRule} from './rules/no-mixed-file-declarations'
 
 /** Workspace ESLint plugin for file-structure conventions. */
@@ -17,6 +18,7 @@ export class WorkspaceEslintPlugin {
       'max-standalone-functions': maxStandaloneFunctionsRule,
       'max-classes-per-file': maxClassesPerFileRule,
       'no-mixed-file-declarations': noMixedFileDeclarationsRule,
+      'no-cross-context-imports': noCrossContextImportsRule,
     },
   } as unknown as ESLint.Plugin
 }

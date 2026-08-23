@@ -16,6 +16,7 @@ export class BackendEslintConfig {
     ],
     rules: {
       'simple-import-sort/imports': ['error', {groups: ImportGroups.backend}],
+      '@b2b-saas-starter-kit/no-cross-context-imports': 'error',
     },
   }
 }

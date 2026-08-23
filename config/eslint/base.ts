@@ -48,6 +48,7 @@ export class EslintBase {
     'no-console': 'warn',
     'no-unused-vars': 'off',
     'no-undef': 'off',
+    'no-redeclare': 'off',
 
     '@typescript-eslint/restrict-template-expressions': 'off',
     '@typescript-eslint/no-explicit-any': 'error',

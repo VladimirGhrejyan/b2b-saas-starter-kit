@@ -1,11 +1,9 @@
 /**
- * Intended Nx module-boundary constraints (docs/architecture/boundaries.md).
+ * Nx module-boundary constraints (docs/architecture/boundaries.md).
  *
- * TODO(architecture): turn on / tighten @nx/enforce-module-boundaries once projects exist with
- *   scope:shared|backend|frontend and layer:domain|application|platform|infrastructure|composition|…
- * TODO(architecture): folder-level context isolation
- *   (e.g. packages/domain/src/tenancy ↛ packages/domain/src/authorization)
- * TODO(architecture): domain purity no-restricted-imports
+ * Active: `@nx/enforce-module-boundaries` (this file) and folder-level context isolation
+ *   (`@b2b-saas-starter-kit/no-cross-context-imports`).
+ * TODO(architecture): domain purity no-restricted-imports (Phase 2)
  *   (no @nestjs/*, typeorm, ioredis inside packages/domain)
  */
 export class NxBoundaries {
