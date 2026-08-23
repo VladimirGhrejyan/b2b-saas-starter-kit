@@ -28,11 +28,25 @@ Pure business logic. **Zero framework dependencies** — no NestJS, no TypeORM, 
 
 Contains, per context folder:
 
-- **Aggregates / entities / value objects** — domain models (plain classes/types), independent of persistence.
+- **Aggregates / entities / value objects** — domain models (plain classes/types), independent of persistence. Aggregates live at the context root (`<aggregate>.ts`, `<aggregate>.types.ts`, `<aggregate>.spec.ts`).
 - **Domain events** — emitted by aggregates (event-driven pattern; see [`infrastructure.md`](./infrastructure.md)).
-- **Domain errors** — typed, meaningful failures.
-- **Repository ports** — interfaces such as `UserRepository`, `TenantRepository`. **Decision: repository ports live in the domain layer** (classic DDD). They are interface-only and reference domain models + `shared-kernel-types`, so the domain stays pure.
-- **`shared-kernel/`** — base `AggregateRoot`, `Entity`, `DomainEvent`, `Result` (backend-only primitives).
+- **Domain errors** — typed, meaningful failures under `<context>/errors/`.
+- **Repository ports** — interfaces such as `UserRepository`, `TenantRepository` under `<context>/ports/`. **Decision: repository ports live in the domain layer** (classic DDD). They are interface-only and reference domain models + `shared-kernel-types`, so the domain stays pure.
+- **Context-wide catalogs** (authorization only today) — `permission-catalog.ts`, `system-roles.ts` at the context root.
+- **`shared-kernel/`** — base `AggregateRoot`, `Entity`, `DomainEvent`, `Result` (backend-only primitives). Unchanged by context layout.
+
+Default layout (kind folders):
+
+```
+packages/domain/src/<context>/
+  <aggregate>.ts
+  <aggregate>.types.ts
+  <aggregate>.spec.ts
+  errors/*.error.ts
+  ports/*.repository.ts
+```
+
+Do not pre-create empty `events/`, `value-objects/`, or `aggregates/` folders. Introduce a full DDD catalog inside that context (`aggregates/`, `entities/`, `value-objects/`, `events/`, `errors/`, `ports/`, `services/`) only when complexity actually appears — for example a third aggregate, extracted value objects, typed event classes, or a domain service. Promote one context at a time; other contexts stay on kind folders until they hit the same bar. Isolation lint still keys off the context folder name (`src/<context>/`).
 
 Allowed imports: `shared-kernel-types`, `zod` (pure). Nothing else.
 

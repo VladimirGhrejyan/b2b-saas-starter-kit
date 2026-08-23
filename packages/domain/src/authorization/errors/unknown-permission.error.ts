@@ -1,4 +1,4 @@
-import {DomainError} from '../shared-kernel/domain-error'
+import {DomainError} from '../../shared-kernel/domain-error'
 
 /**
  * Thrown when a permission is not in {@link PermissionCatalog}.

@@ -22,6 +22,23 @@ Never import Nest, TypeORM, Redis, `contracts`, `application`, `platform`, `util
 
 Do not relatively import another context's internals. `Membership` stores `UserId` + `RoleId[]`, not `User` or `Role`.
 
+## Folder layout
+
+Each bounded context uses **kind folders**. Aggregates stay at the context root; only errors and ports get their own directories:
+
+```
+src/<context>/
+  <aggregate>.ts
+  <aggregate>.types.ts
+  <aggregate>.spec.ts
+  errors/*.error.ts
+  ports/*.repository.ts
+```
+
+`shared-kernel/` is unchanged. Do not add empty `events/`, `value-objects/`, or `aggregates/` folders.
+
+Graduate **one context** to a full DDD catalog (`aggregates/`, `entities/`, `value-objects/`, `events/`, `errors/`, `ports/`, `services/`) only when complexity actually appears — a third aggregate, extracted value objects, typed event classes, or a domain service. Other contexts stay on kind folders until they hit the same bar. Isolation lint still keys off `src/<context>/`.
+
 ## Contexts
 
 **Authorization** — tenant-scoped `Role` bundles from `PermissionCatalog`. System roles (`Owner` / `Admin` / `Member`) are definitions; `CreateTenant` seeds rows later.

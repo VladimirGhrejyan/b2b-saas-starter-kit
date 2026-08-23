@@ -2,10 +2,10 @@ import {describe, expect, it} from 'vitest'
 
 import {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import {EmptyMembershipRolesError} from './empty-membership-roles.error'
+import {EmptyMembershipRolesError} from './errors/empty-membership-roles.error'
+import {MembershipAlreadyActiveError} from './errors/membership-already-active.error'
+import {MembershipAlreadySuspendedError} from './errors/membership-already-suspended.error'
 import {Membership} from './membership'
-import {MembershipAlreadyActiveError} from './membership-already-active.error'
-import {MembershipAlreadySuspendedError} from './membership-already-suspended.error'
 
 const MEMBERSHIP_ID = MembershipId.parse('55555555-5555-4555-8555-555555555555')
 const OTHER_ID = MembershipId.parse('66666666-6666-4666-8666-666666666666')

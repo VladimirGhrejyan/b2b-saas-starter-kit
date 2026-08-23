@@ -2,8 +2,8 @@ import {describe, expect, it} from 'vitest'
 
 import {Permission} from '@b2b-saas-starter-kit/shared-kernel-types'
 
+import {UnknownPermissionError} from './errors/unknown-permission.error'
 import {PermissionCatalog} from './permission-catalog'
-import {UnknownPermissionError} from './unknown-permission.error'
 
 describe('PermissionCatalog', () => {
   it('contains four unique branded permissions', () => {

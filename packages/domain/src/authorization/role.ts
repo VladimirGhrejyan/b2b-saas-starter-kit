@@ -3,8 +3,8 @@ import type {Permission, RoleId, TenantId} from '@b2b-saas-starter-kit/shared-ke
 import {AggregateRoot} from '../shared-kernel/aggregate-root'
 import {Guard} from '../shared-kernel/guard'
 
-import {EmptyRolePermissionsError} from './empty-role-permissions.error'
-import {InvalidRoleNameError} from './invalid-role-name.error'
+import {EmptyRolePermissionsError} from './errors/empty-role-permissions.error'
+import {InvalidRoleNameError} from './errors/invalid-role-name.error'
 import {PermissionCatalog} from './permission-catalog'
 import type {RoleReconstituteProps} from './role.types'
 import {SystemRoles} from './system-roles'

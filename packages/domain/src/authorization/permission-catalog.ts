@@ -1,6 +1,6 @@
 import {Permission} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import {UnknownPermissionError} from './unknown-permission.error'
+import {UnknownPermissionError} from './errors/unknown-permission.error'
 
 /**
  * Fixed, code-owned permission identifiers for the foundation.

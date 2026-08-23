@@ -3,10 +3,10 @@ import {MembershipStatus as MembershipStatusEnum} from '@b2b-saas-starter-kit/sh
 
 import {AggregateRoot} from '../shared-kernel/aggregate-root'
 
-import {EmptyMembershipRolesError} from './empty-membership-roles.error'
+import {EmptyMembershipRolesError} from './errors/empty-membership-roles.error'
+import {MembershipAlreadyActiveError} from './errors/membership-already-active.error'
+import {MembershipAlreadySuspendedError} from './errors/membership-already-suspended.error'
 import type {MembershipReconstituteProps} from './membership.types'
-import {MembershipAlreadyActiveError} from './membership-already-active.error'
-import {MembershipAlreadySuspendedError} from './membership-already-suspended.error'
 
 /**
  * User↔tenant link with tenant-scoped role ids. Does not import User or Role.

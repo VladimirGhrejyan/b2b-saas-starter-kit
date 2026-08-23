@@ -4,11 +4,11 @@ import {UserStatus as UserStatusEnum} from '@b2b-saas-starter-kit/shared-kernel-
 import {AggregateRoot} from '../shared-kernel/aggregate-root'
 import {Guard} from '../shared-kernel/guard'
 
-import {InvalidUserDisplayNameError} from './invalid-user-display-name.error'
-import {InvalidUserEmailError} from './invalid-user-email.error'
+import {InvalidUserDisplayNameError} from './errors/invalid-user-display-name.error'
+import {InvalidUserEmailError} from './errors/invalid-user-email.error'
+import {UserAlreadyActiveError} from './errors/user-already-active.error'
+import {UserAlreadySuspendedError} from './errors/user-already-suspended.error'
 import type {UserReconstituteProps} from './user.types'
-import {UserAlreadyActiveError} from './user-already-active.error'
-import {UserAlreadySuspendedError} from './user-already-suspended.error'
 
 /**
  * Global identity. No tenant, no credentials.

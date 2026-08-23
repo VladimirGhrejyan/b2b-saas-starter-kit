@@ -17,6 +17,7 @@ Source of truth: `docs/architecture/persistence.md`.
 | Artifact | Location |
 |----------|----------|
 | Repository ports | `packages/domain/<context>/ports` |
+| Domain errors | `packages/domain/<context>/errors` |
 | Domain models | `packages/domain/<context>` |
 | TypeORM entities + mappers + repo impls | `packages/infrastructure-postgres/<context>` |
 | Migrations (global) | `packages/infrastructure-postgres/migrations` |

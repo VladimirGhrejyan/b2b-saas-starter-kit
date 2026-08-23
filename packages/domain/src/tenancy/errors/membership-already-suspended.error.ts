@@ -1,4 +1,4 @@
-import {DomainError} from '../shared-kernel/domain-error'
+import {DomainError} from '../../shared-kernel/domain-error'
 
 /**
  * Thrown when `Membership.suspend` is called on an already-suspended membership.

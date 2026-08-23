@@ -12,9 +12,10 @@ Source of truth: `docs/architecture/backend.md`, `docs/architecture/persistence.
 ## Rules
 
 - Pure TypeScript only
-- Repository **ports** live in `packages/domain/<context>/ports`
+- Default layout is **kind folders**: aggregates at the context root; `DomainError` subclasses in `packages/domain/src/<context>/errors`; repository **ports** in `packages/domain/src/<context>/ports`
 - May depend on `@b2b-saas-starter-kit/shared-kernel-types` and Zod
 - Never import NestJS, TypeORM, Redis, `contracts`, `application`, or `infrastructure`
+- Do not pre-create empty `events/`, `value-objects/`, or `aggregates/` folders. Graduate one context to a full DDD catalog (`aggregates/`, `entities/`, `value-objects/`, `events/`, `errors/`, `ports/`, `services/`) only when complexity actually appears — a third aggregate, extracted value objects, typed event classes, or a domain service. Isolation lint still keys off `src/<context>/`.
 
 ## Allowed
 
@@ -64,6 +65,19 @@ export class Tenant {
     if (this.status === 'suspended') throw new TenantAlreadySuspendedError()
     this.status = 'suspended'
     return [{ type: 'TenantSuspended', tenantId: this.id, occurredAt: new Date() }]
+  }
+}
+```
+
+## Domain Error
+
+```typescript
+// packages/domain/src/tenancy/errors/invalid-tenant-name.error.ts
+import {DomainError} from '../../shared-kernel/domain-error'
+
+export class InvalidTenantNameError extends DomainError {
+  constructor() {
+    super('TENANT_INVALID_NAME', 'name must not be blank')
   }
 }
 ```

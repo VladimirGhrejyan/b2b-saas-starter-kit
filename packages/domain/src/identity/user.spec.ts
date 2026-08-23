@@ -2,11 +2,11 @@ import {describe, expect, it} from 'vitest'
 
 import {UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import {InvalidUserDisplayNameError} from './invalid-user-display-name.error'
-import {InvalidUserEmailError} from './invalid-user-email.error'
+import {InvalidUserDisplayNameError} from './errors/invalid-user-display-name.error'
+import {InvalidUserEmailError} from './errors/invalid-user-email.error'
+import {UserAlreadyActiveError} from './errors/user-already-active.error'
+import {UserAlreadySuspendedError} from './errors/user-already-suspended.error'
 import {User} from './user'
-import {UserAlreadyActiveError} from './user-already-active.error'
-import {UserAlreadySuspendedError} from './user-already-suspended.error'
 
 const USER_ID = UserId.parse('11111111-1111-4111-8111-111111111111')
 const OTHER_ID = UserId.parse('22222222-2222-4222-8222-222222222222')

@@ -1,4 +1,4 @@
-import {DomainError} from '../shared-kernel/domain-error'
+import {DomainError} from '../../shared-kernel/domain-error'
 
 /**
  * Thrown when a user email is blank or not a simple local@domain form.

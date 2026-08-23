@@ -2,10 +2,10 @@ import {describe, expect, it} from 'vitest'
 
 import {TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import {InvalidTenantNameError} from './invalid-tenant-name.error'
+import {InvalidTenantNameError} from './errors/invalid-tenant-name.error'
+import {TenantAlreadyActiveError} from './errors/tenant-already-active.error'
+import {TenantAlreadySuspendedError} from './errors/tenant-already-suspended.error'
 import {Tenant} from './tenant'
-import {TenantAlreadyActiveError} from './tenant-already-active.error'
-import {TenantAlreadySuspendedError} from './tenant-already-suspended.error'
 
 const TENANT_ID = TenantId.parse('33333333-3333-4333-8333-333333333333')
 const OTHER_ID = TenantId.parse('44444444-4444-4444-8444-444444444444')

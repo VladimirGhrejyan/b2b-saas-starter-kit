@@ -2,12 +2,12 @@ import {describe, expect, it} from 'vitest'
 
 import {Permission, RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import {EmptyRolePermissionsError} from './empty-role-permissions.error'
-import {InvalidRoleNameError} from './invalid-role-name.error'
+import {EmptyRolePermissionsError} from './errors/empty-role-permissions.error'
+import {InvalidRoleNameError} from './errors/invalid-role-name.error'
+import {UnknownPermissionError} from './errors/unknown-permission.error'
 import {PermissionCatalog} from './permission-catalog'
 import {Role} from './role'
 import {SystemRoles} from './system-roles'
-import {UnknownPermissionError} from './unknown-permission.error'
 
 const ROLE_ID = RoleId.parse('11111111-1111-4111-8111-111111111111')
 const OTHER_ROLE_ID = RoleId.parse('22222222-2222-4222-8222-222222222222')
