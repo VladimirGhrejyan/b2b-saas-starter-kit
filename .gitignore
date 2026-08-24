@@ -58,11 +58,7 @@ apps/__scratch__
 *.launch
 .settings/
 *.sublime-workspace
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode/
 
 # Claude / local agent state
 .claude/worktrees
