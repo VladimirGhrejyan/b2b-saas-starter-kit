@@ -22,7 +22,7 @@ Every project: `scope:*` + `layer:*` (apps also `type:app`).
 | `domain` | `scope:backend`, `layer:domain` |
 | `application` | `scope:backend`, `layer:application` |
 | `platform` | `scope:backend`, `layer:platform` |
-| `infrastructure-*` | `scope:backend`, `layer:infrastructure` |
+| `postgres` (path `packages/infrastructure/postgres`; later `redis`, `messaging`) | `scope:backend`, `layer:infrastructure` |
 | `composition-*` | `scope:backend`, `layer:composition` |
 | `frontend-ui` | `scope:frontend`, `layer:ui` |
 | `frontend-core` | `scope:frontend`, `layer:frontend-core` |
@@ -51,7 +51,7 @@ type:app             → composition / frontend libs / shared (never other apps)
 import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
 
 // ❌ application → infrastructure
-import { TypeOrmTenantRepository } from '@b2b-saas-starter-kit/infrastructure-postgres'
+import { TypeOrmTenantRepository } from '@b2b-saas-starter-kit/postgres'
 
 // ❌ frontend → backend
 import { Tenant } from '@b2b-saas-starter-kit/domain'

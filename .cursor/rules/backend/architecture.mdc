@@ -4,7 +4,7 @@ globs:
   - "packages/domain/**/*.ts"
   - "packages/application/**/*.ts"
   - "packages/platform/**/*.ts"
-  - "packages/infrastructure*/**/*.ts"
+  - "packages/infrastructure/**/*.ts"
   - "packages/composition*/**/*.ts"
   - "apps/api/**/*.ts"
   - "apps/worker/**/*.ts"
@@ -96,7 +96,7 @@ Capability ports only (`CachePort`, `LockPort`, `PubSubPort`, `UnitOfWork`). Ada
 
 ## Infrastructure
 
-Implements ports. TypeORM entities + mappers in `infrastructure-postgres`. Redis adapters in `infrastructure-redis`. Never export entities outside this layer.
+Implements ports. TypeORM entities + mappers in `packages/infrastructure/postgres`. Redis adapters in `packages/infrastructure/redis`. Never export entities outside this layer.
 
 ## Composition
 

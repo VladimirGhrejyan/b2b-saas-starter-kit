@@ -6,18 +6,19 @@ Related: [`backend.md`](./backend.md) (layers), [`multi-tenancy.md`](./multi-ten
 
 ## Where everything lives
 
-| Artifact                             | Location                             | Layer          |
-| ------------------------------------ | ------------------------------------ | -------------- |
-| Repository **ports** (interfaces)    | `domain/<context>/ports`             | domain         |
-| Domain models (aggregates/VOs)       | `domain/<context>`                   | domain         |
-| TypeORM **entities** (`*.entity.ts`) | `infrastructure/postgres/<context>`  | infrastructure |
-| **Mappers** (entity ↔ domain)       | `infrastructure/postgres/<context>`  | infrastructure |
-| Repository **implementations**       | `infrastructure/postgres/<context>`  | infrastructure |
-| `DataSource` / TypeORM config        | `infrastructure/postgres`            | infrastructure |
-| **Migrations** (single global set)   | `infrastructure/postgres/migrations` | infrastructure |
-| Tenant-aware **base repository**     | `infrastructure/postgres`            | infrastructure |
-| `UnitOfWork` **port**                | `platform`                           | platform       |
-| `UnitOfWork` **implementation**      | `infrastructure/postgres`            | infrastructure |
+| Artifact                             | Location                                                       | Layer          |
+| ------------------------------------ | -------------------------------------------------------------- | -------------- |
+| Repository **ports** (interfaces)    | `domain/<context>/ports`                                       | domain         |
+| Domain models (aggregates/VOs)       | `domain/<context>`                                             | domain         |
+| TypeORM **entities** (`*.entity.ts`) | `infrastructure/postgres/src/contexts/<context>`               | infrastructure |
+| **Mappers** (entity ↔ domain)       | `infrastructure/postgres/src/contexts/<context>`               | infrastructure |
+| Repository **implementations**       | `infrastructure/postgres/src/contexts/<context>`               | infrastructure |
+| `DataSource` / TypeORM config        | `packages/infrastructure/postgres/src/kernel/data-source`      | infrastructure |
+| **Migrations** (single global set)   | `packages/infrastructure/postgres/src/kernel/migrations`       | infrastructure |
+| Tenant-aware **base repository**     | `packages/infrastructure/postgres/src/kernel/persistence`      | infrastructure |
+| DI **tokens** (`DATA_SOURCE`, …)     | `packages/infrastructure/postgres/src/kernel/tokens.ts`        | infrastructure |
+| `UnitOfWork` **port**                | `platform`                                                     | platform       |
+| `UnitOfWork` **implementation**      | `packages/infrastructure/postgres` (`TypeormUnitOfWork` + ALS) | infrastructure |
 
 **Dependency direction:** `infrastructure/postgres` → `domain` (implements its ports) + `application` + `platform`. The domain never sees TypeORM.
 
@@ -49,7 +50,7 @@ export interface TenantRepository {
   save(tenant: Tenant): Promise<void>
 }
 
-// infrastructure/postgres/tenancy/tenant.entity.ts  (TypeORM)
+// infrastructure/postgres/src/contexts/tenancy/tenant.entity.ts  (TypeORM)
 @Entity('tenants')
 export class TenantEntity {
   @PrimaryColumn('uuid') id!: string
@@ -58,7 +59,7 @@ export class TenantEntity {
   @Column('uuid') tenantId!: string // see multi-tenancy note below
 }
 
-// infrastructure/postgres/tenancy/tenant.mapper.ts
+// infrastructure/postgres/src/contexts/tenancy/tenant.mapper.ts
 export const TenantMapper = {
   toDomain(e: TenantEntity): Tenant {
     /* … */
@@ -68,7 +69,7 @@ export const TenantMapper = {
   },
 }
 
-// infrastructure/postgres/tenancy/typeorm-tenant.repository.ts
+// infrastructure/postgres/src/contexts/tenancy/typeorm-tenant.repository.ts
 @Injectable()
 export class TypeOrmTenantRepository extends TenantAwareRepository implements TenantRepository {
   async findById(id: TenantId) {
@@ -85,12 +86,12 @@ export class TypeOrmTenantRepository extends TenantAwareRepository implements Te
 ## Database ownership
 
 - **Schema ownership:** each context owns the tables for its aggregates. Physically they live in one shared `public` schema, but a table conceptually "belongs to" exactly one context.
-- **No cross-context foreign keys.** A context references another only by **ID value** (e.g. `Membership.userId`). FKs exist only _within_ a context. This preserves context autonomy and keeps future extraction possible. Integrity across contexts is maintained by application logic + events.
+- **No cross-context foreign keys.** A context references another only by **ID value** (e.g. `Membership.userId`). FKs exist only _within_ a context. This preserves context autonomy and keeps future extraction possible. Integrity across contexts is maintained by application logic + events. TypeORM relations (`@ManyToOne` / `@OneToMany`) are allowed only between entities in the same `src/contexts/<context>/` folder; cross-context links are uuid columns, never a relation to another context's entity.
 - **Entities are persistence models**, never exported outside `infrastructure/postgres`.
 
 ## Migrations — single global timeline
 
-**Decision:** one ordered migration set in `infrastructure/postgres/migrations`, run against the single database via one `DataSource`.
+**Decision:** one ordered migration set in `packages/infrastructure/postgres/src/kernel/migrations`, run against the single database via one `DataSource`.
 
 - Simplest source of truth and ordering for a shared kit.
 - Organize files by context (filename prefix or subfolder) for readability; this is the easy upgrade path to per-context migration ownership if ever needed.
@@ -98,7 +99,9 @@ export class TypeOrmTenantRepository extends TenantAwareRepository implements Te
 
 ## Transactions — Unit-of-Work port
 
-**Decision:** transactions are expressed through a `UnitOfWork` (a.k.a. `TransactionManager`) **port** in `platform`, implemented in `infrastructure/postgres` over `DataSource.transaction`.
+**Decision:** transactions are expressed through a `UnitOfWork` (a.k.a. `TransactionManager`) **port** in `platform`, implemented in `packages/infrastructure/postgres` over `DataSource.transaction`. The Nest surface is a custom `PostgresInfrastructureModule` wrapping a vanilla `DataSource` — not `TypeOrmModule` / `@nestjs/typeorm`.
+
+The ambient transaction is stored in Node `AsyncLocalStorage` on **this process**. Nested `uow.run` joins the existing transaction (one DB connection / tx per request or job). `TxContext` stays `{id: string}` — never put `EntityManager` on the platform type. Repositories resolve `manager` from ALS, else `dataSource.manager` (auto-commit).
 
 ```typescript
 // platform/unit-of-work.port.ts
@@ -141,7 +144,7 @@ All tenant-owned repositories extend a shared **`TenantAwareRepository`** that a
 
 `infrastructure/postgres` is a single project shared by all contexts. Risk: it could become a place where contexts entangle. Mitigations:
 
-- Entities/mappers/repos are organized **per-context folder** and subject to the same context-isolation lint.
+- Entities/mappers/repos are organized **per-context folder** under `src/contexts/` and subject to the same context-isolation lint.
 - Contexts reference each other only by ID — no cross-context joins, so there is no _schema-level_ coupling.
 - Only **implementations** live here; the **contracts** (ports) live in `domain`, so swapping the persistence technology for one context does not affect others.
 

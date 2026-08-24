@@ -26,7 +26,8 @@ bind-mount filesystem issues, while keeping Postgres/Redis versions identical to
    ```
 
    Compose starts `postgres` and `redis` with healthchecks. Ports are published on
-   `127.0.0.1` only (`5432`, `6379`) — not exposed to your network.
+   `127.0.0.1` only (`5432`, `6379`) — not exposed to your network. If a native Postgres
+   already occupies `5432`, set `POSTGRES_PORT` (and `DATABASE_URL`) in `infra/env/.env`.
 
 3. Run apps on the host (once they exist):
 

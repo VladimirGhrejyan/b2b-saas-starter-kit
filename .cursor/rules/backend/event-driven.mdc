@@ -4,7 +4,7 @@ globs:
   - "packages/domain/**/*.ts"
   - "packages/application/**/*.ts"
   - "packages/composition*/**/*.ts"
-  - "packages/infrastructure*/**/*.ts"
+  - "packages/infrastructure/**/*.ts"
 alwaysApply: false
 ---
 

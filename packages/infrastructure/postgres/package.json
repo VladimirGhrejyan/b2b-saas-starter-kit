@@ -1,0 +1,56 @@
+{
+  "name": "@b2b-saas-starter-kit/postgres",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "nx": {
+    "name": "postgres",
+    "tags": [
+      "scope:backend",
+      "layer:infrastructure"
+    ],
+    "targets": {
+      "migration:run": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm exec jiti src/kernel/migrations/run.ts",
+          "cwd": "{projectRoot}"
+        }
+      },
+      "migration:revert": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm exec jiti src/kernel/migrations/revert.ts",
+          "cwd": "{projectRoot}"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@b2b-saas-starter-kit/application": "workspace:*",
+    "@b2b-saas-starter-kit/config": "workspace:*",
+    "@b2b-saas-starter-kit/domain": "workspace:*",
+    "@b2b-saas-starter-kit/platform": "workspace:*",
+    "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*",
+    "@nestjs/common": "^11.2.1",
+    "pg": "^8.23.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^1.1.0",
+    "uuid": "^14.0.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.2.1",
+    "@types/pg": "^8.23.1"
+  }
+}

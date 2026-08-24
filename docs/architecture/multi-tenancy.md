@@ -40,7 +40,9 @@ The resolver validates that the user has a **membership** in that tenant before 
 **Decision:** a hybrid of explicit and ambient propagation.
 
 1. **Explicit at the application boundary.** Use-case command inputs carry `tenantId` (and `actor`/`userId`). This keeps use cases self-describing and trivially unit-testable — you cannot invoke one without stating the tenant.
-2. **Ambient guardrail in infrastructure.** A request-scoped **`TenantContext`** (async-local-storage / `nestjs-cls`) is set by the edge middleware. The persistence layer reads it as an automatic enforcement net.
+2. **Ambient guardrail in infrastructure.** A request-scoped **`TenantContext`** (Node [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html)) is set by the edge via `tenantContext.run({tenantId, actorId}, …)`. The persistence layer reads it as an automatic enforcement net. Do **not** use `nestjs-cls` — it is the same ALS with a Nest wrapper, and it does not make context valid across instances.
+
+Tenant identity travels **on the message** (headers today, access-token claim / job payload later). Each Node process reconstructs ALS for that async chain only. A Postgres transaction is one connection on one process; never share `EntityManager` or ALS stores across instances. Redis is the wrong place for `TenantContext` (request-scoped, not durable).
 
 The two must agree: the infrastructure asserts that the tenant implied by a command matches the ambient `TenantContext`, catching mistakes where code forgets to scope a query.
 

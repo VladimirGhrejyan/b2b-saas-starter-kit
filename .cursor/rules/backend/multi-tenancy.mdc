@@ -4,7 +4,7 @@ globs:
   - "packages/domain/**/*.ts"
   - "packages/application/**/*.ts"
   - "packages/platform/**/*.ts"
-  - "packages/infrastructure*/**/*.ts"
+  - "packages/infrastructure/**/*.ts"
   - "packages/composition*/**/*.ts"
   - "apps/api/**/*.ts"
   - "apps/worker/**/*.ts"

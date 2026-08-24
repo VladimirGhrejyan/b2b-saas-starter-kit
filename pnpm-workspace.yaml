@@ -1,6 +1,7 @@
 packages:
   - 'packages/*'
   - 'packages/shared/*'
+  - 'packages/infrastructure/*'
   - 'apps/*'
 
 autoInstallPeers: true

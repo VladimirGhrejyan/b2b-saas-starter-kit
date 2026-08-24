@@ -18,7 +18,7 @@ Use `eslint-plugin-simple-import-sort` + `consistent-type-imports`.
 4. `domain`  
 5. `platform`  
 6. `application`  
-7. `infrastructure-*`  
+7. `postgres` / `redis` / `messaging`  
 8. `composition-*` / `contracts` (apps only for contracts)  
 9. Relative
 

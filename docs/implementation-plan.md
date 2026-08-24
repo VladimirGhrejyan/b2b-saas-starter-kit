@@ -16,8 +16,8 @@ These were confirmed for the initial foundation and constrain the whole plan:
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **RBAC breadth**    | **Lean-but-generic.** `identity` (User), `tenancy` (Tenant, Membership), `authorization` (Role, Permission) with a **fixed system-permission catalog** + seeded **system roles** (Owner/Admin/Member). One permission enforced end-to-end. Custom tenant-defined roles CRUD + invitations **deferred** (the seams are built so they slot in without rework). |
 | **Authentication**  | **Stubbed principal.** No password/JWT/refresh/sessions yet. The API edge injects an authenticated principal (dev middleware) and establishes `TenantContext`. Real credentials/tokens are a **later plan**, localized to the `identity` context + edge, so nothing else changes when they land.                                                             |
-| **Depth per slice** | **End-to-end through HTTP.** `domain → application → infrastructure-postgres → composition → apps/api` controllers + `contracts`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Frontend excluded.                                                                                                                     |
-| **Redis**           | **Deferred.** Effective permissions are resolved directly from Postgres (via context repositories). `platform` Cache/Lock/PubSub ports + `infrastructure-redis` + permission caching come later. All keys/queries are designed **cache- and tenant-prefix-ready** now.                                                                                       |
+| **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → composition → apps/api` controllers + `contracts`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Frontend excluded.                                                                                                                                    |
+| **Redis**           | **Deferred.** Effective permissions are resolved directly from Postgres (via context repositories). `platform` Cache/Lock/PubSub ports + `packages/infrastructure/redis` + permission caching come later. All keys/queries are designed **cache- and tenant-prefix-ready** now.                                                                              |
 
 Out of scope for this plan (see §7 Deferred): real authentication, Redis, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime.
 
@@ -37,27 +37,27 @@ So the packages you listed map as follows (names/tags are fixed by [`boundaries.
 | `backend/domain`                  | `packages/domain` → `@b2b-saas-starter-kit/domain` (contexts are folders inside `src/`)   | one project               |
 | `backend/application`             | `packages/application` → `@b2b-saas-starter-kit/application`                              | one project               |
 | `backend/platform`                | `packages/platform` → `@b2b-saas-starter-kit/platform`                                    | one project               |
-| `backend/infrastructure/postgres` | `packages/infrastructure-postgres` → `@b2b-saas-starter-kit/infrastructure-postgres`      | one project (per-concern) |
+| `backend/infrastructure/postgres` | `packages/infrastructure/postgres` → `@b2b-saas-starter-kit/postgres`                     | one project (per-concern) |
 | `backend/composition`             | `packages/composition` → `@b2b-saas-starter-kit/composition` (context modules as folders) | one project               |
 
 **Bounded-context-specific packages are explicitly rejected** for the foundation (documented as rejected alternatives in [`decisions.md`](./architecture/decisions.md)): they multiply project count and make `nx affected` finer at the cost of much more wiring, and a context is promoted to its own project only when it needs independent build/versioning or is being extracted toward a service — an explicit later decision, not the starting point.
 
-**Infrastructure split:** `infrastructure/` is a grouping concept; the docs recommend realization **(a) separate projects per concern**. For the foundation we create only **`infrastructure-postgres`** (Redis/messaging deferred). This keeps `affected` clean and means a future Redis adapter won't pull TypeORM.
+**Infrastructure split:** `packages/infrastructure/` is a grouping directory (like `packages/shared/`); each concern is its own Nx project. For the foundation we create only **`packages/infrastructure/postgres`** (Nx name `postgres`; Redis/messaging deferred). This keeps `affected` clean and means a future Redis adapter won't pull TypeORM.
 
 ### 2.2 Nx projects, tags, and dependency direction
 
 Projects created across the whole plan (only the ones this foundation needs), with their required tags and allowed dependencies (subset of [`boundaries.md`](./architecture/boundaries.md)):
 
-| Project                   | Tags                                    | May depend on                                                                 |
-| ------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
-| `shared-kernel-types`     | `scope:shared`, `layer:shared-types`    | — (+ Zod)                                                                     |
-| `contracts`               | `scope:shared`, `layer:contracts`       | `shared-kernel-types`                                                         |
-| `domain`                  | `scope:backend`, `layer:domain`         | `shared-kernel-types`                                                         |
-| `platform`                | `scope:backend`, `layer:platform`       | `shared-kernel-types`                                                         |
-| `application`             | `scope:backend`, `layer:application`    | `domain`, `platform`, `shared-kernel-types`, `utils`                          |
-| `infrastructure-postgres` | `scope:backend`, `layer:infrastructure` | `domain`, `application`, `platform`, `shared-kernel-types`, `utils`, `config` |
-| `composition`             | `scope:backend`, `layer:composition`    | `domain`, `application`, `infrastructure-postgres`, `platform`, shared        |
-| `apps/api`                | `scope:backend`, `type:app`             | `composition`, `contracts`, `config`, `utils`                                 |
+| Project               | Tags                                    | May depend on                                                                 |
+| --------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
+| `shared-kernel-types` | `scope:shared`, `layer:shared-types`    | — (+ Zod)                                                                     |
+| `contracts`           | `scope:shared`, `layer:contracts`       | `shared-kernel-types`                                                         |
+| `domain`              | `scope:backend`, `layer:domain`         | `shared-kernel-types`                                                         |
+| `platform`            | `scope:backend`, `layer:platform`       | `shared-kernel-types`                                                         |
+| `application`         | `scope:backend`, `layer:application`    | `domain`, `platform`, `shared-kernel-types`, `utils`                          |
+| `postgres`            | `scope:backend`, `layer:infrastructure` | `domain`, `application`, `platform`, `shared-kernel-types`, `utils`, `config` |
+| `composition`         | `scope:backend`, `layer:composition`    | `domain`, `application`, `postgres`, `platform`, shared                       |
+| `apps/api`            | `scope:backend`, `type:app`             | `composition`, `contracts`, `config`, `utils`                                 |
 
 **Forbidden edges that make this design correct** (enforced, not conventional): `domain → anything but shared-types`; `application → contracts`; `application → infrastructure`; `scope:backend ↔ scope:frontend`; `type:app → type:app`. The direction always points **inward** toward the pure domain.
 
@@ -68,7 +68,7 @@ The kit's five contexts are folders inside each layer project. This foundation i
 ```
 domain/src/{ identity, tenancy, authorization, shared-kernel }
 application/src/{ identity, tenancy, authorization, shared }
-infrastructure-postgres/{ identity, tenancy, authorization, <core: DataSource/base repo/UoW/migrations> }
+infrastructure/postgres/src/{ kernel, contexts, testing }
 composition/src/{ identity, tenancy, authorization }
 ```
 
@@ -96,14 +96,14 @@ Context isolation is a **folder-level lint**: within `domain/src/<A>` you may no
 
 | Port (interface)       | Defined in                              | Adapter / impl (this plan)                                                              | Purpose                                                                                 |
 | ---------------------- | --------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `UserRepository`       | `domain/identity/ports`                 | `infrastructure-postgres/identity`                                                      | Load/save User.                                                                         |
-| `TenantRepository`     | `domain/tenancy/ports`                  | `infrastructure-postgres/tenancy`                                                       | Load/save Tenant (tenant-aware).                                                        |
-| `MembershipRepository` | `domain/tenancy/ports`                  | `infrastructure-postgres/tenancy`                                                       | Load/save Membership; list by tenant (tenant-aware).                                    |
-| `RoleRepository`       | `domain/authorization/ports`            | `infrastructure-postgres/authorization`                                                 | Load/save/seed Roles (tenant-aware).                                                    |
-| `UnitOfWork`           | `platform`                              | `infrastructure-postgres` (over `DataSource.transaction`)                               | Transaction boundary; ambient `TxContext`.                                              |
-| `TenantContext`        | `platform`                              | `infrastructure-postgres` (nestjs-cls / ALS)                                            | Ambient active-tenant + actor accessor.                                                 |
-| `Clock`                | `platform`                              | `infrastructure-postgres` (system clock)                                                | Deterministic timestamps (`occurredAt`, `createdAt`).                                   |
-| `IdGenerator`          | `platform`                              | `infrastructure-postgres` (UUID v7)                                                     | Deterministic-in-tests ID creation; ids passed into domain factories.                   |
+| `UserRepository`       | `domain/identity/ports`                 | `infrastructure/postgres/identity`                                                      | Load/save User.                                                                         |
+| `TenantRepository`     | `domain/tenancy/ports`                  | `infrastructure/postgres/tenancy`                                                       | Load/save Tenant (tenant-aware).                                                        |
+| `MembershipRepository` | `domain/tenancy/ports`                  | `infrastructure/postgres/tenancy`                                                       | Load/save Membership; list by tenant (tenant-aware).                                    |
+| `RoleRepository`       | `domain/authorization/ports`            | `infrastructure/postgres/authorization`                                                 | Load/save/seed Roles (tenant-aware).                                                    |
+| `UnitOfWork`           | `platform`                              | `infrastructure/postgres` (over `DataSource.transaction`)                               | Transaction boundary; ambient `TxContext`.                                              |
+| `TenantContext`        | `platform`                              | `infrastructure/postgres` (Node AsyncLocalStorage)                                      | Ambient active-tenant + actor accessor.                                                 |
+| `Clock`                | `platform`                              | `infrastructure/postgres` (system clock)                                                | Deterministic timestamps (`occurredAt`, `createdAt`).                                   |
+| `IdGenerator`          | `platform`                              | `infrastructure/postgres` (UUID v7)                                                     | Deterministic-in-tests ID creation; ids passed into domain factories.                   |
 | `AuthorizationPort`    | `application/authorization` (published) | `application/authorization` service, backed by `RoleRepository` + `MembershipRolesPort` | `require(actor, permission, {tenantId})` / `getEffectivePermissions(userId, tenantId)`. |
 | `MembershipRolesPort`  | `application/tenancy` (published)       | `application/tenancy` service (reads `MembershipRepository`)                            | Sanctioned cross-context sync read: "which roleIds does (user,tenant) have?"            |
 
@@ -122,8 +122,8 @@ Per [`multi-tenancy.md`](./architecture/multi-tenancy.md), **pool model** (share
 
 ### 2.7 Persistence, migrations, seeding
 
-- **Separate domain models and TypeORM entities**, connected by explicit **mappers** ([`persistence.md`](./architecture/persistence.md)). Entities never leave `infrastructure-postgres`.
-- **Single global migration timeline** in `infrastructure-postgres/migrations`, files prefixed by context for readability. One `DataSource`.
+- **Separate domain models and TypeORM entities**, connected by explicit **mappers** ([`persistence.md`](./architecture/persistence.md)). Entities never leave `packages/infrastructure/postgres`.
+- **Single global migration timeline** in `packages/infrastructure/postgres`, files prefixed by context for readability. One `DataSource`.
 - **Seeding:** permission catalog is code. **System roles are seeded per tenant at runtime** inside `CreateTenant` (not via migration), so custom roles later use the identical path. A separate idempotent dev **seeder** (fixed dev user) supports local e2e without real auth.
 - **Transactions** via `UnitOfWork` port; repositories join the ambient `TxContext` (no `EntityManager` on port signatures).
 
@@ -136,12 +136,12 @@ Per [`multi-tenancy.md`](./architecture/multi-tenancy.md), **pool model** (share
 
 ### 2.9 Testing strategy
 
-| Layer                     | Test type                 | Tooling / notes                                                                                                                   |
-| ------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `domain`                  | Pure unit                 | Vitest, no Nest/DB. Target ~90% on domain.                                                                                        |
-| `application`             | Unit with in-memory fakes | In-memory repositories + in-memory `UnitOfWork` + fake `TenantContext`/`Clock`/`IdGenerator`.                                     |
-| `infrastructure-postgres` | Integration               | Against a **containerized Postgres** (reuse `infra/compose`), migrations applied to a dedicated test DB. Assert tenant isolation. |
-| `apps/api`                | HTTP e2e                  | `supertest` against a booted Nest app + real Postgres. Full slice: create user → create tenant → `/me` → members (allow/deny).    |
+| Layer         | Test type                 | Tooling / notes                                                                                                                   |
+| ------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `domain`      | Pure unit                 | Vitest, no Nest/DB. Target ~90% on domain.                                                                                        |
+| `application` | Unit with in-memory fakes | In-memory repositories + in-memory `UnitOfWork` + fake `TenantContext`/`Clock`/`IdGenerator`.                                     |
+| `postgres`    | Integration               | Against a **containerized Postgres** (reuse `infra/compose`), migrations applied to a dedicated test DB. Assert tenant isolation. |
+| `apps/api`    | HTTP e2e                  | `supertest` against a booted Nest app + real Postgres. Full slice: create user → create tenant → `/me` → members (allow/deny).    |
 
 Recommended: reuse the existing `infra/compose` Postgres with a separate `*_test` database + `beforeAll` migration run (lower dependency footprint than adding Testcontainers). Testcontainers remains an easy future swap behind the same test setup.
 
@@ -150,7 +150,7 @@ Recommended: reuse the existing `infra/compose` Postgres with a separate `*_test
 ## 3. Key architectural decisions & trade-offs (summary)
 
 1. **Layer-first Nx, contexts as folders** — build-time layer enforcement; context isolation via lint. (Settled by docs; re-affirmed.)
-2. **One project per layer**, `infrastructure-postgres` as the only infra project now — low project count, clean `affected`, Redis/messaging deferred without pulling TypeORM.
+2. **One project per layer**, `packages/infrastructure/postgres` as the only infra project now — low project count, clean `affected`, Redis/messaging deferred without pulling TypeORM.
 3. **Membership as its own aggregate**; the "≥1 Owner" rule is an **application-level multi-aggregate invariant** inside a `UnitOfWork`. Recommended over stuffing it into `Tenant`.
 4. **Tenant-scoped roles**, seeded per tenant at creation — uniform with future custom roles. Recommended over global system roles.
 5. **`AuthorizationPort` resolves by composing repositories** (own `RoleRepository` + published `MembershipRolesPort`), **never a cross-context join** — preserves boundaries, cache-ready.
@@ -256,25 +256,25 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 - **Definition of Done:** every foundation use case passes with in-memory adapters; port surfaces frozen for the infra phase.
 - **Deferred:** invitation/role-assignment/tenant-switch use cases; event publication (outbox phase).
 
-### Phase 7 — infrastructure-postgres core
+### Phase 7 — infrastructure/postgres core
 
 - **Goal:** the persistence backbone, proven against real Postgres, with **no** context tables yet.
-- **Scope:** `DataSource` + TypeORM config (via `ConfigLoader` env schema), `TenantContext` impl (nestjs-cls/ALS), `TenantAwareRepository` base, `UnitOfWork` impl (`DataSource.transaction`), `Clock`/`IdGenerator` impls, migration tooling + runner, test-DB harness.
-- **Packages/projects:** create `packages/infrastructure-postgres` (tags `scope:backend`, `layer:infrastructure`).
+- **Scope:** `DataSource` + TypeORM config (via `ConfigLoader` env schema), `TenantContext` impl (Node AsyncLocalStorage), `TenantAwareRepository` base, `UnitOfWork` impl (`DataSource.transaction`), `Clock`/`IdGenerator` impls, migration tooling + runner, test-DB harness.
+- **Packages/projects:** create `packages/infrastructure/postgres` (Nx name `postgres`, tags `scope:backend`, `layer:infrastructure`).
 - **Implementation tasks:** wire `DataSource`; implement the four platform-port adapters; base repo that reads ambient `TenantContext` and asserts command/context tenant agreement + provides `withoutTenantScope()`; migration config; connect to `infra/compose` Postgres (dedicated `*_test` DB).
 - **Tests:** integration — connectivity; `UnitOfWork.run` commits/rolls back; base repo auto-filters and the escape hatch works (using a throwaway table or the first real table from Phase 8 if interleaved).
-- **Verification:** `nx test infrastructure-postgres` against a running compose Postgres; migration up/down clean.
+- **Verification:** `nx test postgres` against a running compose Postgres; migration up/down clean.
 - **Definition of Done:** core adapters green against real Postgres; `docs/infrastructure` referenced for how to run it.
 - **Deferred:** context entities/repos (Phase 8); RLS "secure profile".
 
-### Phase 8 — infrastructure-postgres per-context adapters + migrations
+### Phase 8 — infrastructure/postgres per-context adapters + migrations
 
 - **Goal:** real repositories for all three contexts, tenant-isolated, integration-tested.
 - **Scope:** entities + mappers + repo impls + migrations for `identity` (`users`), `authorization` (`roles`, `role_permissions`), `tenancy` (`tenants`, `memberships`, `membership_roles`); `AuthorizationPort` + `MembershipRolesPort` impls (composing repos, no cross-context join).
-- **Packages/projects:** `infrastructure-postgres` (identity/authorization/tenancy folders + `migrations`).
+- **Packages/projects:** `packages/infrastructure/postgres` (`src/contexts/{identity,authorization,tenancy}` + `src/kernel/migrations`).
 - **Implementation tasks:** `*.entity.ts` (persistence-only), `*.mapper.ts`, `TypeOrm*Repository` extending the tenant-aware base where tenant-owned (`users` is global); context-prefixed migrations; within-context FKs only; branded IDs across contexts.
 - **Tests:** integration per repo against real Postgres — round-trip mapping; **tenant isolation** (tenant A cannot read tenant B); `AuthorizationPort` returns correct effective permissions end-to-end through the repos.
-- **Verification:** `nx test infrastructure-postgres`; migrations apply cleanly on an empty DB; no cross-context join in any query (review + isolation lint on the folder).
+- **Verification:** `nx test postgres`; migrations apply cleanly on an empty DB; no cross-context join in any query (review + isolation lint on the folder).
 - **Definition of Done:** all foundation tables + repos + authorization resolution work against real Postgres with isolation proven.
 - **Deferred:** Redis-cached effective permissions; outbox tables.
 
@@ -309,7 +309,7 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 | Area                                   | Why deferred / how it slots in later                                                                                                                                                                |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Real authentication**                | Credentials/sessions/tokens (JWT access+refresh, tenant claim, verification, password reset) live in `identity` + edge; the `DevPrincipal` seam is replaced without touching controllers/use cases. |
-| **Redis**                              | `platform` Cache/Lock/PubSub ports + `infrastructure-redis`; cache effective permissions (tenant-prefixed key) behind the existing `AuthorizationPort`.                                             |
+| **Redis**                              | `platform` Cache/Lock/PubSub ports + `packages/infrastructure/redis`; cache effective permissions (tenant-prefixed key) behind the existing `AuthorizationPort`.                                    |
 | **Transactional outbox + event bus**   | Publish domain events (`UserCreated`, `MembershipCreated`, …) durably; enables `audit`/`notifications`.                                                                                             |
 | **`audit` + `notifications` contexts** | Downstream event subscribers; add as folders across layers, no changes to existing contexts.                                                                                                        |
 | **`apps/worker` wiring**               | Re-establish `TenantContext` from job payloads; consume outbox.                                                                                                                                     |

@@ -80,7 +80,7 @@ These are **interfaces + contracts only**. Adapters live in `infrastructure`. Th
 
 Adapters that implement ports, split by concern:
 
-- **`postgres`** — TypeORM entities, mappers, repository implementations (implement domain repository ports), `DataSource`, migrations, the tenant-aware base repository, the `UnitOfWork` implementation. See [`persistence.md`](./persistence.md).
+- **`postgres`** — TypeORM entities, mappers, repository implementations (implement domain repository ports), a custom `DataSource` module (`DataSourceManager` — not `@nestjs/typeorm`), migrations, the tenant-aware base repository, and the `UnitOfWork` / `TenantContext` adapters (Node `AsyncLocalStorage`, not `nestjs-cls`). See [`persistence.md`](./persistence.md).
 - **`redis`** — implementations of `CachePort`/`LockPort`/`PubSubPort`. See [`infrastructure.md`](./infrastructure.md).
 - **`messaging`** — BullMQ queues/processors and the outbox relay.
 

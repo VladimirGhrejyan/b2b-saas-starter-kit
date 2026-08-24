@@ -21,8 +21,9 @@ const ruleTester = new RuleTester({
 const domainTenancy = '/workspace/packages/domain/src/tenancy/tenant.ts'
 const applicationAuthorization = '/workspace/packages/application/src/authorization/require-permission.ts'
 const compositionTenancy = '/workspace/packages/composition/src/tenancy/tenancy.module.ts'
-const infrastructureCore = '/workspace/packages/infrastructure-postgres/src/tenant-aware.repository.ts'
-const infrastructureTenancy = '/workspace/packages/infrastructure-postgres/src/tenancy/tenant.entity.ts'
+const infrastructureCore =
+  '/workspace/packages/infrastructure/postgres/src/kernel/persistence/tenant-aware.repository.ts'
+const infrastructureTenancy = '/workspace/packages/infrastructure/postgres/src/contexts/tenancy/tenant.entity.ts'
 
 ruleTester.run('no-cross-context-imports', noCrossContextImportsRule, {
   valid: [
@@ -48,7 +49,11 @@ ruleTester.run('no-cross-context-imports', noCrossContextImportsRule, {
     },
     {
       filename: infrastructureCore,
-      code: `import {TenantEntity} from './tenancy/tenant.entity'`,
+      code: `import {TenantEntity} from '../../contexts/tenancy/tenant.entity'`,
+    },
+    {
+      filename: infrastructureTenancy,
+      code: `import {TenantAwareRepository} from '../../kernel/persistence/tenant-aware.repository'`,
     },
     {
       filename: domainTenancy,

@@ -24,7 +24,7 @@ Canonical packages (see `docs/architecture/workspace-topology.md`):
 | `@b2b-saas-starter-kit/domain` | Backend domain + repository ports |
 | `@b2b-saas-starter-kit/application` | Backend use cases |
 | `@b2b-saas-starter-kit/platform` | Capability ports (Cache, Lock, UoW, …) |
-| `@b2b-saas-starter-kit/infrastructure-*` | Adapters (postgres, redis, messaging) |
+| `@b2b-saas-starter-kit/postgres` | Postgres adapters (`packages/infrastructure/postgres`; later `redis`, `messaging`) |
 | `@b2b-saas-starter-kit/composition-*` | NestJS DI wiring per context |
 | `@b2b-saas-starter-kit/frontend-ui` | Design system |
 | `@b2b-saas-starter-kit/frontend-core` | RTK store, auth/tenant/`can()` |

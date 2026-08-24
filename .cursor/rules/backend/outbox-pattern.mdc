@@ -1,7 +1,7 @@
 ---
 description: Transactional outbox for reliable background jobs (BullMQ)
 globs:
-  - "packages/infrastructure*/**/*.ts"
+  - "packages/infrastructure/**/*.ts"
   - "packages/application/**/*.ts"
   - "packages/composition*/**/*.ts"
   - "apps/worker/**/*.ts"

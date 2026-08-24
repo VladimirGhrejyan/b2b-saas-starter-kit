@@ -21,21 +21,21 @@ Every Nx project carries a **scope** tag and a **layer** tag.
 - `layer:ui`, `layer:frontend-core`, `layer:feature` (frontend)
 - `type:app` for applications
 
-| Project                  | Tags                                    |
-| ------------------------ | --------------------------------------- |
-| `shared-kernel-types`    | `scope:shared`, `layer:shared-types`    |
-| `contracts`              | `scope:shared`, `layer:contracts`       |
-| `utils`                  | `scope:shared`, `layer:utils`           |
-| `config`                 | `scope:shared`, `layer:config`          |
-| `domain`                 | `scope:backend`, `layer:domain`         |
-| `application`            | `scope:backend`, `layer:application`    |
-| `platform`               | `scope:backend`, `layer:platform`       |
-| `infrastructure-*`       | `scope:backend`, `layer:infrastructure` |
-| `composition-*`          | `scope:backend`, `layer:composition`    |
-| `frontend/ui`            | `scope:frontend`, `layer:ui`            |
-| `frontend/core`          | `scope:frontend`, `layer:frontend-core` |
-| `apps/api`,`apps/worker` | `scope:backend`, `type:app`             |
-| `apps/web`,`apps/admin`  | `scope:frontend`, `type:app`            |
+| Project                                 | Tags                                    |
+| --------------------------------------- | --------------------------------------- |
+| `shared-kernel-types`                   | `scope:shared`, `layer:shared-types`    |
+| `contracts`                             | `scope:shared`, `layer:contracts`       |
+| `utils`                                 | `scope:shared`, `layer:utils`           |
+| `config`                                | `scope:shared`, `layer:config`          |
+| `domain`                                | `scope:backend`, `layer:domain`         |
+| `application`                           | `scope:backend`, `layer:application`    |
+| `platform`                              | `scope:backend`, `layer:platform`       |
+| `postgres` (later `redis`, `messaging`) | `scope:backend`, `layer:infrastructure` |
+| `composition-*`                         | `scope:backend`, `layer:composition`    |
+| `frontend/ui`                           | `scope:frontend`, `layer:ui`            |
+| `frontend/core`                         | `scope:frontend`, `layer:frontend-core` |
+| `apps/api`,`apps/worker`                | `scope:backend`, `type:app`             |
+| `apps/web`,`apps/admin`                 | `scope:frontend`, `type:app`            |
 
 ## Dependency constraints (`@nx/enforce-module-boundaries`)
 

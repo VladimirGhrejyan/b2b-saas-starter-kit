@@ -3,7 +3,7 @@ description: Port-based persistence — domain ports, TypeORM entities, mappers,
 globs:
   - "packages/domain/**/ports/**/*.ts"
   - "packages/platform/**/*.ts"
-  - "packages/infrastructure*/**/*.ts"
+  - "packages/infrastructure/**/*.ts"
   - "packages/application/**/*.ts"
 alwaysApply: false
 ---
@@ -19,10 +19,13 @@ Source of truth: `docs/architecture/persistence.md`.
 | Repository ports | `packages/domain/<context>/ports` |
 | Domain errors | `packages/domain/<context>/errors` |
 | Domain models | `packages/domain/<context>` |
-| TypeORM entities + mappers + repo impls | `packages/infrastructure-postgres/<context>` |
-| Migrations (global) | `packages/infrastructure-postgres/migrations` |
+| TypeORM entities + mappers + repo impls | `packages/infrastructure/postgres/src/contexts/<context>` |
+| Migrations (global) | `packages/infrastructure/postgres/src/kernel/migrations` |
+| `DataSource` manager + factory | `packages/infrastructure/postgres/src/kernel/data-source` |
+| DI tokens (`DATA_SOURCE`, `UNIT_OF_WORK`, `TENANT_CONTEXT`, `CLOCK`, `ID_GENERATOR`) | `packages/infrastructure/postgres/src/kernel/tokens.ts` |
 | `UnitOfWork` port | `packages/platform` |
-| `UnitOfWork` impl | `packages/infrastructure-postgres` |
+| `UnitOfWork` impl (`TypeormUnitOfWork` + ALS) | `packages/infrastructure/postgres/src/kernel/persistence` |
+| `TenantContext` impl (`AlsTenantContext`) | `packages/infrastructure/postgres/src/kernel/tenant-context` |
 | In-memory fakes | `packages/application/src/testing` |
 
 ## Separate Models + Mappers
@@ -34,7 +37,7 @@ export interface TenantRepository {
   save(tenant: Tenant): Promise<void>
 }
 
-// infrastructure-postgres — TypeORM entity (never exported as domain)
+// infrastructure/postgres — TypeORM entity (never exported as domain)
 @Entity('tenants')
 export class TenantEntity {
   @PrimaryColumn('uuid') id!: string
@@ -64,7 +67,7 @@ await this.uow.run(async () => {
 })
 ```
 
-Do **not** put `EntityManager` on domain port signatures.
+Do **not** put `EntityManager` on domain port signatures. Do **not** use `@nestjs/typeorm` (`InjectRepository`); bind `DATA_SOURCE` from `DataSourceManager`.
 
 ## Tenant-Aware Repositories
 
@@ -74,6 +77,7 @@ Tenant-owned repos extend `TenantAwareRepository` (ambient `TenantContext`). See
 
 - FKs only **within** a context
 - Across contexts: store branded IDs (`userId`, `tenantId`, `roleId`) — no cross-context FKs/joins
+- TypeORM relations only inside `src/contexts/<context>/`; cross-context links are uuid columns, never `@ManyToOne` to another context's entity
 
 ## Anti-Patterns
 

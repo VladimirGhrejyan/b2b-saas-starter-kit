@@ -9,7 +9,7 @@ export class BackendEslintConfig {
       'packages/domain/**/*.{ts,tsx}',
       'packages/application/**/*.{ts,tsx}',
       'packages/platform/**/*.{ts,tsx}',
-      'packages/infrastructure*/**/*.{ts,tsx}',
+      'packages/infrastructure/**/*.{ts,tsx}',
       'packages/composition*/**/*.{ts,tsx}',
       'apps/api/**/*.{ts,tsx}',
       'apps/worker/**/*.{ts,tsx}',

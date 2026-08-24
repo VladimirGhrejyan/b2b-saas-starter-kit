@@ -1,0 +1,6 @@
+export const POSTGRES_CONFIG = Symbol('POSTGRES_CONFIG')
+export const DATA_SOURCE = Symbol('DATA_SOURCE')
+export const UNIT_OF_WORK = Symbol('UNIT_OF_WORK')
+export const TENANT_CONTEXT = Symbol('TENANT_CONTEXT')
+export const CLOCK = Symbol('CLOCK')
+export const ID_GENERATOR = Symbol('ID_GENERATOR')

@@ -10,6 +10,8 @@ const LAYER_PATTERNS = [
   /(?:^|\/)packages\/domain\/src\/([^/]+)\//,
   /(?:^|\/)packages\/application\/src\/([^/]+)\//,
   /(?:^|\/)packages\/composition(?:-[^/]+)?\/src\/([^/]+)\//,
+  /(?:^|\/)packages\/infrastructure\/[^/]+\/src\/contexts\/([^/]+)\//,
+  /(?:^|\/)packages\/infrastructure\/[^/]+\/src\/([^/]+)\//,
   /(?:^|\/)packages\/infrastructure-[^/]+\/src\/([^/]+)\//,
   /(?:^|\/)packages\/infrastructure-[^/]+\/([^/]+)\//,
 ] as const

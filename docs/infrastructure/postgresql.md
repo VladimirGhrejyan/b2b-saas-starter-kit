@@ -20,10 +20,24 @@
 
 ## Schema & initialization
 
-- **Schema is owned by TypeORM migrations**, applied at app startup / a one-shot migration task —
-  not by Compose.
+- **Schema is owned by TypeORM migrations**, applied via the runner in `@b2b-saas-starter-kit/postgres` — not by Compose and not by `migrationsRun: true` at `DataSource` init.
 - `/docker-entrypoint-initdb.d` runs **only on first init of an empty volume**; reserve it for
   one-time concerns like creating extensions or roles, never for app schema.
+
+Phase 7 ships an **empty** migration list (no-op). Phase 8 adds context tables. Until then:
+
+```bash
+# Uses DATABASE_URL (default compose: postgres://app:…@localhost:5432/app)
+pnpm nx run postgres:migration:run
+pnpm nx run postgres:migration:revert
+```
+
+Integration tests derive `app_test` from `DATABASE_URL` (swap the database name to `*_test`) and create that database if it is missing. They also read `infra/env/.env` and rewrite localhost URLs to `POSTGRES_PORT`. If Postgres is down, they fail with `run pnpm infra:up`. If a native Postgres occupies the port (no `app` role), they fail with a hint to change `POSTGRES_PORT`.
+
+```bash
+pnpm infra:up
+pnpm nx run postgres:test
+```
 
 ## Credentials & exposure
 

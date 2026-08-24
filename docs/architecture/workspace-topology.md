@@ -64,12 +64,12 @@ Rejected alternatives (context-first single project per context; context×layer 
 
 ### Note on `infrastructure/*` realization
 
-`infrastructure/` is a **grouping directory**. `postgres`, `redis`, and `messaging` are split by concern because they have different dependency footprints and change cadences. Two valid realizations exist:
+`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, later `redis` and `messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
 
-- **(a) Separate Nx projects:** `infrastructure-postgres`, `infrastructure-redis`, `infrastructure-messaging` — best `affected` granularity; a context needing only Redis won't pull TypeORM.
-- **(b) One `infrastructure` project with subfolders** — fewer projects; coarser affected.
+- **Disk:** `packages/infrastructure/<concern>/` (mirrors `packages/shared/<leaf>/`).
+- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; later `redis`, `messaging`) so a Redis consumer never pulls TypeORM.
 
-Default recommendation: **(a)** for postgres/messaging (heaviest, most-coupled) and Redis, but either is compatible with the architecture. The same "grouping dir may be one project or several" principle applies to `frontend/`.
+A single `infrastructure` project with subfolders is a valid alternative (fewer projects, coarser `affected`) but is not what this kit ships. The same "grouping dir may be one project or several" principle applies to `frontend/`.
 
 ## Project roles
 
@@ -152,7 +152,7 @@ flowchart TB
 
 ## What is a project vs. a folder
 
-- **Project** (has `package.json` + `tsconfig`): a _layer_ (`domain`), an _infra concern_ (`infrastructure-postgres`), a _shared leaf_ (`contracts`), a _frontend lib_ (`ui`), or an _app_.
+- **Project** (has `package.json` + `tsconfig`): a _layer_ (`domain`), an _infra concern_ (`packages/infrastructure/postgres`), a _shared leaf_ (`contracts`), a _frontend lib_ (`ui`), or an _app_.
 - **Folder** (no project boundary): a _bounded context_ inside a layer (`domain/src/identity`), an _aggregate_, a _use case_, an FSD _feature_ inside an app.
 
 Guideline: promote a folder to a project only when it must be (a) independently versioned/built, (b) shared across apps, or (c) boundary-enforced by Nx. Frontend features start as folders and become libs only when a second app needs them (see [`frontend.md`](./frontend.md)).

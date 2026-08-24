@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/platform`
 
-Backend capability **ports** — interfaces only. Adapters live in `infrastructure-*`. In-memory fakes for use-case tests live in `packages/application/src/testing` (`@b2b-saas-starter-kit/application/testing`).
+Backend capability **ports** — interfaces only. Adapters live in `packages/infrastructure/*`. In-memory fakes for use-case tests live in `packages/application/src/testing` (`@b2b-saas-starter-kit/application/testing`).
 
 **Path:** `packages/platform`  
 **Nx project:** `platform`  
@@ -21,12 +21,12 @@ Never import Nest, TypeORM, Redis, `domain`, `application`, `contracts`, `utils`
 
 ## Who consumes vs who implements
 
-| Port            | Consumes                                         | Implements (later)                          |
-| --------------- | ------------------------------------------------ | ------------------------------------------- |
-| `UnitOfWork`    | Application use cases                            | `infrastructure-postgres` (Phase 7)         |
-| `TenantContext` | Edge sets via `run`; infra reads via getters     | `infrastructure-postgres` CLS/ALS (Phase 7) |
-| `Clock`         | Application (pass `now()` into domain factories) | `infrastructure-postgres` (Phase 7)         |
-| `IdGenerator`   | Application (`UserId.parse(ids.generate())`)     | UUID v7 adapter (Phase 7)                   |
+| Port            | Consumes                                         | Implements                                      |
+| --------------- | ------------------------------------------------ | ----------------------------------------------- |
+| `UnitOfWork`    | Application use cases                            | `infrastructure/postgres` (`TypeormUnitOfWork`) |
+| `TenantContext` | Edge sets via `run`; infra reads via getters     | `infrastructure/postgres` (`AlsTenantContext`)  |
+| `Clock`         | Application (pass `now()` into domain factories) | `infrastructure/postgres` (`SystemClock`)       |
+| `IdGenerator`   | Application (`UserId.parse(ids.generate())`)     | `infrastructure/postgres` (`UuidV7IdGenerator`) |
 
 Domain never imports this package.
 
@@ -66,7 +66,7 @@ await tenantContext.run({tenantId, actorId}, async () => {
 
 - `CachePort` / `LockPort` / `PubSubPort` (Redis phase)
 - `Logger`
-- Nest injection tokens, CLS/ALS adapters, TypeORM `UnitOfWork`
+- Nest injection tokens, ALS adapters, TypeORM `UnitOfWork` — those live in `packages/infrastructure/postgres`
 - In-memory test doubles (`packages/application/src/testing`)
 
 ## Commands
