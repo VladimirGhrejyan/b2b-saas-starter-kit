@@ -3,8 +3,9 @@
  *
  * Active: `@nx/enforce-module-boundaries` (this file), folder-level context isolation
  *   (`@b2b-saas-starter-kit/no-cross-context-imports`), domain-purity
- *   `no-restricted-imports` (`config/eslint/domain.ts`), and platform-purity
- *   `no-restricted-imports` (`config/eslint/platform.ts`).
+ *   `no-restricted-imports` (`config/eslint/domain.ts`), platform-purity
+ *   `no-restricted-imports` (`config/eslint/platform.ts`), and application-purity
+ *   `no-restricted-imports` (`config/eslint/application.ts`).
  */
 export class NxBoundaries {
   static readonly depConstraints = [

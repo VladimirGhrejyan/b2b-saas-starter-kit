@@ -1,6 +1,7 @@
 import type {Linter} from 'eslint'
 import prettier from 'eslint-config-prettier'
 
+import {ApplicationEslintConfig} from './application'
 import {BackendEslintConfig} from './backend'
 import {EslintBase} from './base'
 import {DomainEslintConfig} from './domain'
@@ -21,6 +22,7 @@ export class EslintFlatConfig {
     BackendEslintConfig.config,
     DomainEslintConfig.config,
     PlatformEslintConfig.config,
+    ApplicationEslintConfig.config,
     FrontendEslintConfig.config,
     TestsEslintConfig.config,
     ToolingEslintConfig.config,

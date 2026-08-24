@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/platform`
 
-Backend capability **ports** — interfaces only. Adapters live in `infrastructure-*`. In-memory fakes for use-case tests live next to application tests (Phase 6).
+Backend capability **ports** — interfaces only. Adapters live in `infrastructure-*`. In-memory fakes for use-case tests live in `packages/application/src/testing` (`@b2b-saas-starter-kit/application/testing`).
 
 **Path:** `packages/platform`  
 **Nx project:** `platform`  
@@ -67,7 +67,7 @@ await tenantContext.run({tenantId, actorId}, async () => {
 - `CachePort` / `LockPort` / `PubSubPort` (Redis phase)
 - `Logger`
 - Nest injection tokens, CLS/ALS adapters, TypeORM `UnitOfWork`
-- In-memory test doubles (Phase 6, beside application tests)
+- In-memory test doubles (`packages/application/src/testing`)
 
 ## Commands
 

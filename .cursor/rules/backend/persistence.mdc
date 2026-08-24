@@ -23,6 +23,7 @@ Source of truth: `docs/architecture/persistence.md`.
 | Migrations (global) | `packages/infrastructure-postgres/migrations` |
 | `UnitOfWork` port | `packages/platform` |
 | `UnitOfWork` impl | `packages/infrastructure-postgres` |
+| In-memory fakes | `packages/application/src/testing` |
 
 ## Separate Models + Mappers
 

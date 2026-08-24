@@ -35,6 +35,9 @@
     },
     {
       "path": "./packages/platform"
+    },
+    {
+      "path": "./packages/application"
     }
   ]
 }

@@ -60,6 +60,7 @@ Use-case orchestration. This is where a request becomes a sequence of domain ope
 - Owns **fine-grained authorization** checks (see [`authorization.md`](./authorization.md)).
 - Consumes **repository ports** (from `domain`) and **capability ports** (from `platform`).
 - Receives **command inputs** (plain typed objects), _not_ wire DTOs. Mapping `contracts` DTO → command happens in `apps/api`.
+- **Published ports** (`AuthorizationPort`, `MembershipRolesPort`) live in `application/src/shared/` so other contexts import the interface, not a sibling-context file. The authorization **resolver** is an application service composing `RoleRepository` + `MembershipRolesPort` (not a cross-context SQL join, not an infrastructure adapter).
 
 Allowed imports: `domain`, `platform`, `shared-kernel-types`, `utils`, `@nestjs/common` (decorator only).
 

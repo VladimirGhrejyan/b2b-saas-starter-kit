@@ -1,0 +1,39 @@
+---
+description: Application use cases — @Injectable, published ports, in-memory fakes
+globs:
+  - "packages/application/**/*.ts"
+alwaysApply: false
+---
+
+# Application Layer
+
+Source of truth: `docs/architecture/backend.md`, `packages/application/README.md`.
+
+## Rules
+
+- `@Injectable` is the only Nest seam. No controllers, TypeORM, Redis, or `contracts`.
+- Commands/queries are plain typed objects. Actor field is **`actorId`** (matches `TenantScope`).
+- Published port **interfaces** live in `packages/application/src/shared/` so contexts can import them without a relative sibling-context path.
+- Implementations stay in the owning context (`authorization/`, `tenancy/`).
+- In-memory fakes live in `packages/application/src/testing` and are exported from `@b2b-saas-starter-kit/application/testing`.
+- Writes run inside `UnitOfWork.run`. Brand IDs with `UserId.parse(ids.generate())` and pass `clock.now()` into domain factories.
+- Only `ListTenantMembers` requires `PermissionCatalog.tenancyMembersRead`. `CreateUser` / `CreateTenant` are onboarding; `GetMyProfile` is self-read.
+- Active memberships only contribute role IDs. Isolation lint still keys off `src/<context>/`.
+
+## Allowed
+
+```typescript
+import {Injectable} from '@nestjs/common'
+import type {UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
+import type {UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {AuthorizationPort} from '../shared/authorization.port'
+```
+
+## Forbidden
+
+```typescript
+import {InviteMemberInput} from '@b2b-saas-starter-kit/contracts'
+import {Injectable} from '@nestjs/core'
+import {MembershipRolesPort} from '../tenancy/membership-roles.port'
+```

@@ -22,15 +22,16 @@ Aligned with `docs/architecture/` (layer-first Nx topology, SaaS bounded context
 
 ### Backend
 
-| File                         | Purpose                              |
-| ---------------------------- | ------------------------------------ |
-| `backend/architecture.mdc`   | Layers, composition, Nest outer ring |
-| `backend/domain-layer.mdc`   | Pure domain + repository ports       |
-| `backend/event-driven.mdc`   | Aggregates emit events               |
-| `backend/persistence.mdc`    | Entities, mappers, UnitOfWork        |
-| `backend/outbox-pattern.mdc` | Transactional outbox + worker        |
-| `backend/multi-tenancy.mdc`  | Pool model, hybrid tenant context    |
-| `backend/authorization.mdc`  | RBAC + policies, dual enforcement    |
+| File                            | Purpose                                |
+| ------------------------------- | -------------------------------------- |
+| `backend/architecture.mdc`      | Layers, composition, Nest outer ring   |
+| `backend/domain-layer.mdc`      | Pure domain + repository ports         |
+| `backend/application-layer.mdc` | `@Injectable` use cases + shared ports |
+| `backend/event-driven.mdc`      | Aggregates emit events                 |
+| `backend/persistence.mdc`       | Entities, mappers, UnitOfWork          |
+| `backend/outbox-pattern.mdc`    | Transactional outbox + worker          |
+| `backend/multi-tenancy.mdc`     | Pool model, hybrid tenant context      |
+| `backend/authorization.mdc`     | RBAC + policies, dual enforcement      |
 
 ### Frontend
 
