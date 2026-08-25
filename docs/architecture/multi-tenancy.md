@@ -63,7 +63,7 @@ controller maps DTO → command { tenantId, … }  │  both carry the tenant
 
 - `TenantAwareRepository` automatically adds `WHERE tenant_id = :ctx` to reads and stamps `tenant_id` on writes, using the ambient `TenantContext`.
 - Individual repositories cannot "forget" to scope — they inherit the behavior.
-- A narrow, explicit **escape hatch** (`withoutTenantScope()` / a dedicated admin repository path) exists for legitimately cross-tenant operations (system admin, analytics, the tenant-resolution lookups themselves). Use of the escape hatch is intentionally verbose and reviewable.
+- A narrow, explicit **escape hatch** (`TenantContext.withoutTenantScope()` / `TenantAwareRepository.withoutTenantScope()`) exists for legitimately cross-tenant operations (system admin, analytics, tenant-resolution lookups) and **first-tenant writes** (`CreateTenant`). Use of the escape hatch is intentionally verbose and reviewable. A write with no ambient scope and no hatch throws `TenantContextNotEstablishedError` (same as reads).
 
 ### Optional hardening: Postgres Row-Level Security (RLS)
 

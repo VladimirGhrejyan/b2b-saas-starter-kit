@@ -5,6 +5,7 @@ import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
  *
  * Edge middleware and workers call `run`. Infrastructure reads the getters.
  * Getters throw `TenantContextNotEstablishedError` when no scope is active.
+ * First-tenant / admin writes use {@link TenantContext.withoutTenantScope}.
  */
 export type TenantScope = {
   readonly tenantId: TenantId
@@ -13,6 +14,7 @@ export type TenantScope = {
 
 export interface TenantContext {
   run<T>(scope: TenantScope, work: () => Promise<T>): Promise<T>
+  withoutTenantScope<T>(work: () => Promise<T>): Promise<T>
   getTenantId(): TenantId
   getActorId(): UserId
 }

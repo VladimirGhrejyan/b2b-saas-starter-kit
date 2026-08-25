@@ -61,7 +61,9 @@ describe('AuthorizationService through TypeORM repositories', () => {
 
   it('gives Owner tenancy.members.read and a Member membership only tenant.read', async () => {
     const owner = await createUser.execute({email: 'ada@example.com', displayName: 'Ada'})
-    const tenant = await createTenant.execute({name: 'Acme', ownerUserId: owner.userId})
+    const tenant = await tenantContext.withoutTenantScope(() =>
+      createTenant.execute({name: 'Acme', ownerUserId: owner.userId}),
+    )
 
     await users.save(
       User.reconstitute({
@@ -71,15 +73,17 @@ describe('AuthorizationService through TypeORM repositories', () => {
         status: UserStatus.parse('active'),
       }),
     )
-    await memberships.save(
-      Membership.reconstitute({
-        id: MEMBER_MEMBERSHIP,
-        tenantId: tenant.tenantId,
-        userId: MEMBER_USER,
-        roleIds: [tenant.roleIds.member],
-        status: MembershipStatus.parse('active'),
-      }),
-    )
+    await tenantContext.run({tenantId: tenant.tenantId, actorId: owner.userId}, async () => {
+      await memberships.save(
+        Membership.reconstitute({
+          id: MEMBER_MEMBERSHIP,
+          tenantId: tenant.tenantId,
+          userId: MEMBER_USER,
+          roleIds: [tenant.roleIds.member],
+          status: MembershipStatus.parse('active'),
+        }),
+      )
+    })
 
     const ownerPermissions = await tenantContext.run({tenantId: tenant.tenantId, actorId: owner.userId}, async () =>
       authz.getEffectivePermissions(owner.userId, tenant.tenantId),

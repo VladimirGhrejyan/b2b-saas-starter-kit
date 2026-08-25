@@ -46,7 +46,7 @@ Job payloads must include `tenantId`. Worker re-establishes `TenantContext` befo
 ## Enforcement
 
 - Default: `TenantAwareRepository` stamps/filters `tenant_id`
-- Escape hatch for cross-tenant/admin ops must be explicit and rare
+- Escape hatch for cross-tenant/admin ops and first-tenant writes (`CreateTenant`) must be explicit (`withoutTenantScope`)
 - Optional Postgres RLS is a documented hardening profile, not the default
 
 ## Redis

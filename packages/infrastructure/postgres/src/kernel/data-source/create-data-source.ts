@@ -22,5 +22,15 @@ export function createDataSource(config: PostgresConfig, options: CreateDataSour
     migrationsRun: false,
     synchronize: false,
     logging: false,
+    poolSize: config.POSTGRES_POOL_MAX,
+    maxQueryExecutionTime: config.POSTGRES_SLOW_QUERY_MS,
+    extra: {
+      max: config.POSTGRES_POOL_MAX,
+      connectionTimeoutMillis: config.POSTGRES_CONNECT_TIMEOUT_MS,
+      statement_timeout: config.POSTGRES_STATEMENT_TIMEOUT_MS,
+      lock_timeout: config.POSTGRES_LOCK_TIMEOUT_MS,
+      idle_in_transaction_session_timeout: config.POSTGRES_IDLE_IN_TX_TIMEOUT_MS,
+      application_name: config.POSTGRES_APPLICATION_NAME,
+    },
   })
 }

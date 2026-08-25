@@ -16,6 +16,12 @@ export class AlsTenantContext implements TenantContext {
     return tenantAls.run({scope, skipTenantScope: false}, work)
   }
 
+  withoutTenantScope<T>(work: () => Promise<T>): Promise<T> {
+    const store = tenantAls.getStore()
+
+    return tenantAls.run({scope: store?.scope, skipTenantScope: true}, work)
+  }
+
   getTenantId(): TenantId {
     return this.#requireScope().tenantId
   }

@@ -19,12 +19,10 @@ export abstract class TenantAwareRepository {
   ) {}
 
   /**
-   * Skips tenant filter/stamp for `work`. Verbose escape hatch for admin and pre-context lookups.
+   * Skips tenant filter/stamp for `work`. Verbose escape hatch for admin and first-tenant writes.
    */
   withoutTenantScope<T>(work: () => Promise<T>): Promise<T> {
-    const store = tenantAls.getStore()
-
-    return tenantAls.run({scope: store?.scope, skipTenantScope: true}, work)
+    return this.tenantContext.withoutTenantScope(work)
   }
 
   protected get manager(): EntityManager {
@@ -40,11 +38,11 @@ export abstract class TenantAwareRepository {
   }
 
   /**
-   * Stamps `tenantId` for writes. Ambient scope must match the aggregate; bootstrap
-   * (no ALS store or `withoutTenantScope`) persists `row.tenantId` as-is.
+   * Stamps `tenantId` for writes. Ambient scope must match the aggregate.
+   * First-tenant writes must run inside {@link TenantContext.withoutTenantScope}.
    */
   protected stampTenantId<T>(row: T & {tenantId?: string}): T & {tenantId: string} {
-    if (this.#isBootstrapWrite()) {
+    if (this.#isTenantScopeSkipped()) {
       if (row.tenantId === undefined) {
         throw new TenantContextMismatchError()
       }
@@ -73,11 +71,5 @@ export abstract class TenantAwareRepository {
 
   #isTenantScopeSkipped(): boolean {
     return tenantAls.getStore()?.skipTenantScope === true
-  }
-
-  #isBootstrapWrite(): boolean {
-    const store = tenantAls.getStore()
-
-    return store === undefined || store.skipTenantScope || store.scope === undefined
   }
 }

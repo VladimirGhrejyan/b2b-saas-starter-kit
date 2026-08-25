@@ -19,6 +19,10 @@ export class InMemoryTenantContext implements TenantContext {
     }
   }
 
+  async withoutTenantScope<T>(work: () => Promise<T>): Promise<T> {
+    return work()
+  }
+
   getTenantId(): TenantId {
     return this.#requireScope().tenantId
   }

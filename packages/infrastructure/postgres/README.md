@@ -29,14 +29,16 @@ Never import `contracts`, `composition*`, or `nestjs-cls`.
 
 ## Tokens
 
-| Token             | Binds to             |
-| ----------------- | -------------------- |
-| `DATA_SOURCE`     | TypeORM `DataSource` |
-| `UNIT_OF_WORK`    | `TypeormUnitOfWork`  |
-| `TENANT_CONTEXT`  | `AlsTenantContext`   |
-| `CLOCK`           | `SystemClock`        |
-| `ID_GENERATOR`    | `UuidV7IdGenerator`  |
-| `POSTGRES_CONFIG` | `{DATABASE_URL}`     |
+| Token             | Binds to                               |
+| ----------------- | -------------------------------------- |
+| `DATA_SOURCE`     | TypeORM `DataSource`                   |
+| `UNIT_OF_WORK`    | `TypeormUnitOfWork`                    |
+| `TENANT_CONTEXT`  | `AlsTenantContext`                     |
+| `CLOCK`           | `SystemClock`                          |
+| `ID_GENERATOR`    | `UuidV7IdGenerator`                    |
+| `POSTGRES_CONFIG` | `{DATABASE_URL, POSTGRES_POOL_MAX, …}` |
+
+Pool, connect/statement/lock/idle-in-transaction timeouts, `application_name`, and slow-query threshold (`POSTGRES_SLOW_QUERY_MS` → TypeORM `maxQueryExecutionTime`) are optional env vars with defaults. `DATABASE_URL` remains required. Query logging stays off.
 
 ## Commands
 
@@ -74,6 +76,6 @@ pnpm nx run postgres:migration:revert
 - [x] Authorization `roles` / `role_permissions` adapters — `save` / `saveMany`, unique `(tenant_id, name)`
 - [x] Mappers reconstitute domain aggregates (no extra domain events)
 - [x] Migration CLI (`create` / `generate` / `run` / `revert`); register drafts in `postgres-migrations.ts` after review
-- [x] `stampTenantId` asserts ambient vs aggregate tenant; first-tenant bootstrap persists `row.tenantId`
+- [x] `stampTenantId` asserts ambient vs aggregate tenant; first-tenant writes require `withoutTenantScope`
 - [x] Integration tests: round-trip, tenant isolation, mismatch, `AuthorizationService` through TypeORM repos
 - [x] Public exports are repository classes only (no entities/mappers)

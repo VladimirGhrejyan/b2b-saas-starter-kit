@@ -37,24 +37,26 @@ describe('TypeOrmRoleRepository', () => {
   })
 
   it('round-trips save and saveMany including permissions', async () => {
-    await repo.save(
-      Role.reconstitute({
-        id: ownerA,
-        tenantId: tenantA,
-        name: 'Owner',
-        permissions: PermissionCatalog.all,
-        isSystem: true,
-      }),
-    )
-    await repo.saveMany([
-      Role.reconstitute({
-        id: memberA,
-        tenantId: tenantA,
-        name: 'Member',
-        permissions: [PermissionCatalog.tenancyTenantRead],
-        isSystem: true,
-      }),
-    ])
+    await tenantContext.withoutTenantScope(async () => {
+      await repo.save(
+        Role.reconstitute({
+          id: ownerA,
+          tenantId: tenantA,
+          name: 'Owner',
+          permissions: PermissionCatalog.all,
+          isSystem: true,
+        }),
+      )
+      await repo.saveMany([
+        Role.reconstitute({
+          id: memberA,
+          tenantId: tenantA,
+          name: 'Member',
+          permissions: [PermissionCatalog.tenancyTenantRead],
+          isSystem: true,
+        }),
+      ])
+    })
 
     const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(ownerA))
     const byTenant = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
@@ -67,15 +69,17 @@ describe('TypeOrmRoleRepository', () => {
   })
 
   it('does not let tenant A load tenant B roles', async () => {
-    await repo.save(
-      Role.reconstitute({
-        id: ownerB,
-        tenantId: tenantB,
-        name: 'Owner',
-        permissions: PermissionCatalog.all,
-        isSystem: true,
-      }),
-    )
+    await tenantContext.withoutTenantScope(async () => {
+      await repo.save(
+        Role.reconstitute({
+          id: ownerB,
+          tenantId: tenantB,
+          name: 'Owner',
+          permissions: PermissionCatalog.all,
+          isSystem: true,
+        }),
+      )
+    })
 
     const byId = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(ownerB))
     const byTenant = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>

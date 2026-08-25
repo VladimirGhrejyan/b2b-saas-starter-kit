@@ -35,6 +35,7 @@ describe('platform ports', () => {
   it('accepts an established TenantContext fake', async () => {
     const tenantContext: TenantContext = {
       run: async (_scope, work) => work(),
+      withoutTenantScope: async (work) => work(),
       getTenantId: () => tenantId,
       getActorId: () => actorId,
     }
@@ -57,6 +58,7 @@ describe('platform ports', () => {
   it('is catchable from fail-closed TenantContext getters', () => {
     const unsetContext: TenantContext = {
       run: async (_scope, work) => work(),
+      withoutTenantScope: async (work) => work(),
       getTenantId: () => {
         throw new TenantContextNotEstablishedError()
       },

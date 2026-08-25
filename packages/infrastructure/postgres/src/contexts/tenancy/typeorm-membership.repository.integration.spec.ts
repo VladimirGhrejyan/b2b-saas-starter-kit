@@ -46,20 +46,24 @@ describe('TypeOrmMembershipRepository', () => {
 
   beforeEach(async () => {
     await ctx.truncateFoundationTables()
-    await tenants.save(Tenant.reconstitute({id: tenantA, name: 'Acme', status: TenantStatus.parse('active')}))
-    await tenants.save(Tenant.reconstitute({id: tenantB, name: 'Beta', status: TenantStatus.parse('active')}))
+    await tenantContext.withoutTenantScope(async () => {
+      await tenants.save(Tenant.reconstitute({id: tenantA, name: 'Acme', status: TenantStatus.parse('active')}))
+      await tenants.save(Tenant.reconstitute({id: tenantB, name: 'Beta', status: TenantStatus.parse('active')}))
+    })
   })
 
   it('round-trips membership role ids through membership_roles', async () => {
-    await repo.save(
-      Membership.reconstitute({
-        id: membershipA,
-        tenantId: tenantA,
-        userId: actorA,
-        roleIds: [roleA],
-        status: MembershipStatus.parse('active'),
-      }),
-    )
+    await tenantContext.withoutTenantScope(async () => {
+      await repo.save(
+        Membership.reconstitute({
+          id: membershipA,
+          tenantId: tenantA,
+          userId: actorA,
+          roleIds: [roleA],
+          status: MembershipStatus.parse('active'),
+        }),
+      )
+    })
 
     const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(membershipA))
     const byUser = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
@@ -75,15 +79,17 @@ describe('TypeOrmMembershipRepository', () => {
   })
 
   it('does not let tenant A load tenant B memberships', async () => {
-    await repo.save(
-      Membership.reconstitute({
-        id: membershipB,
-        tenantId: tenantB,
-        userId: actorB,
-        roleIds: [roleB],
-        status: MembershipStatus.parse('active'),
-      }),
-    )
+    await tenantContext.withoutTenantScope(async () => {
+      await repo.save(
+        Membership.reconstitute({
+          id: membershipB,
+          tenantId: tenantB,
+          userId: actorB,
+          roleIds: [roleB],
+          status: MembershipStatus.parse('active'),
+        }),
+      )
+    })
 
     const byId = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(membershipB))
     const byTenant = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>

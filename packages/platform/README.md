@@ -33,7 +33,7 @@ Domain never imports this package.
 ## Semantics
 
 - **`UnitOfWork.run`** opens a transaction and passes an opaque `TxContext` (`{id}`). Use cases typically ignore `ctx`. Repositories join the **ambient** transaction inside the adapter — they do not take `EntityManager` or `TxContext` on domain port signatures.
-- **`TenantContext`** is fail-closed: `getTenantId()` / `getActorId()` throw `TenantContextNotEstablishedError` when no `run` scope is active. Pre-context lookups use the repository escape hatch, not a soft read here.
+- **`TenantContext`** is fail-closed: `getTenantId()` / `getActorId()` throw `TenantContextNotEstablishedError` when no `run` scope is active. First-tenant and admin paths call `withoutTenantScope(work)` (writes still require `tenantId` on the row).
 - **`Clock.now()`** is a UTC instant.
 - **`IdGenerator.generate()`** returns a raw string. Branding happens in application.
 
@@ -52,15 +52,15 @@ await tenantContext.run({tenantId, actorId}, async () => {
 
 ## API
 
-| Export                             | Role                                           |
-| ---------------------------------- | ---------------------------------------------- |
-| `UnitOfWork`                       | `run(work)` transaction boundary               |
-| `TxContext`                        | Opaque `{id}` — no persistence types           |
-| `TenantContext`                    | `run(scope, work)` + fail-closed getters       |
-| `TenantScope`                      | `{tenantId, actorId}`                          |
-| `TenantContextNotEstablishedError` | Thrown when getters are called outside a scope |
-| `Clock`                            | `now(): Date` (UTC)                            |
-| `IdGenerator`                      | `generate(): string`                           |
+| Export                             | Role                                                                  |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| `UnitOfWork`                       | `run(work)` transaction boundary                                      |
+| `TxContext`                        | Opaque `{id}` — no persistence types                                  |
+| `TenantContext`                    | `run(scope, work)` + `withoutTenantScope(work)` + fail-closed getters |
+| `TenantScope`                      | `{tenantId, actorId}`                                                 |
+| `TenantContextNotEstablishedError` | Thrown when getters are called outside a scope                        |
+| `Clock`                            | `now(): Date` (UTC)                                                   |
+| `IdGenerator`                      | `generate(): string`                                                  |
 
 ## Must not go here yet
 

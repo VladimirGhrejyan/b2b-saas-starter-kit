@@ -5,6 +5,8 @@ import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest'
 
 import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
+import {TenantContextNotEstablishedError} from '@b2b-saas-starter-kit/platform'
+
 import type {SystemClock} from '../kernel/clock/clock'
 import {DataSourceManager} from '../kernel/data-source/data-source.manager'
 import {PostgresInfrastructureModule} from '../kernel/data-source/postgres-infrastructure.module'
@@ -191,8 +193,14 @@ describe('postgres (compose)', () => {
     })
   })
 
-  it('persists row.tenantId when no ambient tenant is set', async () => {
-    await repo.insertWithTenant('boot', tenantA)
+  it('throws TenantContextNotEstablishedError when a write has no ambient tenant', async () => {
+    await expect(repo.insertWithTenant('boot', tenantA)).rejects.toBeInstanceOf(TenantContextNotEstablishedError)
+  })
+
+  it('persists row.tenantId inside withoutTenantScope', async () => {
+    await tenantContext.withoutTenantScope(async () => {
+      await repo.insertWithTenant('boot', tenantA)
+    })
 
     const names = await repo.findAllNames()
 

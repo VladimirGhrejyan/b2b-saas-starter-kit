@@ -17,53 +17,17 @@ The most important issues are **production-hardening gaps** (no pool/timeout/obs
 
 ## Findings
 
-### 1. Writes fail-open when tenant context is missing — High, Architectural Weakness (security)
+### 1. Writes fail-open when tenant context is missing — High, Architectural Weakness (security) — **done**
 
 `src/kernel/persistence/tenant-aware.repository.ts`
 
-```typescript
-protected stampTenantId<T>(row: T & {tenantId?: string}): T & {tenantId: string} {
-  if (this.#isBootstrapWrite()) {
-    if (row.tenantId === undefined) {
-      throw new TenantContextMismatchError()
-    }
-    return {...row, tenantId: row.tenantId}
-  }
-  ...
-}
-#isBootstrapWrite(): boolean {
-  const store = tenantAls.getStore()
-  return store === undefined || store.skipTenantScope || store.scope === undefined
-}
-```
+Bootstrap writes require `TenantContext.withoutTenantScope()`. No ALS store is no longer treated as bootstrap; `stampTenantId` throws `TenantContextNotEstablishedError` (same as reads). `CreateTenant` callers wrap the use case; the use case itself is unchanged.
 
-**Problem:** `store === undefined` (no ALS at all) is treated as "bootstrap," so any write with a `tenantId` already on the row is persisted as-is, with no assertion. Reads in the same situation throw. So a use case/worker that forgets to establish `TenantContext` will **silently write** to whatever tenant the row claims, while reads would have errored.
-
-**Why it matters:** Tenant isolation is the package's core guarantee. The safe asymmetry is fail-closed on both sides. Here the write path is opt-out-by-omission: the guardrail disappears whenever context setup is skipped by mistake.
-
-**Recommendation:** Make "bootstrap" an **explicit intent**, not the absence of a store. E.g. require `withoutTenantScope()` (or a dedicated `bootstrapTenant()` marker in the ALS store) for the no-ambient path, and throw `TenantContextNotEstablishedError` when `store === undefined` and no explicit bootstrap flag is set. That preserves the genuine first-tenant chicken-and-egg case while closing the accidental-write hole.
-
-### 2. No connection pool, timeouts, or query observability — High, Recommended (production readiness)
+### 2. No connection pool, timeouts, or query observability — High, Recommended (production readiness) — **done**
 
 `src/kernel/data-source/create-data-source.ts`
 
-```typescript
-return new DataSource({
-  type: 'postgres',
-  url: config.DATABASE_URL,
-  entities: [...postgresEntities, ...(options.entities ?? [])],
-  migrations: options.migrations ?? postgresMigrations,
-  migrationsRun: false,
-  synchronize: false,
-  logging: false,
-})
-```
-
-**Problem:** No `poolSize`/`extra.max`, `connectTimeoutMS`, `extra.statement_timeout`, `extra.lock_timeout`, `extra.idle_in_transaction_session_timeout`, `application_name`, or `maxQueryExecutionTime`. `logging` is hardcoded `false`.
-
-**Why it matters:** With horizontal scaling (many API/worker instances) against one Postgres, an unbounded/oversized pool per instance can exhaust `max_connections`. Without `statement_timeout`/`lock_timeout`, a single bad query or lock wait can pin a connection indefinitely. Without `application_name` and slow-query logging, you have no production observability.
-
-**Recommendation:** Add to `PostgresConfig` (all optional with sane defaults): pool max, connect timeout, `statement_timeout`, `lock_timeout`, `idle_in_transaction_session_timeout`, `application_name`, and TypeORM `maxQueryExecutionTime` for slow-query logging. Set them via `extra` (node-postgres passthrough). Plan for PgBouncer (transaction pooling) as the scale-out path and keep per-instance pools small. Introduce now — it's cheap and hard to retrofit once apps depend on the config shape.
+`PostgresConfig` now includes pool max, connect/statement/lock/idle-in-transaction timeouts, `application_name`, and `maxQueryExecutionTime` (via `POSTGRES_SLOW_QUERY_MS`). Defaults apply when only `DATABASE_URL` is set. Query `logging` stays `false`.
 
 ### 3. Multi-statement writes assume an ambient transaction but don't require one — High, Architectural Weakness (correctness)
 
@@ -130,7 +94,7 @@ But `findByTenant(tenantId)` already binds `:tenantId` to its argument, then `sc
 
 ## Final Assessment
 
-- **Should change now:** Finding 1 (write-path fail-open) and Finding 2 (pool/timeouts/observability). These are core to the package's stated guarantees and to production readiness, and both are cheap to add at this stage.
+- **Should change now:** none remaining from this review pass (Findings 1 and 2 are done).
 - **Should change soon:** Findings 3–5 (transaction requirement for multi-statement writes, the delete/insert race, and the `:tenantId` param collision) — correctness issues that will bite under real concurrency.
 - **Can defer:** Findings 6–8 and the optional items.
 - **Keep as-is:** the overall port/adapter structure, UoW/ALS design, custom `DataSource` lifecycle, per-context layout, and review-first migrations.

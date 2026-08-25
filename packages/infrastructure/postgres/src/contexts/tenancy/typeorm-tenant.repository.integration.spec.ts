@@ -34,13 +34,15 @@ describe('TypeOrmTenantRepository', () => {
   })
 
   it('round-trips a bootstrap save and ambient-scoped findById', async () => {
-    await repo.save(
-      Tenant.reconstitute({
-        id: tenantA,
-        name: 'Acme',
-        status: TenantStatus.parse('active'),
-      }),
-    )
+    await tenantContext.withoutTenantScope(async () => {
+      await repo.save(
+        Tenant.reconstitute({
+          id: tenantA,
+          name: 'Acme',
+          status: TenantStatus.parse('active'),
+        }),
+      )
+    })
 
     const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(tenantA))
 
@@ -48,8 +50,10 @@ describe('TypeOrmTenantRepository', () => {
   })
 
   it('does not let tenant A load tenant B by id', async () => {
-    await repo.save(Tenant.reconstitute({id: tenantA, name: 'Acme', status: TenantStatus.parse('active')}))
-    await repo.save(Tenant.reconstitute({id: tenantB, name: 'Beta', status: TenantStatus.parse('active')}))
+    await tenantContext.withoutTenantScope(async () => {
+      await repo.save(Tenant.reconstitute({id: tenantA, name: 'Acme', status: TenantStatus.parse('active')}))
+      await repo.save(Tenant.reconstitute({id: tenantB, name: 'Beta', status: TenantStatus.parse('active')}))
+    })
 
     const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(tenantB))
 

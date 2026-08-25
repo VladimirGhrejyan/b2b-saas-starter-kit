@@ -60,6 +60,26 @@ describe('AlsTenantContext', () => {
       expect(tenantContext.getTenantId()).toBe(tenantA)
     })
   })
+
+  it('withoutTenantScope still exposes an outer run scope', async () => {
+    const tenantContext = new AlsTenantContext()
+
+    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+      await tenantContext.withoutTenantScope(async () => {
+        expect(tenantContext.getTenantId()).toBe(tenantA)
+      })
+    })
+  })
+
+  it('withoutTenantScope does not establish getters when no run is active', async () => {
+    const tenantContext = new AlsTenantContext()
+
+    await tenantContext.withoutTenantScope(async () => {
+      expect(() => {
+        tenantContext.getTenantId()
+      }).toThrow(TenantContextNotEstablishedError)
+    })
+  })
 })
 
 function delay(ms: number): Promise<void> {
