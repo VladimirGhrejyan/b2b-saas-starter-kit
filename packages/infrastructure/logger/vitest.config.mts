@@ -6,14 +6,13 @@ const root = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig(() => ({
   root,
-  cacheDir: '../../node_modules/.vite/packages/application',
+  cacheDir: '../../../node_modules/.vite/packages/infrastructure/logger',
   test: {
-    name: 'application',
+    name: 'logger',
     watch: false,
     globals: true,
     environment: 'node',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    setupFiles: ['./vitest.setup.ts'],
     reporters: ['default'],
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',

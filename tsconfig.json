@@ -41,6 +41,9 @@
     },
     {
       "path": "./packages/infrastructure/postgres"
+    },
+    {
+      "path": "./packages/infrastructure/logger"
     }
   ]
 }

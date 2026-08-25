@@ -8,7 +8,7 @@ Backend capability **ports** — interfaces only. Adapters live in `packages/inf
 
 ## Purpose
 
-Give application, infrastructure, and the HTTP/worker edge a shared, technology-agnostic contract for transactions, tenant scope, time, and IDs.
+Give application, infrastructure, and the HTTP/worker edge a shared, technology-agnostic contract for transactions, tenant scope, time, IDs, and logging.
 
 Architecture: [`docs/architecture/backend.md`](../../docs/architecture/backend.md), [`docs/architecture/persistence.md`](../../docs/architecture/persistence.md), [`docs/architecture/multi-tenancy.md`](../../docs/architecture/multi-tenancy.md).
 
@@ -27,6 +27,7 @@ Never import Nest, TypeORM, Redis, `domain`, `application`, `contracts`, `utils`
 | `TenantContext` | Edge sets via `run`; infra reads via getters     | `infrastructure/postgres` (`AlsTenantContext`)  |
 | `Clock`         | Application (pass `now()` into domain factories) | `infrastructure/postgres` (`SystemClock`)       |
 | `IdGenerator`   | Application (`UserId.parse(ids.generate())`)     | `infrastructure/postgres` (`UuidV7IdGenerator`) |
+| `Logger`        | Application / edge via `getLogger()`             | `infrastructure/logger` (`PinoLogger`)          |
 
 Domain never imports this package.
 
@@ -36,6 +37,7 @@ Domain never imports this package.
 - **`TenantContext`** is fail-closed: `getTenantId()` / `getActorId()` throw `TenantContextNotEstablishedError` when no `run` scope is active. First-tenant and admin paths call `withoutTenantScope(work)` (writes still require `tenantId` on the row).
 - **`Clock.now()`** is a UTC instant.
 - **`IdGenerator.generate()`** returns a raw string. Branding happens in application.
+- **`Logger`** is a process locator, not Nest DI: `initLogger(impl)` at bootstrap, `getLogger()` at call sites, `resetLogger()` in tests. `getLogger()` throws `LoggerNotInitializedError` when unset (no silent no-op). Domain does not log.
 
 ```typescript
 import type {Clock, IdGenerator, TenantContext, UnitOfWork} from '@b2b-saas-starter-kit/platform'
@@ -52,21 +54,24 @@ await tenantContext.run({tenantId, actorId}, async () => {
 
 ## API
 
-| Export                             | Role                                                                  |
-| ---------------------------------- | --------------------------------------------------------------------- |
-| `UnitOfWork`                       | `run(work)` transaction boundary                                      |
-| `TxContext`                        | Opaque `{id}` — no persistence types                                  |
-| `TenantContext`                    | `run(scope, work)` + `withoutTenantScope(work)` + fail-closed getters |
-| `TenantScope`                      | `{tenantId, actorId}`                                                 |
-| `TenantContextNotEstablishedError` | Thrown when getters are called outside a scope                        |
-| `Clock`                            | `now(): Date` (UTC)                                                   |
-| `IdGenerator`                      | `generate(): string`                                                  |
+| Export                                     | Role                                                                  |
+| ------------------------------------------ | --------------------------------------------------------------------- |
+| `UnitOfWork`                               | `run(work)` transaction boundary                                      |
+| `TxContext`                                | Opaque `{id}` — no persistence types                                  |
+| `TenantContext`                            | `run(scope, work)` + `withoutTenantScope(work)` + fail-closed getters |
+| `TenantScope`                              | `{tenantId, actorId}`                                                 |
+| `TenantContextNotEstablishedError`         | Thrown when getters are called outside a scope                        |
+| `Clock`                                    | `now(): Date` (UTC)                                                   |
+| `IdGenerator`                              | `generate(): string`                                                  |
+| `Logger` / `LogLevel`                      | `context(name)` + pino-style level methods                            |
+| `initLogger` / `getLogger` / `resetLogger` | Process locator (overwrite on init; throw if unset)                   |
+| `LoggerNotInitializedError`                | Thrown by `getLogger()` before `initLogger`                           |
 
 ## Must not go here yet
 
 - `CachePort` / `LockPort` / `PubSubPort` (Redis phase)
-- `Logger`
 - Nest injection tokens, ALS adapters, TypeORM `UnitOfWork` — those live in `packages/infrastructure/postgres`
+- Pino adapter — `packages/infrastructure/logger`
 - In-memory test doubles (`packages/application/src/testing`)
 
 ## Commands
@@ -84,3 +89,10 @@ pnpm nx run platform:lint
 - [x] Depends only on `@b2b-saas-starter-kit/shared-kernel-types`
 - [x] Platform-purity `no-restricted-imports` enabled
 - [x] Surface locked by in-memory-shaped fakes + fail-closed getter test
+
+## Phase 9 Definition of Done
+
+- [x] `Logger` port + `LogLevel`
+- [x] `initLogger` / `getLogger` / `resetLogger` process locator (no Nest, no no-op default)
+- [x] `LoggerNotInitializedError` with stable `code`
+- [x] Locator unit tests (unset / init / overwrite / reset)
