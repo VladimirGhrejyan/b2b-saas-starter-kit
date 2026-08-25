@@ -14,12 +14,12 @@ Use `eslint-plugin-simple-import-sort` + `consistent-type-imports`.
 
 1. `node:` builtins  
 2. External packages (`@nestjs/…`, `zod`, …)  
-3. Shared leaves (`shared-kernel-types`, `utils`, `config`)
+3. Shared leaves (`shared-kernel-types`, `utils`, `config`, `contracts`)
 4. `domain`  
 5. `platform`  
 6. `application`  
-7. `postgres` / `redis` / `messaging`  
-8. `composition-*` / `contracts` (apps only for contracts)  
+7. `postgres` / `logger` / `redis` / `messaging`  
+8. `composition` / `nest-http`  
 9. Relative
 
 ```typescript

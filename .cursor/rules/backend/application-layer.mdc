@@ -12,6 +12,7 @@ Source of truth: `docs/architecture/backend.md`, `packages/application/README.md
 ## Rules
 
 - `@Injectable` is the only Nest seam. No controllers, TypeORM, Redis, or `contracts`.
+- **Do not `@Inject()` Logger.** Use `getLogger().context(UseCase.name)` from `@b2b-saas-starter-kit/platform` after process `initLogger`.
 - Commands/queries are plain typed objects. Actor field is **`actorId`** (matches `TenantScope`).
 - Published port **interfaces** live in `packages/application/src/shared/` so contexts can import them without a relative sibling-context path.
 - Implementations stay in the owning context (`authorization/`, `tenancy/`).
@@ -26,7 +27,8 @@ Source of truth: `docs/architecture/backend.md`, `packages/application/README.md
 import {Injectable} from '@nestjs/common'
 import type {UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
-import type {UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {UnitOfWork, Logger} from '@b2b-saas-starter-kit/platform'
+import {getLogger} from '@b2b-saas-starter-kit/platform'
 import type {AuthorizationPort} from '../shared/authorization.port'
 ```
 
@@ -35,5 +37,6 @@ import type {AuthorizationPort} from '../shared/authorization.port'
 ```typescript
 import {InviteMemberInput} from '@b2b-saas-starter-kit/contracts'
 import {Injectable} from '@nestjs/core'
+import {Logger} from '@nestjs/common'
 import {MembershipRolesPort} from '../tenancy/membership-roles.port'
 ```

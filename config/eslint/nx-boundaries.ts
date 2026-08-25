@@ -16,6 +16,7 @@ export class NxBoundaries {
 
     {sourceTag: 'layer:domain', onlyDependOnLibsWithTags: ['layer:shared-types']},
     {sourceTag: 'layer:platform', onlyDependOnLibsWithTags: ['layer:shared-types']},
+    {sourceTag: 'layer:contracts', onlyDependOnLibsWithTags: ['layer:shared-types']},
     {
       sourceTag: 'layer:application',
       onlyDependOnLibsWithTags: ['layer:domain', 'layer:platform', 'layer:shared-types', 'layer:utils'],
@@ -25,6 +26,16 @@ export class NxBoundaries {
       onlyDependOnLibsWithTags: [
         'layer:domain',
         'layer:application',
+        'layer:platform',
+        'layer:shared-types',
+        'layer:utils',
+        'layer:config',
+      ],
+    },
+    {
+      sourceTag: 'layer:nest-http',
+      onlyDependOnLibsWithTags: [
+        'layer:contracts',
         'layer:platform',
         'layer:shared-types',
         'layer:utils',
@@ -64,6 +75,8 @@ export class NxBoundaries {
       sourceTag: 'type:app',
       onlyDependOnLibsWithTags: [
         'layer:composition',
+        'layer:nest-http',
+        'layer:logger',
         'layer:ui',
         'layer:frontend-core',
         'layer:feature',

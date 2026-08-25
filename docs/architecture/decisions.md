@@ -8,7 +8,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-001 — Layer-first Nx topology (contexts as folders)
 
-**Decision:** The Nx projects are the architectural layers (`domain`, `application`, `platform`, `infrastructure`, `composition`); bounded contexts are folders inside them.
+**Decision:** The Nx projects are the architectural layers (`domain`, `application`, `platform`, `infrastructure`, `nest-http`, `composition`); bounded contexts are folders inside them.
 **Options:** (A) layer-first ✓; (B) context = one library, layers as folders; (C) context×layer projects; (D) hybrid domain-split.
 **Rationale:** Prioritizes Nx-enforced _layer_ dependency rules with a low project count. Accepted trade-off: context isolation cannot be an Nx project boundary and is enforced by lint instead; `affected` is per-layer. See [`workspace-topology.md`](./workspace-topology.md).
 
@@ -19,7 +19,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-003 — Infrastructure split by concern
 
-**Decision:** `infrastructure/{postgres,redis,messaging}` (grouping directory), realizable as separate Nx projects or one project with subfolders; separate projects recommended for postgres/redis/messaging.
+**Decision:** `infrastructure/{postgres,logger,redis,messaging}` (grouping directory), each concern its own Nx project. `logger` is Pino only (no Nest) so workers and scripts never pull TypeORM or Swagger.
 **Rationale:** Different dependency footprints and change cadences keep `affected` meaningful.
 
 ## ADR-004 — Repository ports live in the domain layer
@@ -58,7 +58,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-010 — NestJS confined to outer ring; application is Nest-aware only via `@Injectable`
 
-**Decision:** NestJS lives in `apps` + `infrastructure` + `composition`; domain is fully pure; the only Nest in application is the `@Injectable` decorator.
+**Decision:** NestJS lives in `apps` + `infrastructure` (where a Nest adapter is justified) + `packages/nest-http` + `composition`; domain is fully pure; the only Nest in application is the `@Injectable` decorator. Logger is **not** a Nest provider.
 **Options:** (A) framework-free application (factory wiring); (B/C) `@Injectable`-only application ✓.
 **Rationale:** For a starter kit, pure-application factory wiring adds boilerplate that obscures intent; the domain stays pure where it matters. See [`backend.md`](./backend.md).
 
@@ -154,13 +154,30 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) infra-only Compose + apps on host ✓; (B) full app containers (with `Dockerfile.dev` + bind mounts) in dev; (C) Kubernetes/Terraform now.
 **Rationale:** Cheapest, simplest workflow with the best HMR, a production-like staging, and a clean portability path to GCP managed services (Cloud SQL, Memorystore) with **no Compose dependency in production**. Redis durability is delegated to Postgres + the outbox, so it can stay ephemeral. See [`../infrastructure/README.md`](../infrastructure/README.md) and [`infrastructure.md`](./infrastructure.md). (Numbered ADR-026; the plan's provisional "ADR-015" collided with the existing pool-multi-tenancy ADR.)
 
+## ADR-027 — Logger is a platform port + process locator; vendor is Pino
+
+**Decision:** `Logger` lives in `platform` (`context`, level methods, pino-style overloads). Process locator `initLogger` / `getLogger` (throws if uninitialized). Adapter is Pino in `packages/infrastructure/logger`. Not Nest-injectable (`nestjs-pino` rejected). No silent no-op default. No driver switch until a second adapter exists. Production default level `info`; pretty-print only in development. `Error` first argument serializes as `{err}`. Redact authorization headers.
+**Options:** (A) Nest-injectable logger; (B) `export const logger` from infrastructure imported by application; (C) platform locator + infra adapter ✓.
+**Rationale:** Application must not import Pino or Nest; constructors must not take `Logger`. Tests swap a memory logger via `initLogger`. See [`infrastructure.md`](./infrastructure.md), [`backend.md`](./backend.md).
+
+## ADR-028 — Dedicated `nest-http` delivery kit (not composition)
+
+**Decision:** HTTP bootstrap helpers (`ApiBuilder`, global pipe/filter/interceptor, Swagger, `@Public()`, process error handlers) live in `packages/nest-http` (`@b2b-saas-starter-kit/nest-http`, `layer:nest-http`). Composition remains port→adapter Nest modules only. `HttpStatus` and the error envelope live in `contracts`. The kit does not import domain, application, or postgres. JWT / `RequirePermission` stay in `apps/api`.
+**Options:** (A) stuff pipes/filters/Swagger into `apps/api`; (B) mix HTTP kit into `composition`; (C) one Nest+Pino `common` package; (D) dedicated `nest-http` + separate logger adapter ✓.
+**Rationale:** Apps stay thin and consistent; workers must not pull Nest/Swagger; application must not import Nest beyond `@Injectable`. See [`backend.md`](./backend.md), [`workspace-topology.md`](./workspace-topology.md).
+
+## ADR-029 — URI versioning, CORS, and HTTP bootstrap defaults
+
+**Decision:** `VersioningType.URI` default `'1'` (`/v1/...`). CORS from typed env config; **fail closed in production** if origins unset (no silent `origin: '*'`). `helmet()` (document staging HTTP/Swagger exception). `enableShutdownHooks()`. Optional `API_GLOBAL_PREFIX`. Swagger at `/docs`. Structured 400s; hide internals on 500. Applied via `ApiBuilder` in `apps/api` `main.ts`.
+**Rationale:** Public API hygiene from the first HTTP slice so later consumers do not inherit unversioned routes. See [`api-contracts.md`](./api-contracts.md).
+
 ---
 
 ## Deferred decisions
 
 - **Pluggable tenant isolation** (schema/DB-per-tenant) — seam designed, not built.
 - **Realtime `gateway` app** — introduce when notifications/live features demand it.
-- **Concrete logging/observability tooling** — `Logger` seam defined; vendor choice later.
+- **Request/tenant ALS log mixin** — bind `tenantId` / `actorId` / request id onto the logger; locator exists first.
 - **Mapper boilerplate reduction** — standard convention now; possible codegen/Cursor skill later.
 - **Extension contexts** (billing, files, webhooks, feature-flags) — follow existing rules when added.
 - **Auth token strategy specifics** (storage, refresh rotation) — pattern set; concrete choice at implementation.

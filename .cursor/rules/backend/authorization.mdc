@@ -4,6 +4,7 @@ globs:
   - "packages/domain/src/authorization/**/*.ts"
   - "packages/application/**/*.ts"
   - "packages/composition*/**/*.ts"
+  - "packages/nest-http/**/*.ts"
   - "apps/api/**/*.ts"
   - "packages/frontend-core/**/*.{ts,tsx}"
   - "apps/web/**/*.{ts,tsx}"
@@ -25,7 +26,7 @@ Source of truth: `docs/architecture/authorization.md`.
 
 | Layer | Responsibility |
 |-------|----------------|
-| API | Coarse `@RequirePermission('…')` — fast reject |
+| API | Coarse `@RequirePermission('…')` in **`apps/api`** (not `nest-http`) — fast reject |
 | Application | Authoritative check via `AuthorizationPort` (+ resource policies) |
 | Domain | Business invariants only (not permission strings) |
 | Frontend | `useCan` / `<Can>` — **UX only** |
@@ -44,7 +45,7 @@ await this.authz.require(cmd.actorUserId, 'tenant.members.invite', {
 
 ## Frontend
 
-Backend `/me` returns **effective permissions** for the active tenant. FE does not re-derive from roles.
+Backend `GET /v1/me` returns **effective permissions** for the active tenant. FE does not re-derive from roles.
 
 ```typescript
 const canInvite = useCan('tenant.members.invite')

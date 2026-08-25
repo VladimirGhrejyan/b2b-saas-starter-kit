@@ -11,6 +11,7 @@ export class BackendEslintConfig {
       'packages/platform/**/*.{ts,tsx}',
       'packages/infrastructure/**/*.{ts,tsx}',
       'packages/composition*/**/*.{ts,tsx}',
+      'packages/nest-http/**/*.{ts,tsx}',
       'apps/api/**/*.{ts,tsx}',
       'apps/worker/**/*.{ts,tsx}',
     ],

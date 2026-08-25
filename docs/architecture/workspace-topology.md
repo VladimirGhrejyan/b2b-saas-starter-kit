@@ -30,11 +30,13 @@ packages/
     src/
       identity/ …
       shared/              # cross-context application helpers
-  platform/                # layer:platform — capability PORTS: Cache/Lock/PubSub/UnitOfWork
+  platform/                # layer:platform — capability PORTS: Cache/Lock/PubSub/UnitOfWork/Logger
   infrastructure/          # layer:infrastructure — adapters (grouping directory)
     postgres/              #   TypeORM entities, mappers, repo impls, DataSource, migrations, tenant base repo
+    logger/                #   Pino adapter for the Logger port (no Nest)
     redis/                 #   Redis adapters for the platform capability ports
     messaging/             #   BullMQ + outbox relay
+  nest-http/               # layer:nest-http — Nest HTTP kit (ApiBuilder, pipe/filter/interceptor, Swagger)
   composition/             # layer:composition — per-context NestJS modules (DI wiring)
     src/
       identity/ …
@@ -45,8 +47,8 @@ packages/
     core/                  # RTK store, RTK Query base, auth/tenant/permission state, can()
 
 apps/
-  api/                     # NestJS HTTP — thin: transport + composition
-  worker/                  # BullMQ consumers + outbox relay — thin
+  api/                     # NestJS HTTP — thin: transport; bootstraps nest-http + composition
+  worker/                  # BullMQ consumers + outbox relay — thin; bootstraps Logger
   web/                     # React + Vite — tenant-facing app
   admin/                   # React + Vite — back-office app
 ```
@@ -64,32 +66,34 @@ Rejected alternatives (context-first single project per context; context×layer 
 
 ### Note on `infrastructure/*` realization
 
-`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, later `redis` and `messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
+`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, `packages/infrastructure/logger`, later `redis` and `messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
 
 - **Disk:** `packages/infrastructure/<concern>/` (mirrors `packages/shared/<leaf>/`).
-- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; later `redis`, `messaging`) so a Redis consumer never pulls TypeORM.
+- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; `logger` / `@b2b-saas-starter-kit/logger`; later `redis`, `messaging`) so a Redis or logger consumer never pulls TypeORM, and a worker never pulls Nest/Swagger.
 
 A single `infrastructure` project with subfolders is a valid alternative (fewer projects, coarser `affected`) but is not what this kit ships. The same "grouping dir may be one project or several" principle applies to `frontend/`.
 
 ## Project roles
 
-| Project               | Type | Layer          | Depends on (allowed)                                           |
-| --------------------- | ---- | -------------- | -------------------------------------------------------------- |
-| `shared-kernel-types` | lib  | shared         | — (leaf; +Zod)                                                 |
-| `contracts`           | lib  | shared         | `shared-kernel-types`                                          |
-| `utils`               | lib  | shared         | —                                                              |
-| `config`              | lib  | shared         | `utils` (+ Zod, js-yaml)                                       |
-| `domain`              | lib  | domain         | `shared-kernel-types`                                          |
-| `application`         | lib  | application    | `domain`, `platform`, `shared-kernel-types`, `utils`           |
-| `platform`            | lib  | platform       | `shared-kernel-types`                                          |
-| `infrastructure/*`    | lib  | infrastructure | `domain`, `application`, `platform`, shared libs               |
-| `composition/*`       | lib  | composition    | `domain`, `application`, `infrastructure`, `platform`          |
-| `frontend/ui`         | lib  | ui             | `utils` (+ React/Radix/Tailwind)                               |
-| `frontend/core`       | lib  | feature/core   | `contracts`, `shared-kernel-types`, `utils`                    |
-| `apps/api`            | app  | app            | `composition`, `contracts`, `config`, `utils`                  |
-| `apps/worker`         | app  | app            | `composition`, `config`, `utils`                               |
-| `apps/web`            | app  | app            | `frontend/ui`, `frontend/core`, `contracts`, `utils`, `config` |
-| `apps/admin`          | app  | app            | same as `web`                                                  |
+| Project               | Type | Layer          | Depends on (allowed)                                                             |
+| --------------------- | ---- | -------------- | -------------------------------------------------------------------------------- |
+| `shared-kernel-types` | lib  | shared         | — (leaf; +Zod)                                                                   |
+| `contracts`           | lib  | shared         | `shared-kernel-types`                                                            |
+| `utils`               | lib  | shared         | —                                                                                |
+| `config`              | lib  | shared         | `utils` (+ Zod, js-yaml)                                                         |
+| `domain`              | lib  | domain         | `shared-kernel-types`                                                            |
+| `application`         | lib  | application    | `domain`, `platform`, `shared-kernel-types`, `utils`                             |
+| `platform`            | lib  | platform       | `shared-kernel-types`                                                            |
+| `infrastructure/*`    | lib  | infrastructure | `domain`, `application`, `platform`, shared libs                                 |
+| `logger`              | lib  | infrastructure | `platform` (Pino adapter; no Nest, no domain)                                    |
+| `nest-http`           | lib  | nest-http      | `contracts`, `platform`, shared (`config`/`utils` as needed)                     |
+| `composition`         | lib  | composition    | `domain`, `application`, `infrastructure`, `platform`                            |
+| `frontend/ui`         | lib  | ui             | `utils` (+ React/Radix/Tailwind)                                                 |
+| `frontend/core`       | lib  | feature/core   | `contracts`, `shared-kernel-types`, `utils`                                      |
+| `apps/api`            | app  | app            | `nest-http`, `composition`, `contracts`, `config`, `utils`, `logger` (bootstrap) |
+| `apps/worker`         | app  | app            | `composition`, `config`, `utils`, `logger` (bootstrap)                           |
+| `apps/web`            | app  | app            | `frontend/ui`, `frontend/core`, `contracts`, `utils`, `config`                   |
+| `apps/admin`          | app  | app            | same as `web`                                                                    |
 
 ## Dependency graph (the DAG)
 
@@ -103,8 +107,10 @@ flowchart TB
   domain[domain]
   platform[platform]
   application[application]
-  infra[infrastructure/*]
-  composition[composition/*]
+  infra["infra postgres/redis/messaging"]
+  loggerPkg[infrastructure/logger]
+  nestHttp[nest-http]
+  composition[composition]
 
   api[apps/api]
   worker[apps/worker]
@@ -124,15 +130,21 @@ flowchart TB
   infra --> domain
   infra --> application
   infra --> platform
+  loggerPkg --> platform
+  nestHttp --> contracts
+  nestHttp --> platform
   composition --> domain
   composition --> application
   composition --> infra
   composition --> platform
+  api --> nestHttp
   api --> composition
   api --> contracts
   api --> cfg
+  api --> loggerPkg
   worker --> composition
   worker --> cfg
+  worker --> loggerPkg
   core --> contracts
   core --> utils
   ui --> utils
@@ -147,8 +159,9 @@ flowchart TB
 **Key invariants**
 
 - `domain` depends on **nothing** except `shared-kernel-types` (and Zod). It never imports `contracts`, `application`, `infrastructure`, or any framework.
-- `application` never imports `contracts` or `infrastructure`. It receives **command inputs**, not wire DTOs (mapping happens in `apps/api`). See [`api-contracts.md`](./api-contracts.md).
+- `application` never imports `contracts` or `infrastructure`. It receives **command inputs**, not wire DTOs (mapping happens in `apps/api`). Logging uses `getLogger()` from `platform` (process locator), not a Pino import. See [`api-contracts.md`](./api-contracts.md).
 - Frontend and backend never import each other. They meet only at `contracts`, `shared-kernel-types`, `utils`, `config`.
+- `apps/api` does **not** import `domain`, `application`, or `postgres`. Delivery helpers come from `nest-http`; use cases are reached through `composition`.
 
 ## What is a project vs. a folder
 
@@ -161,8 +174,8 @@ Guideline: promote a folder to a project only when it must be (a) independently 
 
 Apps are **thin**: transport + composition, **no business logic**.
 
-- `api` — NestJS HTTP. Imports `composition` context modules, exposes controllers, maps `contracts` DTOs → application commands, applies coarse auth guards.
-- `worker` — BullMQ consumers + the outbox relay. Imports the same `composition` modules; re-establishes tenant context from job payloads.
+- `api` — NestJS HTTP. Bootstraps Pino via `initLogger`, then `ApiBuilder` from `@b2b-saas-starter-kit/nest-http` (URI versioning, CORS, helmet, Swagger, global pipe/filter/interceptor). Imports `composition` context modules, exposes controllers, maps `contracts` DTOs → application commands, applies coarse auth guards. Routes are versioned (`/v1/...`).
+- `worker` — BullMQ consumers + the outbox relay. Bootstraps the same `Logger` locator. Imports the same `composition` modules; re-establishes tenant context from job payloads. Does **not** import `nest-http`.
 - `web` — tenant-facing React/Vite app.
 - `admin` — internal back-office React/Vite app.
 

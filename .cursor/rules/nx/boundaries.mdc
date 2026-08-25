@@ -23,7 +23,9 @@ Every project: `scope:*` + `layer:*` (apps also `type:app`).
 | `application` | `scope:backend`, `layer:application` |
 | `platform` | `scope:backend`, `layer:platform` |
 | `postgres` (path `packages/infrastructure/postgres`; later `redis`, `messaging`) | `scope:backend`, `layer:infrastructure` |
-| `composition-*` | `scope:backend`, `layer:composition` |
+| `logger` (path `packages/infrastructure/logger`) | `scope:backend`, `layer:infrastructure`, `layer:logger` |
+| `nest-http` | `scope:backend`, `layer:nest-http` |
+| `composition` | `scope:backend`, `layer:composition` |
 | `frontend-ui` | `scope:frontend`, `layer:ui` |
 | `frontend-core` | `scope:frontend`, `layer:frontend-core` |
 | `api`, `worker` | `scope:backend`, `type:app` |
@@ -38,10 +40,12 @@ scope:frontend → frontend + shared
 
 layer:domain         → shared-types only
 layer:platform       → shared-types only
+layer:contracts      → shared-types only
 layer:application    → domain, platform, shared-types, utils
 layer:infrastructure → domain, application, platform, shared…
+layer:nest-http      → contracts, platform, shared (not domain/application/postgres)
 layer:composition    → domain, application, infrastructure, platform…
-type:app             → composition / frontend libs / shared (never other apps)
+type:app             → nest-http / composition / logger / frontend libs / shared (never other apps, never postgres/domain/application)
 ```
 
 ## Forbidden Edges

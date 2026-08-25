@@ -39,8 +39,10 @@ export type MembershipOutput = z.infer<typeof MembershipOutput>
 
 **Contains:**
 
-- Request DTOs (body/query/params), response DTOs, shared error shapes, pagination envelopes.
-- Enums/literals that are part of the wire contract.
+- Request DTOs (body/query/params), response DTOs.
+- **Shared error envelope** (`code`, `message`, optional `details`) and **`HttpStatus`** constants used on the wire (including 403 and 409). HTTP status is a transport concern — it lives here, not in Nest and not in domain.
+- Pagination envelopes (`items`, `page`, `pageSize`, `total`).
+- Enums/literals that are part of the wire contract (including the permission string union).
 - Inferred types from the above.
 
 **Does not contain:**
@@ -66,7 +68,7 @@ HTTP body ──(nestjs-zod validates against contracts schema)──▶ DTO
 - The **controller** in `apps/api` owns DTO↔command/result mapping.
 - Use cases speak in commands/results defined in the application layer, keeping them decoupled from the wire format and independently testable.
 
-This preserves the dependency rule: `application` never imports `contracts`; only `apps/api` (and the frontend) do.
+This preserves the dependency rule: `application` never imports `contracts`; only `apps/api`, `nest-http` (error envelope / `HttpStatus`), and the frontend do.
 
 ## File naming
 
@@ -80,14 +82,14 @@ Organized by context inside `packages/shared/contracts/src` (`tenancy/…`, `aut
 
 ## Validation
 
-- **Backend:** `nestjs-zod` validates every controller input against the contract schema; invalid input ⇒ `400` with a structured error (shared error shape from `contracts`).
+- **Backend:** the `nest-http` global pipe (nestjs-zod) validates every controller input against the contract schema; invalid input ⇒ `400` with the shared error envelope from `contracts`.
 - **Frontend:** forms may validate against the same schemas before submitting (optional but encouraged), guaranteeing the client and server agree.
 
 ## OpenAPI / external consumers
 
-- Swagger/OpenAPI is generated on the backend from the `nestjs-zod` DTOs (the contracts). This documents the API and serves **external** (non-monorepo) consumers.
+- Swagger/OpenAPI is generated on the backend from the `nestjs-zod` DTOs via `nest-http` (`ApiBuilder.setupSwagger`). This documents the API and serves **external** (non-monorepo) consumers.
 - **Internal** frontend apps do **not** consume generated types — they import `contracts` directly (no codegen drift). OpenAPI is a byproduct for outsiders, not the internal type channel.
 
 ## Versioning & coupling
 
-The shared contract couples frontend and backend to the same package version — intended in a monorepo (they ship together via Nx affected). For external/public APIs, version the routes (`/v1`, `/v2`) and keep old contract schemas until consumers migrate. Breaking a contract marks all dependents affected in Nx, making the blast radius visible in CI.
+HTTP routes use **URI versioning** (`VersioningType.URI`, default `'1'`) so foundation endpoints are `/v1/users`, `/v1/tenants`, `/v1/me`, `/v1/tenants/:tenantId/members`. An optional global prefix (`API_GLOBAL_PREFIX`) may sit in front. Breaking a contract marks all dependents affected in Nx. Keep old contract schemas until external consumers migrate (`/v2`).

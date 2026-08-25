@@ -2,7 +2,7 @@
 
 Architecture-driven, phase-by-phase plan for the backend foundation of the B2B multi-tenant SaaS starter kit. It is derived **from the existing architecture docs and Cursor rules** (the source of truth), not from the investigated reference repositories.
 
-> Status: planning only. No source code, packages, or migrations are created by this document. Each phase below is meant to be implemented later, one at a time, in Cursor.
+> Status: Phases 1–8 are implemented. Phases 9–11 below are the remaining foundation (Logger, Nest HTTP kit, then composition + versioned HTTP e2e). This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
 
 Related source-of-truth docs: [`architecture/workspace-topology.md`](./architecture/workspace-topology.md), [`architecture/backend.md`](./architecture/backend.md), [`architecture/bounded-contexts.md`](./architecture/bounded-contexts.md), [`architecture/persistence.md`](./architecture/persistence.md), [`architecture/multi-tenancy.md`](./architecture/multi-tenancy.md), [`architecture/authorization.md`](./architecture/authorization.md), [`architecture/api-contracts.md`](./architecture/api-contracts.md), [`architecture/shared-packages.md`](./architecture/shared-packages.md), [`architecture/boundaries.md`](./architecture/boundaries.md), [`architecture/decisions.md`](./architecture/decisions.md).
 
@@ -16,10 +16,11 @@ These were confirmed for the initial foundation and constrain the whole plan:
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **RBAC breadth**    | **Lean-but-generic.** `identity` (User), `tenancy` (Tenant, Membership), `authorization` (Role, Permission) with a **fixed system-permission catalog** + seeded **system roles** (Owner/Admin/Member). One permission enforced end-to-end. Custom tenant-defined roles CRUD + invitations **deferred** (the seams are built so they slot in without rework). |
 | **Authentication**  | **Stubbed principal.** No password/JWT/refresh/sessions yet. The API edge injects an authenticated principal (dev middleware) and establishes `TenantContext`. Real credentials/tokens are a **later plan**, localized to the `identity` context + edge, so nothing else changes when they land.                                                             |
-| **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → composition → apps/api` controllers + `contracts`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Frontend excluded.                                                                                                                                    |
+| **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → logger → nest-http → composition → apps/api`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Routes are URI-versioned (`/v1/...`). Frontend excluded.                                                                                                   |
+| **Logging**         | **Pino**, not Nest-injectable. `Logger` port + `initLogger`/`getLogger` on `platform`; adapter in `packages/infrastructure/logger`.                                                                                                                                                                                                                          |
 | **Redis**           | **Deferred.** Effective permissions are resolved directly from Postgres (via context repositories). `platform` Cache/Lock/PubSub ports + `packages/infrastructure/redis` + permission caching come later. All keys/queries are designed **cache- and tenant-prefix-ready** now.                                                                              |
 
-Out of scope for this plan (see §7 Deferred): real authentication, Redis, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime.
+Out of scope for this plan (see §7 Deferred): real authentication, Redis, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime, request-id ALS log mixin.
 
 ---
 
@@ -31,35 +32,40 @@ The docs already settle the topology: **layer-first Nx projects, bounded context
 
 So the packages you listed map as follows (names/tags are fixed by [`boundaries.md`](./architecture/boundaries.md)):
 
-| Your candidate                    | Realization in this plan                                                                  | Kind                      |
-| --------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------- |
-| `shared/kernel-types`             | `packages/shared/kernel-types` → `@b2b-saas-starter-kit/shared-kernel-types`              | one project (shared leaf) |
-| `backend/domain`                  | `packages/domain` → `@b2b-saas-starter-kit/domain` (contexts are folders inside `src/`)   | one project               |
-| `backend/application`             | `packages/application` → `@b2b-saas-starter-kit/application`                              | one project               |
-| `backend/platform`                | `packages/platform` → `@b2b-saas-starter-kit/platform`                                    | one project               |
-| `backend/infrastructure/postgres` | `packages/infrastructure/postgres` → `@b2b-saas-starter-kit/postgres`                     | one project (per-concern) |
-| `backend/composition`             | `packages/composition` → `@b2b-saas-starter-kit/composition` (context modules as folders) | one project               |
+| Your candidate                    | Realization in this plan                                                                  | Kind                        |
+| --------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------- |
+| `shared/kernel-types`             | `packages/shared/kernel-types` → `@b2b-saas-starter-kit/shared-kernel-types`              | one project (shared leaf)   |
+| `backend/domain`                  | `packages/domain` → `@b2b-saas-starter-kit/domain` (contexts are folders inside `src/`)   | one project                 |
+| `backend/application`             | `packages/application` → `@b2b-saas-starter-kit/application`                              | one project                 |
+| `backend/platform`                | `packages/platform` → `@b2b-saas-starter-kit/platform`                                    | one project                 |
+| `backend/infrastructure/postgres` | `packages/infrastructure/postgres` → `@b2b-saas-starter-kit/postgres`                     | one project (per-concern)   |
+| `backend/infrastructure/logger`   | `packages/infrastructure/logger` → `@b2b-saas-starter-kit/logger`                         | one project (Pino, no Nest) |
+| `backend/nest-http`               | `packages/nest-http` → `@b2b-saas-starter-kit/nest-http`                                  | one project (HTTP kit)      |
+| `shared/contracts`                | `packages/shared/contracts` → `@b2b-saas-starter-kit/contracts`                           | one project (shared leaf)   |
+| `backend/composition`             | `packages/composition` → `@b2b-saas-starter-kit/composition` (context modules as folders) | one project                 |
 
 **Bounded-context-specific packages are explicitly rejected** for the foundation (documented as rejected alternatives in [`decisions.md`](./architecture/decisions.md)): they multiply project count and make `nx affected` finer at the cost of much more wiring, and a context is promoted to its own project only when it needs independent build/versioning or is being extracted toward a service — an explicit later decision, not the starting point.
 
-**Infrastructure split:** `packages/infrastructure/` is a grouping directory (like `packages/shared/`); each concern is its own Nx project. For the foundation we create only **`packages/infrastructure/postgres`** (Nx name `postgres`; Redis/messaging deferred). This keeps `affected` clean and means a future Redis adapter won't pull TypeORM.
+**Infrastructure split:** `packages/infrastructure/` is a grouping directory (like `packages/shared/`); each concern is its own Nx project. For the foundation we create **`postgres`** (done) and **`logger`** (Phase 9). Redis/messaging stay deferred so a logger or Redis consumer never pulls TypeORM, and a worker never pulls Nest/Swagger.
 
 ### 2.2 Nx projects, tags, and dependency direction
 
 Projects created across the whole plan (only the ones this foundation needs), with their required tags and allowed dependencies (subset of [`boundaries.md`](./architecture/boundaries.md)):
 
-| Project               | Tags                                    | May depend on                                                                 |
-| --------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
-| `shared-kernel-types` | `scope:shared`, `layer:shared-types`    | — (+ Zod)                                                                     |
-| `contracts`           | `scope:shared`, `layer:contracts`       | `shared-kernel-types`                                                         |
-| `domain`              | `scope:backend`, `layer:domain`         | `shared-kernel-types`                                                         |
-| `platform`            | `scope:backend`, `layer:platform`       | `shared-kernel-types`                                                         |
-| `application`         | `scope:backend`, `layer:application`    | `domain`, `platform`, `shared-kernel-types`, `utils`                          |
-| `postgres`            | `scope:backend`, `layer:infrastructure` | `domain`, `application`, `platform`, `shared-kernel-types`, `utils`, `config` |
-| `composition`         | `scope:backend`, `layer:composition`    | `domain`, `application`, `postgres`, `platform`, shared                       |
-| `apps/api`            | `scope:backend`, `type:app`             | `composition`, `contracts`, `config`, `utils`                                 |
+| Project               | Tags                                                     | May depend on                                                                    |
+| --------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `shared-kernel-types` | `scope:shared`, `layer:shared-types`                     | — (+ Zod)                                                                        |
+| `contracts`           | `scope:shared`, `layer:contracts`                        | `shared-kernel-types`                                                            |
+| `domain`              | `scope:backend`, `layer:domain`                          | `shared-kernel-types`                                                            |
+| `platform`            | `scope:backend`, `layer:platform`                        | `shared-kernel-types`                                                            |
+| `application`         | `scope:backend`, `layer:application`                     | `domain`, `platform`, `shared-kernel-types`, `utils`                             |
+| `postgres`            | `scope:backend`, `layer:infrastructure`                  | `domain`, `application`, `platform`, `shared-kernel-types`, `utils`, `config`    |
+| `logger`              | `scope:backend`, `layer:infrastructure` + `layer:logger` | `platform` (Pino only)                                                           |
+| `nest-http`           | `scope:backend`, `layer:nest-http`                       | `contracts`, `platform`, `shared-kernel-types`, `utils`, `config`                |
+| `composition`         | `scope:backend`, `layer:composition`                     | `domain`, `application`, `postgres`, `platform`, shared                          |
+| `apps/api`            | `scope:backend`, `type:app`                              | `nest-http`, `composition`, `contracts`, `config`, `utils`, `logger` (bootstrap) |
 
-**Forbidden edges that make this design correct** (enforced, not conventional): `domain → anything but shared-types`; `application → contracts`; `application → infrastructure`; `scope:backend ↔ scope:frontend`; `type:app → type:app`. The direction always points **inward** toward the pure domain.
+**Forbidden edges that make this design correct** (enforced, not conventional): `domain → anything but shared-types`; `application → contracts`; `application → infrastructure`; `nest-http → domain/application/postgres`; `type:app → postgres/domain/application`; `scope:backend ↔ scope:frontend`; `type:app → type:app`. The extra `layer:logger` tag lets apps bootstrap Pino without opening `postgres`. The direction always points **inward** toward the pure domain.
 
 ### 2.3 Contexts as folders (this foundation touches three)
 
@@ -104,6 +110,7 @@ Context isolation is a **folder-level lint**: within `domain/src/<A>` you may no
 | `TenantContext`        | `platform`                              | `infrastructure/postgres` (Node AsyncLocalStorage)                                      | Ambient active-tenant + actor accessor.                                                 |
 | `Clock`                | `platform`                              | `infrastructure/postgres` (system clock)                                                | Deterministic timestamps (`occurredAt`, `createdAt`).                                   |
 | `IdGenerator`          | `platform`                              | `infrastructure/postgres` (UUID v7)                                                     | Deterministic-in-tests ID creation; ids passed into domain factories.                   |
+| `Logger`               | `platform` (locator)                    | `infrastructure/logger` (Pino)                                                          | Structured logs via `getLogger()`; **not** Nest-injectable.                             |
 | `AuthorizationPort`    | `application/authorization` (published) | `application/authorization` service, backed by `RoleRepository` + `MembershipRolesPort` | `require(actor, permission, {tenantId})` / `getEffectivePermissions(userId, tenantId)`. |
 | `MembershipRolesPort`  | `application/tenancy` (published)       | `application/tenancy` service (reads `MembershipRepository`)                            | Sanctioned cross-context sync read: "which roleIds does (user,tenant) have?"            |
 
@@ -127,21 +134,22 @@ Per [`multi-tenancy.md`](./architecture/multi-tenancy.md), **pool model** (share
 - **Seeding:** permission catalog is code. **System roles are seeded per tenant at runtime** inside `CreateTenant` (not via migration), so custom roles later use the identical path. A separate idempotent dev **seeder** (fixed dev user) supports local e2e without real auth.
 - **Transactions** via `UnitOfWork` port; repositories join the ambient `TxContext` (no `EntityManager` on port signatures).
 
-### 2.8 Config, IDs, clock, errors, stubbed-auth seam
+### 2.8 Config, IDs, clock, logger, errors, stubbed-auth seam
 
-- **Config:** apps own Zod schemas + values; `apps/api` loads DB config via `ConfigLoader` (`source: 'env'`, already available) — no eager import-time load.
+- **Config:** apps own Zod schemas + values; `apps/api` loads DB + HTTP (CORS, version, prefix, OpenAPI) via `ConfigLoader` (`source: 'env'`) — no eager import-time load.
 - **IDs/time:** `IdGenerator` (UUID v7) + `Clock` are `platform` ports injected in the **application** layer; ids/timestamps are passed **into** domain factory methods, keeping aggregates pure and tests deterministic. (The domain rule permits `randomUUID`, but injecting keeps use-case tests deterministic and is preferred.)
-- **Errors:** domain throws typed `DomainError` subclasses (per `domain-layer.mdc`); `apps/api` maps them to HTTP via a Nest exception filter using the shared error shape from `contracts`.
-- **Stubbed-auth seam:** a `DevPrincipal` middleware/guard in `apps/api` reads the principal from a header (`x-user-id`) and active tenant (`x-tenant-id`), **validates membership** (escape-hatch lookup) before establishing `TenantContext`, exactly mirroring the future token-claim flow. When real auth lands, only this middleware + the `identity` credential/session code change; controllers, use cases, and the guard stay identical.
+- **Logger:** `initLogger` / `getLogger` on `platform`; Pino adapter at process bootstrap. Application may `getLogger().context(UseCase.name)`. Never `@Inject()` Logger. Tests install a memory logger in `beforeEach`.
+- **Errors:** domain throws typed `DomainError` subclasses (per `domain-layer.mdc`); `nest-http` maps duck-typed `{code, message}` to HTTP using the shared error envelope and `HttpStatus` from `contracts` (include 403/409). Do not import domain error classes into the kit.
+- **Stubbed-auth seam:** a `DevPrincipal` guard in `apps/api` reads `x-user-id` / `x-tenant-id`, **validates membership** (`withoutTenantScope`) before `TenantContext.run`. `@Public()` comes from `nest-http`. When real auth lands, only this guard + `identity` credential/session code change; `ApiBuilder`, controllers, and use cases stay identical.
 
 ### 2.9 Testing strategy
 
-| Layer         | Test type                 | Tooling / notes                                                                                                                   |
-| ------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `domain`      | Pure unit                 | Vitest, no Nest/DB. Target ~90% on domain.                                                                                        |
-| `application` | Unit with in-memory fakes | In-memory repositories + in-memory `UnitOfWork` + fake `TenantContext`/`Clock`/`IdGenerator`.                                     |
-| `postgres`    | Integration               | Against a **containerized Postgres** (reuse `infra/compose`), migrations applied to a dedicated test DB. Assert tenant isolation. |
-| `apps/api`    | HTTP e2e                  | `supertest` against a booted Nest app + real Postgres. Full slice: create user → create tenant → `/me` → members (allow/deny).    |
+| Layer         | Test type                 | Tooling / notes                                                                                                                                          |
+| ------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `domain`      | Pure unit                 | Vitest, no Nest/DB. Target ~90% on domain.                                                                                                               |
+| `application` | Unit with in-memory fakes | In-memory repositories + in-memory `UnitOfWork` + fake `TenantContext`/`Clock`/`IdGenerator`. After Phase 9: `initLogger(memoryLogger)` in `beforeEach`. |
+| `postgres`    | Integration               | Against a **containerized Postgres** (reuse `infra/compose`), migrations applied to a dedicated test DB. Assert tenant isolation.                        |
+| `apps/api`    | HTTP e2e                  | `supertest` against a booted Nest app + real Postgres. Full slice: create user → create tenant → `/v1/me` → `/v1/tenants/:id/members` (allow/deny).      |
 
 Recommended: reuse the existing `infra/compose` Postgres with a separate `*_test` database + `beforeAll` migration run (lower dependency footprint than adding Testcontainers). Testcontainers remains an easy future swap behind the same test setup.
 
@@ -150,19 +158,20 @@ Recommended: reuse the existing `infra/compose` Postgres with a separate `*_test
 ## 3. Key architectural decisions & trade-offs (summary)
 
 1. **Layer-first Nx, contexts as folders** — build-time layer enforcement; context isolation via lint. (Settled by docs; re-affirmed.)
-2. **One project per layer**, `packages/infrastructure/postgres` as the only infra project now — low project count, clean `affected`, Redis/messaging deferred without pulling TypeORM.
+2. **One project per infra concern**, `postgres` (done) + `logger` (Phase 9); Redis/messaging deferred without pulling TypeORM or Nest.
 3. **Membership as its own aggregate**; the "≥1 Owner" rule is an **application-level multi-aggregate invariant** inside a `UnitOfWork`. Recommended over stuffing it into `Tenant`.
 4. **Tenant-scoped roles**, seeded per tenant at creation — uniform with future custom roles. Recommended over global system roles.
 5. **`AuthorizationPort` resolves by composing repositories** (own `RoleRepository` + published `MembershipRolesPort`), **never a cross-context join** — preserves boundaries, cache-ready.
-6. **Injected `IdGenerator`/`Clock`** over in-domain `randomUUID`/`new Date()` — deterministic tests.
+6. **Injected `IdGenerator`/`Clock`** over in-domain `randomUUID`/`new Date()` — deterministic tests. **`Logger` is a process locator**, not injected.
 7. **Stubbed principal** with a real `TenantContext` seam — real auth is a drop-in later, isolated to `identity` + edge.
 8. **Reuse compose Postgres for integration/e2e** over Testcontainers initially — fewer deps, same seam.
+9. **`nest-http` kit + URI `/v1` + CORS/helmet** — HTTP bootstrap is not copied into `apps/api`; composition is not the HTTP kit.
 
 ---
 
 ## 4. Implementation order (dependency-driven)
 
-Ordering follows **actual architectural dependencies**, not a rote "types → domain → app → infra → composition." Pure, widely-depended-on foundations come first; the application layer is validated **entirely with in-memory adapters before any database exists** (fast feedback, de-risks use-case design); Postgres + composition + HTTP come after, culminating in the real e2e.
+Ordering follows **actual architectural dependencies**, not a rote "types → domain → app → infra → composition." Pure, widely-depended-on foundations come first; the application layer is validated **entirely with in-memory adapters before any database exists** (fast feedback, de-risks use-case design); Postgres, then Logger + HTTP kit, then composition + versioned HTTP e2e.
 
 ```
 1 Enforcement + kernel-types ──┬─▶ 2 domain shared-kernel ──┬─▶ 4 authorization domain ─┐
@@ -170,10 +179,12 @@ Ordering follows **actual architectural dependencies**, not a rote "types → do
                                                                                             ▼
                                                                 6 application (in-memory) ──▶ 7 infra-postgres core
                                                                                             ▼
-                                                                8 infra-postgres per context ──▶ 9 composition + apps/api + HTTP e2e
+                                                                8 infra-postgres per context ──▶ 9 Logger port + Pino
+                                                                                            ▼
+                                                                10 contracts envelopes + nest-http ──▶ 11 composition + apps/api + HTTP e2e
 ```
 
-Phases 4 and 5 are independent (both pure domain) and may be done in either order. Phase 6 depends on 3–5. Phases 7–9 are strictly sequential.
+Phases 4 and 5 are independent (both pure domain) and may be done in either order. Phase 6 depends on 3–5. Phases 7–11 are strictly sequential.
 
 ---
 
@@ -195,7 +206,7 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 - **Tests:** schema parse/reject + brand round-trip (Vitest).
 - **Verification:** `nx lint shared-kernel-types`, `nx test shared-kernel-types`; a deliberate boundary violation fails lint; `nx graph` shows the leaf with no backend deps.
 - **Definition of Done:** types + schemas exported from the package entry; boundary + isolation lints active and green; DoD checklist committed to package README.
-- **Deferred:** permission catalog **values** (owned by authorization, Phase 4); contract enums (Phase 9).
+- **Deferred:** permission catalog **values** (owned by authorization, Phase 4); contract enums (Phase 10–11).
 
 ### Phase 2 — Domain shared-kernel primitives
 
@@ -217,7 +228,7 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 - **Tests:** none runtime (interfaces); optional type-level tests.
 - **Verification:** `nx lint platform`; graph shows `platform → shared-kernel-types` only.
 - **Definition of Done:** ports exported and referenced in later phases; no impl leakage.
-- **Deferred:** `CachePort`/`LockPort`/`PubSubPort` (Redis phase).
+- **Deferred:** `CachePort`/`LockPort`/`PubSubPort` (Redis phase). `Logger` port + locator is Phase 9 (platform package already exists).
 
 ### Phase 4 — Authorization domain (roles + permission catalog)
 
@@ -278,19 +289,50 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 - **Definition of Done:** all foundation tables + repos + authorization resolution work against real Postgres with isolation proven.
 - **Deferred:** Redis-cached effective permissions; outbox tables.
 
-### Phase 9 — Composition + apps/api + contracts + HTTP e2e
+### Phase 9 — Logger port + Pino adapter
 
-- **Goal:** the full vertical exposed over HTTP with a stubbed principal, validated end-to-end against real Postgres.
+- **Goal:** structured logging without Nest DI, usable from application, infra, and process entry.
+- **Scope:** add `Logger` + `initLogger` / `getLogger` to the existing `platform` package; create `packages/infrastructure/logger` (Pino). No Nest, no `nestjs-pino`, no driver registry.
+- **Packages/projects:** `platform` (extend); create `logger` (tags `scope:backend`, `layer:infrastructure`, **and** `layer:logger` so `type:app` can bootstrap it without importing `postgres`).
+- **Implementation tasks:**
+  - Port: `context(name)`, `trace`/`debug`/`info`/`warn`/`error`/`fatal`, overloads `msg` | `(data, msg)`.
+  - Locator throws if uninitialized (no silent no-op).
+  - `PinoLogger`: one class + `pino.child({context})`; typed levels; production default `info`; `pino-pretty` only when `isPretty`; `Error` → `{err}`; redact `req.headers.authorization`.
+  - In-memory logger for tests (`application/testing` or logger package).
+- **Tests:** unit — context child fields; error serialization; locator throw; memory logger round-trip. Application tests `initLogger` in `beforeEach` / reset in `afterEach`.
+- **Verification:** `nx lint/typecheck/test platform logger`; graph shows `logger → platform` only; a deliberate application import of `pino` fails purity lint.
+- **Definition of Done:** `getLogger()` works after bootstrap; application never imports `@b2b-saas-starter-kit/logger`.
+- **Deferred:** ALS mixin for `tenantId`/`actorId`/request id; OpenTelemetry; worker bootstrap (Phase 11+).
+
+### Phase 10 — Contracts envelopes + Nest HTTP kit
+
+- **Goal:** shared wire types and a reusable HTTP bootstrap so `apps/api` does not invent pipes, filters, Swagger, CORS, or versioning.
 - **Scope:**
-  - `contracts`: Zod input/output DTOs + shared error shape + pagination envelope for `POST /users`, `POST /tenants`, `GET /me`, `GET /tenants/:tenantId/members`; the permission enum surfaced for the frontend.
-  - `composition`: per-context Nest modules binding ports→adapters and registering use cases + `AuthorizationPort`.
-  - `apps/api`: `DevPrincipal` middleware (principal + membership validation + `TenantContext`), `@RequirePermission` guard (reads effective permissions), controllers with `contracts` validation + DTO↔command mapping, domain-error exception filter, Swagger from `nestjs-zod`.
-- **Packages/projects:** create `packages/contracts` and `packages/composition`; wire `apps/api`.
-- **Implementation tasks:** implement modules + controllers (thin: validate → map → call use case → map result); guard enforcing `tenancy.members.read` on the members endpoint; `/me` returns effective permission set; idempotent dev seeder for a fixed dev user.
-- **Tests:** HTTP e2e (`supertest`) against booted Nest + real Postgres: create user → set principal → create tenant (becomes Owner, roles seeded) → `GET /me` shows Owner permissions → `GET /tenants/:id/members` **allowed** for Owner and **denied (403)** for a Member principal; contract-validation 400s.
-- **Verification:** `nx e2e`/`nx test apps/api` green with compose Postgres up; `nx affected` shows expected blast radius; Swagger renders.
-- **Definition of Done:** the four endpoints work end-to-end through real Postgres with the coarse guard **and** application-layer authorization both enforcing; frontend untouched.
-- **Deferred:** real login/JWT/refresh; tenant-switch endpoint; invitations; worker wiring.
+  - `contracts`: `HttpStatus` (include 403/409), error envelope, pagination envelope. **Not** yet the four endpoint DTOs.
+  - `nest-http`: `ApiBuilder`, `createHttpProviders()` (pipe/filter/interceptor), OpenAPI helper, `@Public()`, process `unhandledRejection`/`uncaughtException` handlers. Kit uses `getLogger()` and contracts — **not** domain/application/postgres.
+- **Packages/projects:** create `packages/shared/contracts` (`layer:contracts`); create `packages/nest-http` (`layer:nest-http`). Add `layer:contracts` and `layer:nest-http` depConstraints (already specified in [`boundaries.md`](./architecture/boundaries.md)).
+- **Implementation tasks:**
+  - `ApiBuilder`: helmet (document staging HTTP/Swagger caveat), CORS from typed config (**fail closed in production** if origins unset), URI versioning default `'1'`, optional `API_GLOBAL_PREFIX`, `enableShutdownHooks()`, Swagger at `/docs` (basic-auth optional).
+  - Exception filter: Zod 400s + `HttpException` + `{code, message}` → contracts envelope.
+  - nestjs-zod compatibility with workspace Zod 4 — verify; fallback a thin parse pipe if needed.
+- **Tests:** unit — CORS fail-closed; error envelope shape; versioning default. Optional Nest testing module for pipe/filter.
+- **Verification:** `nx lint/typecheck/test contracts nest-http`; `nest-http` must not depend on `domain`/`application`/`postgres`.
+- **Definition of Done:** kit + envelopes exported; Swagger helper documented; no app wiring yet.
+- **Deferred:** endpoint DTOs, composition, `RequirePermission`, JWT guards (Phase 11 / real auth).
+
+### Phase 11 — Composition + apps/api + endpoint contracts + HTTP e2e
+
+- **Goal:** the full vertical exposed over **versioned** HTTP with a stubbed principal, validated end-to-end against real Postgres, bootstrapped through `ApiBuilder`.
+- **Scope:**
+  - `contracts`: Zod input/output DTOs + permission union for `POST /v1/users`, `POST /v1/tenants`, `GET /v1/me`, `GET /v1/tenants/:tenantId/members`.
+  - `composition`: per-context Nest modules binding ports→adapters (`useFactory` + postgres tokens) and registering use cases + `AuthorizationPort`. Re-export use-case classes and `TENANT_CONTEXT` so `apps/api` does not import `application`/`postgres`.
+  - `apps/api`: `initLogger` + `ApiBuilder` + `createHttpProviders()`; `DevPrincipal` + ALS interceptor; `@RequirePermission` (app-specific, not in the kit); controllers; idempotent dev seeder (`dev@localhost`). `POST /v1/tenants` wraps `CreateTenant` in `withoutTenantScope`.
+- **Packages/projects:** create `packages/composition`; wire existing `apps/api`.
+- **Implementation tasks:** thin controllers (validate → map → use case → map result); guard `tenancy.members.read` on members; `GET /v1/me` returns effective permissions; CORS/helmet/versioning from env.
+- **Tests:** HTTP e2e (`supertest`) against booted Nest + real Postgres: create user → set principal → create tenant (Owner, roles seeded) → `GET /v1/me` shows Owner permissions → `GET /v1/tenants/:id/members` **allowed** for Owner and **denied (403)** for a Member principal (seed membership via composition helper; invitations deferred); contract-validation 400s.
+- **Verification:** `nx test api` green with compose Postgres up (`CI=true`); Swagger at `/docs`; `nx graph` shows `api → nest-http + composition + contracts + logger`, not `postgres`/`domain`.
+- **Definition of Done:** four versioned endpoints work through real Postgres with coarse guard **and** application-layer authorization; frontend untouched.
+- **Deferred:** real login/JWT/refresh; tenant-switch; invitations; worker wiring.
 
 ---
 
@@ -316,7 +358,8 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 | **Custom roles + invitations**         | Custom-role CRUD and membership invitation/role-assignment use cases reuse the tenant-scoped `RoleRepository` + `MembershipRepository`.                                                             |
 | **Postgres RLS "secure profile"**      | Opt-in defense-in-depth; session `app.tenant_id` + policies alongside the base-repo filter.                                                                                                         |
 | **Policy seam (ABAC-lite)**            | Resource/ownership checks behind `AuthorizationPort` (e.g. CASL adapter) without controller/use-case changes.                                                                                       |
-| **Frontend**                           | `contracts` already shared; `frontend/core` consumes `/me` effective permissions + `can()` in a later plan.                                                                                         |
+| **Frontend**                           | `contracts` already shared; `frontend/core` consumes `/v1/me` effective permissions + `can()` in a later plan.                                                                                      |
+| **Request/tenant log mixin**           | Bind `tenantId` / `actorId` / request id onto Pino via ALS after the locator exists (ADR-027 deferred increment).                                                                                   |
 
 ---
 
@@ -327,5 +370,6 @@ These were decided with rationale (not blocking) and can be revisited when the r
 - **Roles are tenant-scoped**, seeded per tenant at creation (§2.4). If a global-templates model is later preferred, only Phase 4/8 change.
 - **`IdGenerator`/`Clock` injected** rather than in-domain (§2.8).
 - **Integration/e2e reuse the compose Postgres** with a `*_test` DB rather than Testcontainers (§2.9).
-- **Worked permission enforced end-to-end** is `tenancy.members.read` on `GET /tenants/:tenantId/members`; the catalog ships a small fixed set with Owner/Admin/Member bundles.
+- **Worked permission enforced end-to-end** is `tenancy.members.read` on `GET /v1/tenants/:tenantId/members`; the catalog ships a small fixed set with Owner/Admin/Member bundles.
 - **`AuthorizationPort` and `MembershipRolesPort` are application-layer published ports** (§2.5); if a future need makes authorization heavier, they can move behind a dedicated port project without changing callers.
+- **`Logger` is not injectable**; `IdGenerator`/`Clock` remain injected (§2.8).

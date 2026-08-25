@@ -11,7 +11,7 @@ This directory is the **source of truth** for the architecture of the B2B multi-
 3. [`bounded-contexts.md`](./bounded-contexts.md) — the logical domains and how they communicate.
 4. [`backend.md`](./backend.md) — backend layers and NestJS's role.
 5. [`persistence.md`](./persistence.md) — TypeORM, models vs entities, transactions, migrations.
-6. [`infrastructure.md`](./infrastructure.md) — Redis, messaging, background jobs, config.
+6. [`infrastructure.md`](./infrastructure.md) — Redis, messaging, background jobs, config, logging.
 7. [`multi-tenancy.md`](./multi-tenancy.md) — tenant isolation and context flow.
 8. [`authorization.md`](./authorization.md) — authentication, RBAC, policies.
 9. [`api-contracts.md`](./api-contracts.md) — Zod contracts shared between backend and frontend.
@@ -47,6 +47,8 @@ These are **not implemented** here. This documentation defines _how they are to 
 | Cache / locks / pub-sub | **Redis**                        | Behind capability ports (see [`infrastructure.md`](./infrastructure.md)) |
 | Jobs                    | **BullMQ + outbox**              | Reliable async work                                                      |
 | Validation / contracts  | **Zod + nestjs-zod**             | Single source of truth for API shapes                                    |
+| Logging                 | **Pino**                         | `Logger` port + process locator; adapter in `infrastructure/logger`      |
+| HTTP kit                | **`packages/nest-http`**         | ApiBuilder, pipe/filter/interceptor, Swagger, CORS, URI `/v1`            |
 | Frontend                | **React + Vite**                 | Two apps: `web`, `admin`                                                 |
 | Frontend state          | **Redux Toolkit + RTK Query**    | Server state via RTK Query                                               |
 | Styling / UI            | **Tailwind + shadcn/ui + Radix** | Themeable, per-tenant branding                                           |
@@ -73,12 +75,12 @@ The synthesis in one sentence:
 
 **Logical layers do not each become an Nx project, and bounded contexts are not each an Nx project.** Instead:
 
-- The workspace is **layer-first**: `domain`, `application`, `platform`, `infrastructure`, `composition` are the Nx projects.
+- The workspace is **layer-first**: `domain`, `application`, `platform`, `infrastructure`, `nest-http`, `composition` are the Nx projects.
 - Each **bounded context is a folder** inside those layer projects (`domain/src/identity`, `application/src/identity`, …).
 
 Consequences (fully explored in [`workspace-topology.md`](./workspace-topology.md) and [`boundaries.md`](./boundaries.md)):
 
-- Nx **hard-enforces the layer dependency rule** (`domain ← application ← infrastructure ← composition ← apps`).
+- Nx **hard-enforces the layer dependency rule** (`domain ← application ← infrastructure ← composition / nest-http ← apps`).
 - Nx **cannot** enforce context isolation at the project level (contexts share a project per layer), so **context isolation is enforced by a folder-level import lint** instead.
 - `affected` granularity is per-layer, not per-context — an accepted trade-off.
 

@@ -6,6 +6,7 @@ globs:
   - "packages/platform/**/*.ts"
   - "packages/infrastructure/**/*.ts"
   - "packages/composition*/**/*.ts"
+  - "packages/nest-http/**/*.ts"
   - "apps/api/**/*.ts"
   - "apps/worker/**/*.ts"
 alwaysApply: false
@@ -18,29 +19,30 @@ Source of truth: `docs/architecture/backend.md`, `docs/architecture/workspace-to
 ## Layers (dependency points inward)
 
 ```
-apps/api, apps/worker          ← thin transport
+apps/api, apps/worker          ← thin transport (initLogger; api also ApiBuilder)
+  → nest-http                  ← HTTP kit (pipe/filter/Swagger/CORS/versioning)
   → composition/<context>      ← Nest modules (port → adapter wiring)
-  → infrastructure/{postgres,redis,messaging}
+  → infrastructure/{postgres,logger,redis,messaging}
   → application/<context>      ← @Injectable use cases
   → domain/<context>           ← pure models + repository PORTS
   → shared-kernel-types
 
-platform                       ← capability ports (Cache, Lock, PubSub, UnitOfWork)
+platform                       ← capability ports (Cache, Lock, PubSub, UnitOfWork, Logger locator)
 ```
 
 Bounded contexts are **folders** inside each layer: `identity`, `tenancy`, `authorization`, `audit`, `notifications`.
 
 ## Apps (thin)
 
-Controllers/processors only: validate with contracts, map DTO → command, call use cases. No business logic, no TypeORM, no Redis.
+Controllers/processors only: validate with contracts via `nest-http`, map DTO → command, call use cases. No business logic, no TypeORM, no Redis. `apps/api` imports `@b2b-saas-starter-kit/nest-http` and `composition` — not `postgres` / `domain` / `application`. Bootstrap: `initLogger(new PinoLogger(...))` then `ApiBuilder`. Routes are `/v1/...`.
 
 ```typescript
 // apps/api — tenancy controller
-@Controller('tenants/:tenantId/invitations')
+@Controller({path: 'tenants/:tenantId/invitations', version: '1'})
 export class InvitationsController {
   constructor(private readonly inviteMember: InviteMemberUseCase) {}
 
-  @RequirePermission('tenant.members.invite')
+  @RequirePermission('tenancy.members.read')
   @Post()
   async invite(
     @Param() { tenantId }: TenantIdParamDto,
@@ -50,7 +52,7 @@ export class InvitationsController {
       tenantId,
       email: body.email,
       roleIds: body.roleIds,
-      actorUserId: this.currentUser.id,
+      actorId: this.currentUser.id,
     })
   }
 }
@@ -62,6 +64,7 @@ export class InvitationsController {
 - Own transaction boundaries via `UnitOfWork`
 - Own fine-grained authorization
 - Depend on **ports** from `domain` / `platform`, never on infrastructure
+- Log with `getLogger().context(CreateUserUseCase.name)` — **never** `@Inject()` Logger
 - Never import `@b2b-saas-starter-kit/contracts`
 
 ```typescript
@@ -92,11 +95,15 @@ Pure TypeScript. Repository **ports** live here. No Nest, TypeORM, Redis, or HTT
 
 ## Platform
 
-Capability ports only (`CachePort`, `LockPort`, `PubSubPort`, `UnitOfWork`). Adapters live in infrastructure.
+Capability ports only (`CachePort`, `LockPort`, `PubSubPort`, `UnitOfWork`, `Clock`, `IdGenerator`, `Logger`). `initLogger` / `getLogger` is a process locator, not Nest DI. Pino adapter lives in `packages/infrastructure/logger`.
 
 ## Infrastructure
 
-Implements ports. TypeORM entities + mappers in `packages/infrastructure/postgres`. Redis adapters in `packages/infrastructure/redis`. Never export entities outside this layer.
+Implements ports. TypeORM entities + mappers in `packages/infrastructure/postgres`. Pino in `packages/infrastructure/logger` (no Nest). Redis adapters in `packages/infrastructure/redis`. Never export entities outside this layer.
+
+## nest-http
+
+Delivery kit (`ApiBuilder`, global pipe/filter/interceptor, Swagger, CORS, URI versioning, `@Public()`). Not composition. Does not import domain/application/postgres.
 
 ## Composition
 
@@ -116,6 +123,8 @@ export class TenancyModule {}
 ## Forbidden
 
 - Domain/application importing infrastructure or Nest beyond `@Injectable`
+- `@Inject()` Logger or `nestjs-pino`
 - Application importing `contracts`
 - Business logic in controllers
+- Pipes/filters/Swagger copied into `apps/api` instead of `nest-http`
 - Cross-context imports of domain internals (use IDs + events)

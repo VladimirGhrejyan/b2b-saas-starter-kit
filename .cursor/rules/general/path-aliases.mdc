@@ -23,9 +23,11 @@ Canonical packages (see `docs/architecture/workspace-topology.md`):
 | `@b2b-saas-starter-kit/config` | Shared `ConfigLoader` (YAML + Zod) |
 | `@b2b-saas-starter-kit/domain` | Backend domain + repository ports |
 | `@b2b-saas-starter-kit/application` | Backend use cases |
-| `@b2b-saas-starter-kit/platform` | Capability ports (Cache, Lock, UoW, …) |
+| `@b2b-saas-starter-kit/platform` | Capability ports (Cache, Lock, UoW, Logger locator) |
+| `@b2b-saas-starter-kit/logger` | Pino adapter (`packages/infrastructure/logger`; bootstrap only) |
 | `@b2b-saas-starter-kit/postgres` | Postgres adapters (`packages/infrastructure/postgres`; later `redis`, `messaging`) |
-| `@b2b-saas-starter-kit/composition-*` | NestJS DI wiring per context |
+| `@b2b-saas-starter-kit/nest-http` | Nest HTTP kit (ApiBuilder, pipe/filter, Swagger) |
+| `@b2b-saas-starter-kit/composition` | NestJS DI wiring (context folders) |
 | `@b2b-saas-starter-kit/frontend-ui` | Design system |
 | `@b2b-saas-starter-kit/frontend-core` | RTK store, auth/tenant/`can()` |
 

@@ -2,6 +2,7 @@
 description: Shared Zod contracts — single source of truth for API shapes
 globs:
   - "packages/shared/contracts/**/*.ts"
+  - "packages/nest-http/**/*.ts"
   - "apps/api/**/*.ts"
 alwaysApply: false
 ---
@@ -12,7 +13,9 @@ Source of truth: `docs/architecture/api-contracts.md`.
 
 ## Decision
 
-`packages/shared/contracts` holds Zod request/response schemas + inferred types. Backend wraps with `nestjs-zod`; frontend imports the same schemas through `@b2b-saas-starter-kit/contracts`. **Application does not import contracts** — controllers map DTO → command.
+`packages/shared/contracts` holds Zod request/response schemas + inferred types, including `HttpStatus`, the shared error envelope, and pagination. Backend wraps with `nestjs-zod` **via `@b2b-saas-starter-kit/nest-http`** (global pipe/filter/interceptor, `ApiBuilder` Swagger). Frontend imports the same schemas through `@b2b-saas-starter-kit/contracts`. **Application does not import contracts** — controllers map DTO → command.
+
+Routes are URI-versioned (`version: '1'` → `/v1/...`). Do not put pipes, exception filters, or Swagger setup in `apps/api` — use the kit.
 
 ## File Naming
 
@@ -52,6 +55,8 @@ export type MembershipOutput = z.infer<typeof MembershipOutputSchema>
 
 ## Backend Wiring
 
+DTO classes may live in `apps/api`. Global validation is the `nest-http` pipe, not a per-controller copy.
+
 ```typescript
 import { createZodDto } from 'nestjs-zod'
 import { InviteMemberInputSchema } from '@b2b-saas-starter-kit/contracts'
@@ -61,17 +66,17 @@ export class InviteMemberInputDto extends createZodDto(InviteMemberInputSchema) 
 @Post()
 async invite(@Body() body: InviteMemberInputDto) {
   return this.inviteMember.execute({
-    tenantId: this.tenantContext.tenantId,
+    tenantId: this.tenantContext.getTenantId(),
     email: body.email,
     roleIds: body.roleIds,
-    actorUserId: this.currentUser.id,
+    actorId: this.currentUser.id,
   })
 }
 ```
 
 ## Allowed in `contracts`
 
-Wire schemas, shared error/pagination envelopes, permission string unions used on the wire.
+Wire schemas, `HttpStatus`, shared error/pagination envelopes, permission string unions used on the wire.
 
 ## Forbidden in `contracts`
 
@@ -79,4 +84,4 @@ Domain logic, Nest/React, TypeORM entities, context-internal types that are not 
 
 ## OpenAPI
 
-Generated from nestjs-zod DTOs for **external** consumers. Internal FE uses `contracts` directly — no codegen channel.
+Generated from nestjs-zod DTOs via `ApiBuilder.setupSwagger` for **external** consumers. Internal FE uses `contracts` directly — no codegen channel.

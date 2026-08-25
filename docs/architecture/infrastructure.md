@@ -1,4 +1,4 @@
-# Infrastructure: Redis, Messaging, Jobs, Config
+# Infrastructure: Redis, Messaging, Jobs, Config, Logging
 
 Technical capabilities that support the contexts without being domain concepts. All are reached through **ports** so the domain and application layers never depend on a concrete technology.
 
@@ -61,6 +61,22 @@ This prevents the classic "saved to DB but the job never fired" (or vice-versa) 
 
 `PubSubPort` (Redis pub/sub) supports lightweight fan-out (e.g. cache invalidation across instances, future realtime). It is **not** a durability mechanism — anything that must not be lost uses the outbox. A realtime `gateway` app can later subscribe to `PubSubPort` channels; it is deferred for now (see [`decisions.md`](./decisions.md)).
 
+## Logging & observability
+
+- **`Logger` port** lives in `platform`: `context(name)`, `trace` / `debug` / `info` / `warn` / `error` / `fatal`, with pino-style overloads (`msg` or `(data, msg)`). Domain does not log.
+- **Not Nest DI.** A logger is a process sink. Nest providers fight `context()` and would pollute every use-case constructor. Do not use `nestjs-pino` or `@Inject(Logger)`.
+- **Process locator** on `platform` so application never imports Pino:
+
+```typescript
+initLogger(implementation: Logger): void
+getLogger(): Logger // throws if not initialized (no silent no-op default)
+```
+
+Bootstrap (`apps/api`, `apps/worker`): `initLogger(new PinoLogger({level, isPretty}))`. Tests: `initLogger(memoryLogger)` in `beforeEach`.
+
+- **Adapter:** `packages/infrastructure/logger` (`@b2b-saas-starter-kit/logger`). One class wrapping `pino` + `pino.child({context})`. Typed levels. Production default **`info`**. `pino-pretty` only when `isPretty`. `Error` as first argument → `{err}`. Redact `req.headers.authorization` (and similar). No driver registry until a second adapter exists.
+- Structured logs **should** eventually include `tenantId`, `actorId`, and request/correlation IDs from ambient `TenantContext` ALS. That mixin is a later increment; the locator is the commitment.
+
 ## Configuration
 
 - **`@b2b-saas-starter-kit/config`** (`packages/shared/config`) exposes `ConfigLoader`: load from a pluggable `source`, validate with **Zod**, return a typed object.
@@ -68,8 +84,3 @@ This prevents the classic "saved to DB but the job never fired" (or vice-versa) 
 - Apps own schemas and values; the shared package owns the load pipeline. Call `ConfigLoader.load` explicitly at bootstrap / Vite plugin time (no import-time load).
 - Invalid config **fails fast** (`ConfigValidationError`).
 - Secrets must not be committed. In containers they arrive as env vars (`DATABASE_URL`, `REDIS_URL`, …); locally they may live in gitignored YAML. Before production, prefer a secret-manager overlay behind a new `source` variant without changing app facades.
-
-## Logging & observability (design intent)
-
-- A `Logger` seam in `platform` keeps the logging library swappable.
-- Structured, context-enriched logs should include `tenantId`, `userId`, request/correlation IDs (populated from the ambient context). Concrete tooling is deferred; the seam is the architectural commitment.

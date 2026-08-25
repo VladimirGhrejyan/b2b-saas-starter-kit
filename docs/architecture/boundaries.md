@@ -17,25 +17,28 @@ Every Nx project carries a **scope** tag and a **layer** tag.
 **`layer:*`** — its architectural layer:
 
 - `layer:shared-types`, `layer:contracts`, `layer:utils`, `layer:config` (shared leaves)
-- `layer:domain`, `layer:application`, `layer:platform`, `layer:infrastructure`, `layer:composition` (backend)
+- `layer:domain`, `layer:application`, `layer:platform`, `layer:infrastructure`, `layer:nest-http`, `layer:composition` (backend)
+- `layer:logger` — extra tag on the `logger` project so `type:app` can bootstrap Pino without being allowed to import `postgres`
 - `layer:ui`, `layer:frontend-core`, `layer:feature` (frontend)
 - `type:app` for applications
 
-| Project                                 | Tags                                    |
-| --------------------------------------- | --------------------------------------- |
-| `shared-kernel-types`                   | `scope:shared`, `layer:shared-types`    |
-| `contracts`                             | `scope:shared`, `layer:contracts`       |
-| `utils`                                 | `scope:shared`, `layer:utils`           |
-| `config`                                | `scope:shared`, `layer:config`          |
-| `domain`                                | `scope:backend`, `layer:domain`         |
-| `application`                           | `scope:backend`, `layer:application`    |
-| `platform`                              | `scope:backend`, `layer:platform`       |
-| `postgres` (later `redis`, `messaging`) | `scope:backend`, `layer:infrastructure` |
-| `composition-*`                         | `scope:backend`, `layer:composition`    |
-| `frontend/ui`                           | `scope:frontend`, `layer:ui`            |
-| `frontend/core`                         | `scope:frontend`, `layer:frontend-core` |
-| `apps/api`,`apps/worker`                | `scope:backend`, `type:app`             |
-| `apps/web`,`apps/admin`                 | `scope:frontend`, `type:app`            |
+| Project                                 | Tags                                                    |
+| --------------------------------------- | ------------------------------------------------------- |
+| `shared-kernel-types`                   | `scope:shared`, `layer:shared-types`                    |
+| `contracts`                             | `scope:shared`, `layer:contracts`                       |
+| `utils`                                 | `scope:shared`, `layer:utils`                           |
+| `config`                                | `scope:shared`, `layer:config`                          |
+| `domain`                                | `scope:backend`, `layer:domain`                         |
+| `application`                           | `scope:backend`, `layer:application`                    |
+| `platform`                              | `scope:backend`, `layer:platform`                       |
+| `postgres` (later `redis`, `messaging`) | `scope:backend`, `layer:infrastructure`                 |
+| `logger`                                | `scope:backend`, `layer:infrastructure`, `layer:logger` |
+| `nest-http`                             | `scope:backend`, `layer:nest-http`                      |
+| `composition`                           | `scope:backend`, `layer:composition`                    |
+| `frontend/ui`                           | `scope:frontend`, `layer:ui`                            |
+| `frontend/core`                         | `scope:frontend`, `layer:frontend-core`                 |
+| `apps/api`,`apps/worker`                | `scope:backend`, `type:app`                             |
+| `apps/web`,`apps/admin`                 | `scope:frontend`, `type:app`                            |
 
 ## Dependency constraints (`@nx/enforce-module-boundaries`)
 
@@ -52,6 +55,7 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
     // backend layer direction (inward only)
     {"sourceTag": "layer:domain", "onlyDependOnLibsWithTags": ["layer:shared-types"]},
     {"sourceTag": "layer:platform", "onlyDependOnLibsWithTags": ["layer:shared-types"]},
+    {"sourceTag": "layer:contracts", "onlyDependOnLibsWithTags": ["layer:shared-types"]},
     {
       "sourceTag": "layer:application",
       "onlyDependOnLibsWithTags": ["layer:domain", "layer:platform", "layer:shared-types", "layer:utils"],
@@ -61,6 +65,16 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
       "onlyDependOnLibsWithTags": [
         "layer:domain",
         "layer:application",
+        "layer:platform",
+        "layer:shared-types",
+        "layer:utils",
+        "layer:config",
+      ],
+    },
+    {
+      "sourceTag": "layer:nest-http",
+      "onlyDependOnLibsWithTags": [
+        "layer:contracts",
         "layer:platform",
         "layer:shared-types",
         "layer:utils",
@@ -102,6 +116,8 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
       "sourceTag": "type:app",
       "onlyDependOnLibsWithTags": [
         "layer:composition",
+        "layer:nest-http",
+        "layer:logger",
         "layer:ui",
         "layer:frontend-core",
         "layer:feature",
@@ -123,6 +139,8 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
 - `scope:shared → scope:backend|frontend` — a shared package can never pull framework/infra code.
 - `scope:backend ↔ scope:frontend` — the two never import each other.
 - `type:app → type:app` — apps don't depend on other apps.
+- `type:app → postgres/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Bootstrap may import `logger` (`layer:logger`) without opening `postgres`.
+- `nest-http → domain/application/postgres` — the HTTP kit is delivery, not composition.
 
 ## Context isolation (the gap layer-first leaves)
 

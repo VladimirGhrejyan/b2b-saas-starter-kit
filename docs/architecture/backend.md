@@ -5,11 +5,12 @@ Hexagonal + Clean architecture, organized layer-first (see [`workspace-topology.
 ## Layers and the dependency rule
 
 ```
-apps (api, worker)              ← transport + process entry
+apps (api, worker)              ← transport + process entry (initLogger, ApiBuilder)
       ↓ imports
+nest-http                       ← Nest HTTP kit (pipe/filter/interceptor, Swagger, CORS, versioning)
 composition/<context>           ← NestJS modules: wire ports → adapters + use cases
       ↓
-infrastructure/{postgres,redis,messaging}  ← adapters (implements ports)
+infrastructure/{postgres,logger,redis,messaging}  ← adapters (implements ports)
       ↓
 application/<context>           ← use cases (@Injectable), orchestration, transactions
       ↓
@@ -17,7 +18,7 @@ domain/<context>                ← pure business logic + PORTS (interfaces)
       ↓
 shared-kernel-types             ← branded IDs, enums, primitives (leaf)
 
-platform                        ← capability PORTS (Cache/Lock/PubSub/UnitOfWork), inward leaf
+platform                        ← capability PORTS (Cache/Lock/PubSub/UnitOfWork/Logger locator), inward leaf
 ```
 
 **The rule:** dependencies always point _down/inward_. `domain` knows nothing about anything above it. This is enforced by Nx tags (see [`boundaries.md`](./boundaries.md)).
@@ -58,7 +59,7 @@ Use-case orchestration. This is where a request becomes a sequence of domain ope
 - Use cases are **`@Injectable`** — this is the _only_ tolerated framework seam in the application layer (chosen for DI ergonomics). No controllers, no HTTP, no TypeORM, no Redis clients here.
 - Owns **transaction boundaries** via the `UnitOfWork` port (see [`persistence.md`](./persistence.md)).
 - Owns **fine-grained authorization** checks (see [`authorization.md`](./authorization.md)).
-- Consumes **repository ports** (from `domain`) and **capability ports** (from `platform`).
+- Consumes **repository ports** (from `domain`) and **capability ports** (from `platform`), including `getLogger()` for structured logs. **Do not** `@Inject()` a Logger — it is a process locator, not a Nest provider.
 - Receives **command inputs** (plain typed objects), _not_ wire DTOs. Mapping `contracts` DTO → command happens in `apps/api`.
 - **Published ports** (`AuthorizationPort`, `MembershipRolesPort`) live in `application/src/shared/` so other contexts import the interface, not a sibling-context file. The authorization **resolver** is an application service composing `RoleRepository` + `MembershipRolesPort` (not a cross-context SQL join, not an infrastructure adapter).
 
@@ -74,19 +75,37 @@ Generic **capability ports** that are technical, not domain concepts:
 - `UnitOfWork` / `TransactionManager` (see [`persistence.md`](./persistence.md))
 - `Clock`, `IdGenerator`, `Logger` (cross-cutting seams)
 
-These are **interfaces + contracts only**. Adapters live in `infrastructure`. The domain never imports `platform` for caching/locking (those aren't domain concerns); the **application** layer uses platform ports, and each context's application code decides _policy_ (what to cache, when to lock).
+These are **interfaces + contracts only**. Adapters live in `infrastructure`. `Logger` is reached via `initLogger` / `getLogger` on `platform` (process locator), not Nest DI — see [`infrastructure.md`](./infrastructure.md). The domain never imports `platform` for caching/locking (those aren't domain concerns); the **application** layer uses platform ports, and each context's application code decides _policy_ (what to cache, when to lock). Application **may** call `getLogger().context(UseCase.name)`.
 
 ## Infrastructure layer (`packages/infrastructure/*`)
 
 Adapters that implement ports, split by concern:
 
 - **`postgres`** — TypeORM entities, mappers, repository implementations (implement domain repository ports), a custom `DataSource` module (`DataSourceManager` — not `@nestjs/typeorm`), migrations, the tenant-aware base repository, and the `UnitOfWork` / `TenantContext` adapters (Node `AsyncLocalStorage`, not `nestjs-cls`). See [`persistence.md`](./persistence.md).
+- **`logger`** — Pino adapter for the `Logger` port. **No Nest.** Process bootstrap calls `initLogger(new PinoLogger(options))`.
 - **`redis`** — implementations of `CachePort`/`LockPort`/`PubSubPort`. See [`infrastructure.md`](./infrastructure.md).
 - **`messaging`** — BullMQ queues/processors and the outbox relay.
 
-Infrastructure may use NestJS (`@Injectable`, module providers) freely — it is the outer ring.
+Infrastructure may use NestJS (`@Injectable`, module providers) where it is a Nest adapter (`postgres`). The **logger** adapter does not.
 
-## Composition layer (`packages/composition/*`)
+## Nest HTTP kit (`packages/nest-http`)
+
+**Delivery helpers for HTTP apps**, not context DI. Composition wires ports→adapters; `nest-http` owns how a Nest process speaks HTTP.
+
+`@b2b-saas-starter-kit/nest-http` provides:
+
+- `ApiBuilder` — helmet, CORS (fail-closed in production if origins unset), URI versioning (default `'1'` → `/v1/...`), optional global prefix, shutdown hooks, Swagger, listen
+- `createHttpProviders()` — global `APP_PIPE` / `APP_FILTER` / `APP_INTERCEPTOR` (nestjs-zod validation + serializer)
+- Exception filter — Zod 400s, `HttpException`, duck-typed `{code, message}` mapped with the **contracts** error envelope and `HttpStatus` (no domain error class imports)
+- OpenAPI setup (`cleanupOpenApiDoc`); basic-auth on `/docs` optional
+- `@Public()` metadata decorator (JWT / `RequirePermission` stay in `apps/api`)
+- Process handlers — `unhandledRejection` / `uncaughtException` → `getLogger().fatal`
+
+Depends on Nest, `contracts`, `platform` (`getLogger`). Does **not** depend on domain, application, or postgres.
+
+`apps/api` `main.ts`: load config → `initLogger` → `NestFactory.create` → `new ApiBuilder(app, apiConfig).useSecurity().enableVersioning()…`.
+
+## Composition layer (`packages/composition`)
 
 **The answer to a problem layer-first creates:** a context's NestJS module must assemble that context's `domain` + `application` + `infrastructure`, but there is no single "context project" to hold it. So a dedicated **composition layer** owns the wiring.
 
@@ -118,21 +137,22 @@ flowchart TB
 
 NestJS is the **delivery + composition framework**, nothing more:
 
-- **Controllers** live only in `apps/api` (and BullMQ processors in `apps/worker`). They validate input via `nestjs-zod` (see [`api-contracts.md`](./api-contracts.md)), map to commands, invoke use cases, and map results back to responses.
-- **Dependency injection / module composition** lives in `composition/*` (reusable) and is assembled by the apps.
-- **No NestJS in `domain`.** The only NestJS in `application` is the `@Injectable` decorator.
+- **Controllers** live only in `apps/api` (and BullMQ processors in `apps/worker`). They validate input via the `nest-http` pipe (nestjs-zod against `contracts`), map to commands, invoke use cases, and map results back to responses.
+- **Reusable HTTP bootstrap** (versioning, CORS, helmet, Swagger, global pipe/filter/interceptor) lives in `packages/nest-http`.
+- **Dependency injection / module composition** lives in `composition` (reusable) and is assembled by the apps.
+- **No NestJS in `domain`.** The only NestJS in `application` is the `@Injectable` decorator. **Logger is not a Nest provider.**
 
 This guarantees the domain and (almost all of) the application layer are unit-testable with plain Vitest, no Nest test harness required.
 
 ## Request lifecycle (HTTP example)
 
 ```
-HTTP request
-  → apps/api controller
-      → nestjs-zod validates body/query/params against a contracts schema
-      → coarse permission guard (authorization)
-      → map DTO → application command
+HTTP request  (/v1/…)
+  → nest-http global pipe (nestjs-zod vs contracts schema)
+  → apps/api coarse permission guard
+  → controller maps DTO → application command
   → application use case (@Injectable)
+      → getLogger().context(…) as needed (not injected)
       → open UnitOfWork (transaction)
       → fine-grained authorization / policy check
       → load aggregates via repository ports
@@ -141,6 +161,7 @@ HTTP request
       → commit UnitOfWork
       → dispatch in-process events
   → controller maps result → response DTO (contracts schema)
+  → nest-http serializer interceptor + exception filter (contracts error envelope)
 HTTP response
 ```
 

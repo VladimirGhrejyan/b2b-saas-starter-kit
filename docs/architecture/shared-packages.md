@@ -8,12 +8,12 @@ Related: [`workspace-topology.md`](./workspace-topology.md), [`api-contracts.md`
 
 Only these cross the frontend/backend boundary. Each is pure and framework-free.
 
-| Package                                                | Purpose                                                                                  | Depends on                    |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------- | ----------------------------- |
-| `shared-kernel-types` (`packages/shared/kernel-types`) | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types | — (leaf)                      |
-| `contracts` (`packages/shared/contracts`)              | Zod API request/response schemas + inferred types                                        | `shared-kernel-types` (+ Zod) |
-| `utils` (`packages/shared/utils`)                      | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …         | — (leaf; no Zod)              |
-| `config` (`packages/shared/config`)                    | `ConfigLoader` — pluggable sources (YAML today) + Zod validation                         | `utils` (+ Zod, js-yaml)      |
+| Package                                                | Purpose                                                                                    | Depends on                    |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ----------------------------- |
+| `shared-kernel-types` (`packages/shared/kernel-types`) | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types   | — (leaf)                      |
+| `contracts` (`packages/shared/contracts`)              | Zod API request/response schemas, inferred types, `HttpStatus`, error/pagination envelopes | `shared-kernel-types` (+ Zod) |
+| `utils` (`packages/shared/utils`)                      | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …           | — (leaf; no Zod)              |
+| `config` (`packages/shared/config`)                    | `ConfigLoader` — pluggable sources (YAML today) + Zod validation                           | `utils` (+ Zod, js-yaml)      |
 
 There is intentionally **no `constants` package** — cross-cutting enums live in `shared-kernel-types`; anything else that looks like a "constant" belongs to a context, not to shared.
 
@@ -35,7 +35,7 @@ It has **zero dependencies** (aside from Zod for the schemas) and **no framework
 ## What MAY go into shared packages
 
 - Pure, deterministic functions with no I/O (`utils`).
-- API contract schemas + inferred types (`contracts`).
+- API contract schemas + inferred types, including `HttpStatus`, the shared error envelope, and pagination (`contracts`).
 - Branded IDs, cross-cutting enums, primitives (`shared-kernel-types`).
 - Config loading via `ConfigLoader` (`config`); apps own schemas and value files.
 
@@ -50,13 +50,14 @@ It has **zero dependencies** (aside from Zod for the schemas) and **no framework
 
 ## Backend-only vs. frontend-only vs. domain-only
 
-| Kind                     | Where              | Never shared because                |
-| ------------------------ | ------------------ | ----------------------------------- |
-| Backend infra            | `infrastructure/*` | technology-specific, server-only    |
-| Backend domain           | `domain/*`         | business rules + backend primitives |
-| Backend capability ports | `platform`         | server capabilities                 |
-| Frontend UI              | `frontend/ui`      | React/DOM                           |
-| Frontend state/data      | `frontend/core`    | RTK/browser concerns                |
+| Kind                     | Where                | Never shared because                |
+| ------------------------ | -------------------- | ----------------------------------- |
+| Backend infra            | `infrastructure/*`   | technology-specific, server-only    |
+| Nest HTTP kit            | `packages/nest-http` | NestJS delivery helpers             |
+| Backend domain           | `domain/*`           | business rules + backend primitives |
+| Backend capability ports | `platform`           | server capabilities                 |
+| Frontend UI              | `frontend/ui`        | React/DOM                           |
+| Frontend state/data      | `frontend/core`      | RTK/browser concerns                |
 
 Sharing anything from these across the FE/BE line is a boundary violation (see [`boundaries.md`](./boundaries.md)).
 

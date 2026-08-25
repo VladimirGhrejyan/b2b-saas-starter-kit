@@ -17,7 +17,7 @@ Source of truth: `docs/architecture/shared-packages.md`.
 | Package | Contents |
 |---------|----------|
 | `shared-kernel-types` (`packages/shared/kernel-types`) | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums |
-| `contracts` (`packages/shared/contracts`) | Zod API schemas + inferred types |
+| `contracts` (`packages/shared/contracts`) | Zod API schemas, `HttpStatus`, error/pagination envelopes |
 | `utils` (`packages/shared/utils`) | Pure helpers (`ObjectUtils`, `ArrayUtils`, `DateUtils`, …) |
 | `config` (`packages/shared/config`) | `ConfigLoader` (YAML + Zod; pluggable `source`) |
 
