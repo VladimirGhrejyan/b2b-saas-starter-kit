@@ -10,5 +10,7 @@ describe('createDataSource', () => {
 
     expect(dataSource.options.type).toBe('postgres')
     expect(dataSource.isInitialized).toBe(false)
+    expect(dataSource.options.entities).not.toHaveLength(0)
+    expect(dataSource.options.migrations).toHaveLength(0)
   })
 })

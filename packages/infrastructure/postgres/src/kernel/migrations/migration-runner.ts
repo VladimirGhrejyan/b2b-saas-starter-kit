@@ -5,7 +5,7 @@ import type {PostgresConfig} from '../config/postgres-config'
 import {createDataSource} from '../data-source/create-data-source'
 
 /**
- * Runs or reverts the TypeORM migration set. Phase 7 ships an empty list (no-op).
+ * Runs or reverts the TypeORM migration set registered on {@link createDataSource}.
  */
 export class TypeormMigrationRunner {
   static async run(config?: PostgresConfig): Promise<void> {

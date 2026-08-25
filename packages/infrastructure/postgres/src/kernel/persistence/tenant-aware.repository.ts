@@ -39,8 +39,12 @@ export abstract class TenantAwareRepository {
     return qb.andWhere(`${alias}.tenantId = :tenantId`, {tenantId: this.tenantContext.getTenantId()})
   }
 
+  /**
+   * Stamps `tenantId` for writes. Ambient scope must match the aggregate; bootstrap
+   * (no ALS store or `withoutTenantScope`) persists `row.tenantId` as-is.
+   */
   protected stampTenantId<T>(row: T & {tenantId?: string}): T & {tenantId: string} {
-    if (this.#isTenantScopeSkipped()) {
+    if (this.#isBootstrapWrite()) {
       if (row.tenantId === undefined) {
         throw new TenantContextMismatchError()
       }
@@ -48,7 +52,13 @@ export abstract class TenantAwareRepository {
       return {...row, tenantId: row.tenantId}
     }
 
-    return {...row, tenantId: this.tenantContext.getTenantId()}
+    const ambientTenantId = this.tenantContext.getTenantId()
+
+    if (row.tenantId !== undefined && row.tenantId !== ambientTenantId) {
+      throw new TenantContextMismatchError()
+    }
+
+    return {...row, tenantId: ambientTenantId}
   }
 
   protected assertTenant(tenantId: TenantId): void {
@@ -63,5 +73,11 @@ export abstract class TenantAwareRepository {
 
   #isTenantScopeSkipped(): boolean {
     return tenantAls.getStore()?.skipTenantScope === true
+  }
+
+  #isBootstrapWrite(): boolean {
+    const store = tenantAls.getStore()
+
+    return store === undefined || store.skipTenantScope || store.scope === undefined
   }
 }

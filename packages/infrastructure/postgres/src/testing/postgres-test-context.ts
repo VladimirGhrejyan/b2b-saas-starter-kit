@@ -34,6 +34,8 @@ export class PostgresTestContext {
 
     try {
       await dataSource.initialize()
+
+      await dataSource.runMigrations()
     } catch (error) {
       PostgresTestContext.#throwConnectionError(error)
     }
@@ -45,6 +47,12 @@ export class PostgresTestContext {
     if (this.dataSource.isInitialized) {
       await this.dataSource.destroy()
     }
+  }
+
+  async truncateFoundationTables(): Promise<void> {
+    await this.dataSource.query(
+      'TRUNCATE membership_roles, memberships, role_permissions, roles, tenants, users RESTART IDENTITY CASCADE',
+    )
   }
 
   static #loadTestConfig(): PostgresConfig {

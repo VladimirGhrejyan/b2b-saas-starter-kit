@@ -28,6 +28,8 @@ Source of truth: `docs/architecture/persistence.md`.
 | `TenantContext` impl (`AlsTenantContext`) | `packages/infrastructure/postgres/src/kernel/tenant-context` |
 | In-memory fakes | `packages/application/src/testing` |
 
+Export repository classes from `@b2b-saas-starter-kit/postgres`. Do **not** export TypeORM entities or mappers. `postgres:migration:generate` is a draft — review SQL and register the class in `postgres-migrations.ts` before `migration:run`.
+
 ## Separate Models + Mappers
 
 ```typescript

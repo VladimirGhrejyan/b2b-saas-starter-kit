@@ -8,7 +8,7 @@ Postgres persistence adapters: a custom TypeORM `DataSource` lifecycle (no `@nes
 
 `packages/infrastructure/` is a grouping directory (like `packages/shared/`). Each concern is its own Nx project: `postgres` now, `redis` / `messaging` later.
 
-Core adapters live under `src/kernel/` (config, DataSource, persistence plumbing, migrations). Bounded-context entities and repos live only under `src/contexts/<context>/` (placeholders until Phase 8). TypeORM relations stay inside one context folder; cross-context links are uuid columns.
+Core adapters live under `src/kernel/` (config, DataSource, persistence plumbing, migrations). Bounded-context entities, mappers, and repos live only under `src/contexts/<context>/`. TypeORM relations stay inside one context folder; cross-context links are uuid columns. The public API exports repository classes only — never entities or mappers.
 
 Architecture: [`docs/architecture/persistence.md`](../../../docs/architecture/persistence.md), [`docs/architecture/multi-tenancy.md`](../../../docs/architecture/multi-tenancy.md), [`docs/infrastructure/postgresql.md`](../../../docs/infrastructure/postgresql.md).
 
@@ -47,11 +47,15 @@ pnpm infra:up
 pnpm nx run postgres:lint
 pnpm nx run postgres:test
 pnpm nx run postgres:typecheck
+pnpm nx run postgres:migration:create --name=tenancy-add-slug
+pnpm nx run postgres:migration:generate --name=tenancy-add-slug
 pnpm nx run postgres:migration:run
 pnpm nx run postgres:migration:revert
 ```
 
-Point `DATABASE_URL` at `app_test` when running the migration targets locally. The runner is a no-op until Phase 8 adds migration files (`migrationsRun` is never `true` at `DataSource` init).
+`create` writes an empty class. `generate` diffs current entities against the live schema in `DATABASE_URL` and writes `queryRunner.query(…)` SQL. Both are drafts: review the file, then **append** the class to `src/kernel/data-source/postgres-migrations.ts` (order is the timeline). Names must be context-prefixed kebab-case (`identity-…`, `tenancy-…`, `authorization-…`). The CLI loads TypeScript through SWC (`legacyDecorator` + `decoratorMetadata`) so TypeORM entities emit `design:type`; tsx/esbuild cannot.
+
+`migrationsRun` is never `true` at `DataSource` init. Apply with `migration:run` (local, CI, or a staging one-shot). Do not run `create` / `generate` on staging.
 
 ## Phase 7 Definition of Done
 
@@ -62,3 +66,14 @@ Point `DATABASE_URL` at `app_test` when running the migration targets locally. T
 - [x] `SystemClock` + UUID v7 `IdGenerator`
 - [x] Empty migration runner + Nx `migration:run` / `migration:revert`
 - [x] Unit tests + compose Postgres integration tests
+
+## Phase 8 Definition of Done
+
+- [x] Identity `users` adapter (`TypeOrmUserRepository`) — global, unique email, no `tenant_id`
+- [x] Tenancy `tenants` / `memberships` / `membership_roles` adapters — in-context FKs only (`role_id` is a uuid column)
+- [x] Authorization `roles` / `role_permissions` adapters — `save` / `saveMany`, unique `(tenant_id, name)`
+- [x] Mappers reconstitute domain aggregates (no extra domain events)
+- [x] Migration CLI (`create` / `generate` / `run` / `revert`); register drafts in `postgres-migrations.ts` after review
+- [x] `stampTenantId` asserts ambient vs aggregate tenant; first-tenant bootstrap persists `row.tenantId`
+- [x] Integration tests: round-trip, tenant isolation, mismatch, `AuthorizationService` through TypeORM repos
+- [x] Public exports are repository classes only (no entities/mappers)

@@ -59,7 +59,7 @@ see [`redis.md`](./redis.md)).
 
 1. Pull new **pinned** images / rebuild affected app images.
 2. `docker compose … up -d` (recreates only changed services).
-3. Migrations run on app boot or as a one-shot task.
+3. Run `pnpm nx run postgres:migration:run` as a **one-shot** against the internal `DATABASE_URL` (host `postgres`), then `up -d` the app services. Do not `create` / `generate` on the server, and do not set `migrationsRun: true` on API boot.
 
 Because tags are pinned, redeploys are reproducible; roll back by pointing to the previous tag.
 

@@ -87,7 +87,7 @@ export class TypeOrmTenantRepository extends TenantAwareRepository implements Te
 
 - **Schema ownership:** each context owns the tables for its aggregates. Physically they live in one shared `public` schema, but a table conceptually "belongs to" exactly one context.
 - **No cross-context foreign keys.** A context references another only by **ID value** (e.g. `Membership.userId`). FKs exist only _within_ a context. This preserves context autonomy and keeps future extraction possible. Integrity across contexts is maintained by application logic + events. TypeORM relations (`@ManyToOne` / `@OneToMany`) are allowed only between entities in the same `src/contexts/<context>/` folder; cross-context links are uuid columns, never a relation to another context's entity.
-- **Entities are persistence models**, never exported outside `infrastructure/postgres`.
+- **Entities are persistence models**, never exported outside `infrastructure/postgres`. The package public API exports repository classes (`TypeOrmUserRepository`, …) only.
 
 ## Migrations — single global timeline
 
@@ -95,7 +95,7 @@ export class TypeOrmTenantRepository extends TenantAwareRepository implements Te
 
 - Simplest source of truth and ordering for a shared kit.
 - Organize files by context (filename prefix or subfolder) for readability; this is the easy upgrade path to per-context migration ownership if ever needed.
-- Migrations are code-reviewed like any change; never auto-run destructive changes in production without review.
+- `postgres:migration:generate` is a **draft** (entity metadata vs the live database). Review the SQL, then register the class in `postgres-migrations.ts`. Never auto-run destructive changes without review.
 
 ## Transactions — Unit-of-Work port
 

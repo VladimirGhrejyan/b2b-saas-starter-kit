@@ -8,7 +8,6 @@ import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {SystemClock} from '../kernel/clock/clock'
 import {DataSourceManager} from '../kernel/data-source/data-source.manager'
 import {PostgresInfrastructureModule} from '../kernel/data-source/postgres-infrastructure.module'
-import {TypeormMigrationRunner} from '../kernel/migrations/migration-runner'
 import {TenantAwareRepository} from '../kernel/persistence/tenant-aware.repository'
 import {TypeormUnitOfWork} from '../kernel/persistence/unit-of-work'
 import {AlsTenantContext} from '../kernel/tenant-context/tenant-context'
@@ -26,6 +25,10 @@ const actorB = UserId.parse('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
 class ProbeRepository extends TenantAwareRepository {
   async insert(name: string): Promise<void> {
     await this.manager.insert(InfraProbeRowEntity, this.stampTenantId({id: uuidv7(), name}))
+  }
+
+  async insertWithTenant(name: string, tenantId: string): Promise<void> {
+    await this.manager.insert(InfraProbeRowEntity, this.stampTenantId({id: uuidv7(), name, tenantId}))
   }
 
   async findNames(): Promise<string[]> {
@@ -182,8 +185,17 @@ describe('postgres (compose)', () => {
     }
   })
 
-  it('runs and reverts an empty migration list', async () => {
-    await TypeormMigrationRunner.run(ctx.config)
-    await TypeormMigrationRunner.revert(ctx.config)
+  it('throws TenantContextMismatchError when a write stamps a different tenant than ambient', async () => {
+    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+      await expect(repo.insertWithTenant('x', tenantB)).rejects.toBeInstanceOf(TenantContextMismatchError)
+    })
+  })
+
+  it('persists row.tenantId when no ambient tenant is set', async () => {
+    await repo.insertWithTenant('boot', tenantA)
+
+    const names = await repo.findAllNames()
+
+    expect(names).toEqual(['boot'])
   })
 })

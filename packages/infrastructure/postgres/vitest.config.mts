@@ -15,6 +15,7 @@ export default defineConfig(() => ({
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['./src/testing/reflect-setup.ts'],
     reporters: ['default'],
+    fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,
     coverage: {

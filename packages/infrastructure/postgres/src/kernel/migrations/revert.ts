@@ -1,3 +1,5 @@
+import 'reflect-metadata'
+
 import {TypeormMigrationRunner} from './migration-runner'
 
 try {

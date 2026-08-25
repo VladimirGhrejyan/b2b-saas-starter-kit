@@ -24,13 +24,17 @@
 - `/docker-entrypoint-initdb.d` runs **only on first init of an empty volume**; reserve it for
   one-time concerns like creating extensions or roles, never for app schema.
 
-Phase 7 ships an **empty** migration list (no-op). Phase 8 adds context tables. Until then:
+Schema changes are authored locally (`create` / `generate`), reviewed, registered in `postgres-migrations.ts`, then applied with the runner (`migrationsRun` is never `true` at `DataSource` init):
 
 ```bash
 # Uses DATABASE_URL (default compose: postgres://app:…@localhost:5432/app)
+pnpm nx run postgres:migration:create --name=tenancy-add-slug   # empty scaffold
+pnpm nx run postgres:migration:generate --name=tenancy-add-slug # entity vs live DB (review the SQL)
 pnpm nx run postgres:migration:run
 pnpm nx run postgres:migration:revert
 ```
+
+`create` / `generate` write a file under `packages/infrastructure/postgres/src/kernel/migrations/`. Register the class in `postgres-migrations.ts` after review. On staging, run **only** `migration:run` as a one-shot job against the internal `DATABASE_URL` (host `postgres`); do not generate on the server.
 
 Integration tests derive `app_test` from `DATABASE_URL` (swap the database name to `*_test`) and create that database if it is missing. They also read `infra/env/.env` and rewrite localhost URLs to `POSTGRES_PORT`. If Postgres is down, they fail with `run pnpm infra:up`. If a native Postgres occupies the port (no `app` role), they fail with a hint to change `POSTGRES_PORT`.
 

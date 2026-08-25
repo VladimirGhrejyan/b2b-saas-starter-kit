@@ -1,3 +1,7 @@
+export {TypeOrmRoleRepository} from './contexts/authorization/typeorm-role.repository'
+export {TypeOrmUserRepository} from './contexts/identity/typeorm-user.repository'
+export {TypeOrmMembershipRepository} from './contexts/tenancy/typeorm-membership.repository'
+export {TypeOrmTenantRepository} from './contexts/tenancy/typeorm-tenant.repository'
 export {SystemClock} from './kernel/clock/clock'
 export {loadPostgresConfigFromEnv} from './kernel/config/load-postgres-config'
 export type {PostgresConfig} from './kernel/config/postgres-config'
