@@ -1,5 +1,5 @@
 /**
- * Structured logger. Not a Nest provider — use {@link initLogger} / {@link getLogger}.
+ * Structured logger. Not a Nest provider — use {@link LoggerLocator.init} / {@link LoggerLocator.get}.
  *
  * Overloads match pino: `info('message')` or `info({data}, 'message')`.
  */

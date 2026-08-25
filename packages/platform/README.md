@@ -12,6 +12,10 @@ Give application, infrastructure, and the HTTP/worker edge a shared, technology-
 
 Architecture: [`docs/architecture/backend.md`](../../docs/architecture/backend.md), [`docs/architecture/persistence.md`](../../docs/architecture/persistence.md), [`docs/architecture/multi-tenancy.md`](../../docs/architecture/multi-tenancy.md).
 
+## Internal layout
+
+One folder per capability under `src/`: `clock`, `id-generator`, `unit-of-work`, `tenant-context`, `logger`. Import only from `@b2b-saas-starter-kit/platform`. Do not deep-import those folders.
+
 ## Allowed imports
 
 - `@b2b-saas-starter-kit/shared-kernel-types`
@@ -27,7 +31,7 @@ Never import Nest, TypeORM, Redis, `domain`, `application`, `contracts`, `utils`
 | `TenantContext` | Edge sets via `run`; infra reads via getters     | `infrastructure/postgres` (`AlsTenantContext`)  |
 | `Clock`         | Application (pass `now()` into domain factories) | `infrastructure/postgres` (`SystemClock`)       |
 | `IdGenerator`   | Application (`UserId.parse(ids.generate())`)     | `infrastructure/postgres` (`UuidV7IdGenerator`) |
-| `Logger`        | Application / edge via `getLogger()`             | `infrastructure/logger` (`PinoLogger`)          |
+| `Logger`        | Application / edge via `LoggerLocator.get()`     | `infrastructure/logger` (`PinoLogger`)          |
 
 Domain never imports this package.
 
@@ -37,7 +41,7 @@ Domain never imports this package.
 - **`TenantContext`** is fail-closed: `getTenantId()` / `getActorId()` throw `TenantContextNotEstablishedError` when no `run` scope is active. First-tenant and admin paths call `withoutTenantScope(work)` (writes still require `tenantId` on the row).
 - **`Clock.now()`** is a UTC instant.
 - **`IdGenerator.generate()`** returns a raw string. Branding happens in application.
-- **`Logger`** is a process locator, not Nest DI: `initLogger(impl)` at bootstrap, `getLogger()` at call sites, `resetLogger()` in tests. `getLogger()` throws `LoggerNotInitializedError` when unset (no silent no-op). Domain does not log.
+- **`Logger`** is a process locator, not Nest DI: `LoggerLocator.init(impl)` at bootstrap, `LoggerLocator.get()` at call sites, `LoggerLocator.reset()` in tests. `LoggerLocator.get()` throws `LoggerNotInitializedError` when unset (no silent no-op). Domain does not log.
 
 ```typescript
 import type {Clock, IdGenerator, TenantContext, UnitOfWork} from '@b2b-saas-starter-kit/platform'
@@ -54,18 +58,18 @@ await tenantContext.run({tenantId, actorId}, async () => {
 
 ## API
 
-| Export                                     | Role                                                                  |
-| ------------------------------------------ | --------------------------------------------------------------------- |
-| `UnitOfWork`                               | `run(work)` transaction boundary                                      |
-| `TxContext`                                | Opaque `{id}` — no persistence types                                  |
-| `TenantContext`                            | `run(scope, work)` + `withoutTenantScope(work)` + fail-closed getters |
-| `TenantScope`                              | `{tenantId, actorId}`                                                 |
-| `TenantContextNotEstablishedError`         | Thrown when getters are called outside a scope                        |
-| `Clock`                                    | `now(): Date` (UTC)                                                   |
-| `IdGenerator`                              | `generate(): string`                                                  |
-| `Logger` / `LogLevel`                      | `context(name)` + pino-style level methods                            |
-| `initLogger` / `getLogger` / `resetLogger` | Process locator (overwrite on init; throw if unset)                   |
-| `LoggerNotInitializedError`                | Thrown by `getLogger()` before `initLogger`                           |
+| Export                             | Role                                                                  |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| `UnitOfWork`                       | `run(work)` transaction boundary                                      |
+| `TxContext`                        | Opaque `{id}` — no persistence types                                  |
+| `TenantContext`                    | `run(scope, work)` + `withoutTenantScope(work)` + fail-closed getters |
+| `TenantScope`                      | `{tenantId, actorId}`                                                 |
+| `TenantContextNotEstablishedError` | Thrown when getters are called outside a scope                        |
+| `Clock`                            | `now(): Date` (UTC)                                                   |
+| `IdGenerator`                      | `generate(): string`                                                  |
+| `Logger` / `LogLevel`              | `context(name)` + pino-style level methods                            |
+| `LoggerLocator`                    | Process locator (`init` / `get` / `reset`; throw if unset)            |
+| `LoggerNotInitializedError`        | Thrown by `LoggerLocator.get()` before `init`                         |
 
 ## Must not go here yet
 
@@ -93,6 +97,6 @@ pnpm nx run platform:lint
 ## Phase 9 Definition of Done
 
 - [x] `Logger` port + `LogLevel`
-- [x] `initLogger` / `getLogger` / `resetLogger` process locator (no Nest, no no-op default)
+- [x] `LoggerLocator` process locator (`init` / `get` / `reset`; no Nest, no no-op default)
 - [x] `LoggerNotInitializedError` with stable `code`
 - [x] Locator unit tests (unset / init / overwrite / reset)

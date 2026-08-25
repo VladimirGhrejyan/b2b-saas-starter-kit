@@ -159,7 +159,7 @@ flowchart TB
 **Key invariants**
 
 - `domain` depends on **nothing** except `shared-kernel-types` (and Zod). It never imports `contracts`, `application`, `infrastructure`, or any framework.
-- `application` never imports `contracts` or `infrastructure`. It receives **command inputs**, not wire DTOs (mapping happens in `apps/api`). Logging uses `getLogger()` from `platform` (process locator), not a Pino import. See [`api-contracts.md`](./api-contracts.md).
+- `application` never imports `contracts` or `infrastructure`. It receives **command inputs**, not wire DTOs (mapping happens in `apps/api`). Logging uses `LoggerLocator.get()` from `platform` (process locator), not a Pino import. See [`api-contracts.md`](./api-contracts.md).
 - Frontend and backend never import each other. They meet only at `contracts`, `shared-kernel-types`, `utils`, `config`.
 - `apps/api` does **not** import `domain`, `application`, or `postgres`. Delivery helpers come from `nest-http`; use cases are reached through `composition`.
 
@@ -174,7 +174,7 @@ Guideline: promote a folder to a project only when it must be (a) independently 
 
 Apps are **thin**: transport + composition, **no business logic**.
 
-- `api` — NestJS HTTP. Bootstraps Pino via `initLogger`, then `ApiBuilder` from `@b2b-saas-starter-kit/nest-http` (URI versioning, CORS, helmet, Swagger, global pipe/filter/interceptor). Imports `composition` context modules, exposes controllers, maps `contracts` DTOs → application commands, applies coarse auth guards. Routes are versioned (`/v1/...`).
+- `api` — NestJS HTTP. Bootstraps Pino via `LoggerLocator.init`, then `ApiBuilder` from `@b2b-saas-starter-kit/nest-http` (URI versioning, CORS, helmet, Swagger, global pipe/filter/interceptor). Imports `composition` context modules, exposes controllers, maps `contracts` DTOs → application commands, applies coarse auth guards. Routes are versioned (`/v1/...`).
 - `worker` — BullMQ consumers + the outbox relay. Bootstraps the same `Logger` locator. Imports the same `composition` modules; re-establishes tenant context from job payloads. Does **not** import `nest-http`.
 - `web` — tenant-facing React/Vite app.
 - `admin` — internal back-office React/Vite app.

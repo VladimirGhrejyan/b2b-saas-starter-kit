@@ -1,5 +1,5 @@
 /**
- * Thrown by {@link getLogger} when {@link initLogger} has not run.
+ * Thrown by {@link LoggerLocator.get} when {@link LoggerLocator.init} has not run.
  */
 export class LoggerNotInitializedError extends Error {
   readonly code = 'LOGGER_NOT_INITIALIZED'

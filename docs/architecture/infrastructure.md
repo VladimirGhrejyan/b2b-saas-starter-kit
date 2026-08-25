@@ -68,11 +68,12 @@ This prevents the classic "saved to DB but the job never fired" (or vice-versa) 
 - **Process locator** on `platform` so application never imports Pino:
 
 ```typescript
-initLogger(implementation: Logger): void
-getLogger(): Logger // throws if not initialized (no silent no-op default)
+LoggerLocator.init(implementation: Logger): void
+LoggerLocator.get(): Logger // throws if not initialized (no silent no-op default)
+LoggerLocator.reset(): void
 ```
 
-Bootstrap (`apps/api`, `apps/worker`): `initLogger(new PinoLogger({level, isPretty}))`. Tests: `initLogger(memoryLogger)` in `beforeEach`.
+Bootstrap (`apps/api`, `apps/worker`): `LoggerLocator.init(new PinoLogger({level, isPretty}))`. Tests: `LoggerLocator.init(memoryLogger)` in `beforeEach`.
 
 - **Adapter:** `packages/infrastructure/logger` (`@b2b-saas-starter-kit/logger`). One class wrapping `pino` + `pino.child({context})`. Typed levels. Production default **`info`**. `pino-pretty` only when `isPretty`. `Error` as first argument → `{err}`. Redact `req.headers.authorization` (and similar). No driver registry until a second adapter exists.
 - Structured logs **should** eventually include `tenantId`, `actorId`, and request/correlation IDs from ambient `TenantContext` ALS. That mixin is a later increment; the locator is the commitment.

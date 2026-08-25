@@ -17,7 +17,7 @@ These were confirmed for the initial foundation and constrain the whole plan:
 | **RBAC breadth**    | **Lean-but-generic.** `identity` (User), `tenancy` (Tenant, Membership), `authorization` (Role, Permission) with a **fixed system-permission catalog** + seeded **system roles** (Owner/Admin/Member). One permission enforced end-to-end. Custom tenant-defined roles CRUD + invitations **deferred** (the seams are built so they slot in without rework). |
 | **Authentication**  | **Stubbed principal.** No password/JWT/refresh/sessions yet. The API edge injects an authenticated principal (dev middleware) and establishes `TenantContext`. Real credentials/tokens are a **later plan**, localized to the `identity` context + edge, so nothing else changes when they land.                                                             |
 | **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → logger → nest-http → composition → apps/api`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Routes are URI-versioned (`/v1/...`). Frontend excluded.                                                                                                   |
-| **Logging**         | **Pino**, not Nest-injectable. `Logger` port + `initLogger`/`getLogger` on `platform`; adapter in `packages/infrastructure/logger`.                                                                                                                                                                                                                          |
+| **Logging**         | **Pino**, not Nest-injectable. `Logger` port + `LoggerLocator` on `platform`; adapter in `packages/infrastructure/logger`.                                                                                                                                                                                                                                   |
 | **Redis**           | **Deferred.** Effective permissions are resolved directly from Postgres (via context repositories). `platform` Cache/Lock/PubSub ports + `packages/infrastructure/redis` + permission caching come later. All keys/queries are designed **cache- and tenant-prefix-ready** now.                                                                              |
 
 Out of scope for this plan (see §7 Deferred): real authentication, Redis, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime, request-id ALS log mixin.
@@ -110,7 +110,7 @@ Context isolation is a **folder-level lint**: within `domain/src/<A>` you may no
 | `TenantContext`        | `platform`                              | `infrastructure/postgres` (Node AsyncLocalStorage)                                      | Ambient active-tenant + actor accessor.                                                 |
 | `Clock`                | `platform`                              | `infrastructure/postgres` (system clock)                                                | Deterministic timestamps (`occurredAt`, `createdAt`).                                   |
 | `IdGenerator`          | `platform`                              | `infrastructure/postgres` (UUID v7)                                                     | Deterministic-in-tests ID creation; ids passed into domain factories.                   |
-| `Logger`               | `platform` (locator)                    | `infrastructure/logger` (Pino)                                                          | Structured logs via `getLogger()`; **not** Nest-injectable.                             |
+| `Logger`               | `platform` (locator)                    | `infrastructure/logger` (Pino)                                                          | Structured logs via `LoggerLocator.get()`; **not** Nest-injectable.                     |
 | `AuthorizationPort`    | `application/authorization` (published) | `application/authorization` service, backed by `RoleRepository` + `MembershipRolesPort` | `require(actor, permission, {tenantId})` / `getEffectivePermissions(userId, tenantId)`. |
 | `MembershipRolesPort`  | `application/tenancy` (published)       | `application/tenancy` service (reads `MembershipRepository`)                            | Sanctioned cross-context sync read: "which roleIds does (user,tenant) have?"            |
 
@@ -138,18 +138,18 @@ Per [`multi-tenancy.md`](./architecture/multi-tenancy.md), **pool model** (share
 
 - **Config:** apps own Zod schemas + values; `apps/api` loads DB + HTTP (CORS, version, prefix, OpenAPI) via `ConfigLoader` (`source: 'env'`) — no eager import-time load.
 - **IDs/time:** `IdGenerator` (UUID v7) + `Clock` are `platform` ports injected in the **application** layer; ids/timestamps are passed **into** domain factory methods, keeping aggregates pure and tests deterministic. (The domain rule permits `randomUUID`, but injecting keeps use-case tests deterministic and is preferred.)
-- **Logger:** `initLogger` / `getLogger` on `platform`; Pino adapter at process bootstrap. Application may `getLogger().context(UseCase.name)`. Never `@Inject()` Logger. Tests install a memory logger in `beforeEach`.
+- **Logger:** `LoggerLocator` on `platform`; Pino adapter at process bootstrap. Application may `LoggerLocator.get().context(UseCase.name)`. Never `@Inject()` Logger. Tests install a memory logger in `beforeEach`.
 - **Errors:** domain throws typed `DomainError` subclasses (per `domain-layer.mdc`); `nest-http` maps duck-typed `{code, message}` to HTTP using the shared error envelope and `HttpStatus` from `contracts` (include 403/409). Do not import domain error classes into the kit.
 - **Stubbed-auth seam:** a `DevPrincipal` guard in `apps/api` reads `x-user-id` / `x-tenant-id`, **validates membership** (`withoutTenantScope`) before `TenantContext.run`. `@Public()` comes from `nest-http`. When real auth lands, only this guard + `identity` credential/session code change; `ApiBuilder`, controllers, and use cases stay identical.
 
 ### 2.9 Testing strategy
 
-| Layer         | Test type                 | Tooling / notes                                                                                                                                          |
-| ------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain`      | Pure unit                 | Vitest, no Nest/DB. Target ~90% on domain.                                                                                                               |
-| `application` | Unit with in-memory fakes | In-memory repositories + in-memory `UnitOfWork` + fake `TenantContext`/`Clock`/`IdGenerator`. After Phase 9: `initLogger(memoryLogger)` in `beforeEach`. |
-| `postgres`    | Integration               | Against a **containerized Postgres** (reuse `infra/compose`), migrations applied to a dedicated test DB. Assert tenant isolation.                        |
-| `apps/api`    | HTTP e2e                  | `supertest` against a booted Nest app + real Postgres. Full slice: create user → create tenant → `/v1/me` → `/v1/tenants/:id/members` (allow/deny).      |
+| Layer         | Test type                 | Tooling / notes                                                                                                                                                  |
+| ------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `domain`      | Pure unit                 | Vitest, no Nest/DB. Target ~90% on domain.                                                                                                                       |
+| `application` | Unit with in-memory fakes | In-memory repositories + in-memory `UnitOfWork` + fake `TenantContext`/`Clock`/`IdGenerator`. After Phase 9: `LoggerLocator.init(memoryLogger)` in `beforeEach`. |
+| `postgres`    | Integration               | Against a **containerized Postgres** (reuse `infra/compose`), migrations applied to a dedicated test DB. Assert tenant isolation.                                |
+| `apps/api`    | HTTP e2e                  | `supertest` against a booted Nest app + real Postgres. Full slice: create user → create tenant → `/v1/me` → `/v1/tenants/:id/members` (allow/deny).              |
 
 Recommended: reuse the existing `infra/compose` Postgres with a separate `*_test` database + `beforeAll` migration run (lower dependency footprint than adding Testcontainers). Testcontainers remains an easy future swap behind the same test setup.
 
@@ -292,16 +292,16 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 ### Phase 9 — Logger port + Pino adapter
 
 - **Goal:** structured logging without Nest DI, usable from application, infra, and process entry.
-- **Scope:** add `Logger` + `initLogger` / `getLogger` to the existing `platform` package; create `packages/infrastructure/logger` (Pino). No Nest, no `nestjs-pino`, no driver registry.
+- **Scope:** add `Logger` + `LoggerLocator` to the existing `platform` package; create `packages/infrastructure/logger` (Pino). No Nest, no `nestjs-pino`, no driver registry.
 - **Packages/projects:** `platform` (extend); create `logger` (tags `scope:backend`, `layer:infrastructure`, **and** `layer:logger` so `type:app` can bootstrap it without importing `postgres`).
 - **Implementation tasks:**
   - Port: `context(name)`, `trace`/`debug`/`info`/`warn`/`error`/`fatal`, overloads `msg` | `(data, msg)`.
   - Locator throws if uninitialized (no silent no-op).
   - `PinoLogger`: one class + `pino.child({context})`; typed levels; production default `info`; `pino-pretty` only when `isPretty`; `Error` → `{err}`; redact `req.headers.authorization`.
   - In-memory logger for tests (`application/testing` or logger package).
-- **Tests:** unit — context child fields; error serialization; locator throw; memory logger round-trip. Application tests `initLogger` in `beforeEach` / reset in `afterEach`.
+- **Tests:** unit — context child fields; error serialization; locator throw; memory logger round-trip. Application tests `LoggerLocator.init` in `beforeEach` / `reset` in `afterEach`.
 - **Verification:** `nx lint/typecheck/test platform logger`; graph shows `logger → platform` only; a deliberate application import of `pino` fails purity lint.
-- **Definition of Done:** `getLogger()` works after bootstrap; application never imports `@b2b-saas-starter-kit/logger`.
+- **Definition of Done:** `LoggerLocator.get()` works after bootstrap; application never imports `@b2b-saas-starter-kit/logger`.
 - **Deferred:** ALS mixin for `tenantId`/`actorId`/request id; OpenTelemetry; worker bootstrap (Phase 11+).
 
 ### Phase 10 — Contracts envelopes + Nest HTTP kit
@@ -309,7 +309,7 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 - **Goal:** shared wire types and a reusable HTTP bootstrap so `apps/api` does not invent pipes, filters, Swagger, CORS, or versioning.
 - **Scope:**
   - `contracts`: `HttpStatus` (include 403/409), error envelope, pagination envelope. **Not** yet the four endpoint DTOs.
-  - `nest-http`: `ApiBuilder`, `createHttpProviders()` (pipe/filter/interceptor), OpenAPI helper, `@Public()`, process `unhandledRejection`/`uncaughtException` handlers. Kit uses `getLogger()` and contracts — **not** domain/application/postgres.
+  - `nest-http`: `ApiBuilder`, `createHttpProviders()` (pipe/filter/interceptor), OpenAPI helper, `@Public()`, process `unhandledRejection`/`uncaughtException` handlers. Kit uses `LoggerLocator.get()` and contracts — **not** domain/application/postgres.
 - **Packages/projects:** create `packages/shared/contracts` (`layer:contracts`); create `packages/nest-http` (`layer:nest-http`). Add `layer:contracts` and `layer:nest-http` depConstraints (already specified in [`boundaries.md`](./architecture/boundaries.md)).
 - **Implementation tasks:**
   - `ApiBuilder`: helmet (document staging HTTP/Swagger caveat), CORS from typed config (**fail closed in production** if origins unset), URI versioning default `'1'`, optional `API_GLOBAL_PREFIX`, `enableShutdownHooks()`, Swagger at `/docs` (basic-auth optional).
@@ -326,7 +326,7 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 - **Scope:**
   - `contracts`: Zod input/output DTOs + permission union for `POST /v1/users`, `POST /v1/tenants`, `GET /v1/me`, `GET /v1/tenants/:tenantId/members`.
   - `composition`: per-context Nest modules binding ports→adapters (`useFactory` + postgres tokens) and registering use cases + `AuthorizationPort`. Re-export use-case classes and `TENANT_CONTEXT` so `apps/api` does not import `application`/`postgres`.
-  - `apps/api`: `initLogger` + `ApiBuilder` + `createHttpProviders()`; `DevPrincipal` + ALS interceptor; `@RequirePermission` (app-specific, not in the kit); controllers; idempotent dev seeder (`dev@localhost`). `POST /v1/tenants` wraps `CreateTenant` in `withoutTenantScope`.
+  - `apps/api`: `LoggerLocator.init` + `ApiBuilder` + `createHttpProviders()`; `DevPrincipal` + ALS interceptor; `@RequirePermission` (app-specific, not in the kit); controllers; idempotent dev seeder (`dev@localhost`). `POST /v1/tenants` wraps `CreateTenant` in `withoutTenantScope`.
 - **Packages/projects:** create `packages/composition`; wire existing `apps/api`.
 - **Implementation tasks:** thin controllers (validate → map → use case → map result); guard `tenancy.members.read` on members; `GET /v1/me` returns effective permissions; CORS/helmet/versioning from env.
 - **Tests:** HTTP e2e (`supertest`) against booted Nest + real Postgres: create user → set principal → create tenant (Owner, roles seeded) → `GET /v1/me` shows Owner permissions → `GET /v1/tenants/:id/members` **allowed** for Owner and **denied (403)** for a Member principal (seed membership via composition helper; invitations deferred); contract-validation 400s.

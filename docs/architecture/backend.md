@@ -5,7 +5,7 @@ Hexagonal + Clean architecture, organized layer-first (see [`workspace-topology.
 ## Layers and the dependency rule
 
 ```
-apps (api, worker)              ← transport + process entry (initLogger, ApiBuilder)
+apps (api, worker)              ← transport + process entry (LoggerLocator.init, ApiBuilder)
       ↓ imports
 nest-http                       ← Nest HTTP kit (pipe/filter/interceptor, Swagger, CORS, versioning)
 composition/<context>           ← NestJS modules: wire ports → adapters + use cases
@@ -59,7 +59,7 @@ Use-case orchestration. This is where a request becomes a sequence of domain ope
 - Use cases are **`@Injectable`** — this is the _only_ tolerated framework seam in the application layer (chosen for DI ergonomics). No controllers, no HTTP, no TypeORM, no Redis clients here.
 - Owns **transaction boundaries** via the `UnitOfWork` port (see [`persistence.md`](./persistence.md)).
 - Owns **fine-grained authorization** checks (see [`authorization.md`](./authorization.md)).
-- Consumes **repository ports** (from `domain`) and **capability ports** (from `platform`), including `getLogger()` for structured logs. **Do not** `@Inject()` a Logger — it is a process locator, not a Nest provider.
+- Consumes **repository ports** (from `domain`) and **capability ports** (from `platform`), including `LoggerLocator.get()` for structured logs. **Do not** `@Inject()` a Logger — it is a process locator, not a Nest provider.
 - Receives **command inputs** (plain typed objects), _not_ wire DTOs. Mapping `contracts` DTO → command happens in `apps/api`.
 - **Published ports** (`AuthorizationPort`, `MembershipRolesPort`) live in `application/src/shared/` so other contexts import the interface, not a sibling-context file. The authorization **resolver** is an application service composing `RoleRepository` + `MembershipRolesPort` (not a cross-context SQL join, not an infrastructure adapter).
 
@@ -75,14 +75,14 @@ Generic **capability ports** that are technical, not domain concepts:
 - `UnitOfWork` / `TransactionManager` (see [`persistence.md`](./persistence.md))
 - `Clock`, `IdGenerator`, `Logger` (cross-cutting seams)
 
-These are **interfaces + contracts only**. Adapters live in `infrastructure`. `Logger` is reached via `initLogger` / `getLogger` on `platform` (process locator), not Nest DI — see [`infrastructure.md`](./infrastructure.md). The domain never imports `platform` for caching/locking (those aren't domain concerns); the **application** layer uses platform ports, and each context's application code decides _policy_ (what to cache, when to lock). Application **may** call `getLogger().context(UseCase.name)`.
+These are **interfaces + contracts only**. Adapters live in `infrastructure`. `Logger` is reached via `LoggerLocator` on `platform` (process locator), not Nest DI — see [`infrastructure.md`](./infrastructure.md). The domain never imports `platform` for caching/locking (those aren't domain concerns); the **application** layer uses platform ports, and each context's application code decides _policy_ (what to cache, when to lock). Application **may** call `LoggerLocator.get().context(UseCase.name)`.
 
 ## Infrastructure layer (`packages/infrastructure/*`)
 
 Adapters that implement ports, split by concern:
 
 - **`postgres`** — TypeORM entities, mappers, repository implementations (implement domain repository ports), a custom `DataSource` module (`DataSourceManager` — not `@nestjs/typeorm`), migrations, the tenant-aware base repository, and the `UnitOfWork` / `TenantContext` adapters (Node `AsyncLocalStorage`, not `nestjs-cls`). See [`persistence.md`](./persistence.md).
-- **`logger`** — Pino adapter for the `Logger` port. **No Nest.** Process bootstrap calls `initLogger(new PinoLogger(options))`.
+- **`logger`** — Pino adapter for the `Logger` port. **No Nest.** Process bootstrap calls `LoggerLocator.init(new PinoLogger(options))`.
 - **`redis`** — implementations of `CachePort`/`LockPort`/`PubSubPort`. See [`infrastructure.md`](./infrastructure.md).
 - **`messaging`** — BullMQ queues/processors and the outbox relay.
 
@@ -99,11 +99,11 @@ Infrastructure may use NestJS (`@Injectable`, module providers) where it is a Ne
 - Exception filter — Zod 400s, `HttpException`, duck-typed `{code, message}` mapped with the **contracts** error envelope and `HttpStatus` (no domain error class imports)
 - OpenAPI setup (`cleanupOpenApiDoc`); basic-auth on `/docs` optional
 - `@Public()` metadata decorator (JWT / `RequirePermission` stay in `apps/api`)
-- Process handlers — `unhandledRejection` / `uncaughtException` → `getLogger().fatal`
+- Process handlers — `unhandledRejection` / `uncaughtException` → `LoggerLocator.get().fatal`
 
-Depends on Nest, `contracts`, `platform` (`getLogger`). Does **not** depend on domain, application, or postgres.
+Depends on Nest, `contracts`, `platform` (`LoggerLocator.get`). Does **not** depend on domain, application, or postgres.
 
-`apps/api` `main.ts`: load config → `initLogger` → `NestFactory.create` → `new ApiBuilder(app, apiConfig).useSecurity().enableVersioning()…`.
+`apps/api` `main.ts`: load config → `LoggerLocator.init` → `NestFactory.create` → `new ApiBuilder(app, apiConfig).useSecurity().enableVersioning()…`.
 
 ## Composition layer (`packages/composition`)
 
@@ -152,7 +152,7 @@ HTTP request  (/v1/…)
   → apps/api coarse permission guard
   → controller maps DTO → application command
   → application use case (@Injectable)
-      → getLogger().context(…) as needed (not injected)
+      → LoggerLocator.get().context(…) as needed (not injected)
       → open UnitOfWork (transaction)
       → fine-grained authorization / policy check
       → load aggregates via repository ports

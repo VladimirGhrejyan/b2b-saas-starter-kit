@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/logger`
 
-Pino adapter for the platform `Logger` port. Process-wide: bootstrap calls `initLogger(new PinoLogger(…))`; application code calls `getLogger()`.
+Pino adapter for the platform `Logger` port. Process-wide: bootstrap calls `LoggerLocator.init(new PinoLogger(…))`; application code calls `LoggerLocator.get()`.
 
 **Path:** `packages/infrastructure/logger`  
 **Nx project:** `logger`  
@@ -28,9 +28,9 @@ Do **not** call this from `apps/api` until the HTTP composition phase. When that
 
 ```typescript
 import {PinoLogger} from '@b2b-saas-starter-kit/logger'
-import {initLogger} from '@b2b-saas-starter-kit/platform'
+import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
 
-initLogger(new PinoLogger({level: 'info', isPretty: false}))
+LoggerLocator.init(new PinoLogger({level: 'info', isPretty: false}))
 ```
 
 Defaults: `level: 'info'`, `isPretty: false`. Pretty-print uses `pino-pretty` only when `isPretty: true`. `Error` as the first argument is serialized as `{err}`. `req.headers.authorization` / `Authorization` are redacted.

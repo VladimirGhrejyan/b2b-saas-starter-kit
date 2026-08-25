@@ -2,7 +2,10 @@ import type {Logger} from './logger.port'
 import {LoggerNotInitializedError} from './logger-not-initialized.error'
 
 /**
- * Process-wide logger slot. Prefer {@link initLogger} / {@link getLogger} / {@link resetLogger}.
+ * Process-wide logger slot. Not a Nest provider.
+ *
+ * `init` overwrites. `get` throws {@link LoggerNotInitializedError} when unset.
+ * `reset` is for tests (`afterEach`) and process teardown.
  */
 export class LoggerLocator {
   static #instance: Logger | undefined

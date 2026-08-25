@@ -1,10 +1,8 @@
 import {afterEach, describe, expect, it} from 'vitest'
 
-import {getLogger} from './get-logger'
-import {initLogger} from './init-logger'
+import {LoggerLocator} from './logger.locator'
 import type {Logger} from './logger.port'
 import {LoggerNotInitializedError} from './logger-not-initialized.error'
-import {resetLogger} from './reset-logger'
 
 const createFakeLogger = (label: string): Logger => {
   const fake: Logger = {
@@ -20,13 +18,13 @@ const createFakeLogger = (label: string): Logger => {
   return fake
 }
 
-describe('logger locator', () => {
+describe('LoggerLocator', () => {
   afterEach(() => {
-    resetLogger()
+    LoggerLocator.reset()
   })
 
   it('throws LoggerNotInitializedError before init', () => {
-    expect(() => getLogger()).toThrow(LoggerNotInitializedError)
+    expect(() => LoggerLocator.get()).toThrow(LoggerNotInitializedError)
 
     const error = new LoggerNotInitializedError()
 
@@ -35,29 +33,29 @@ describe('logger locator', () => {
     expect(error.name).toBe('LoggerNotInitializedError')
   })
 
-  it('returns the installed logger after initLogger', () => {
+  it('returns the installed logger after init', () => {
     const logger = createFakeLogger('root')
 
-    initLogger(logger)
+    LoggerLocator.init(logger)
 
-    expect(getLogger()).toBe(logger)
-    expect(getLogger().context('UseCase')).not.toBe(logger)
+    expect(LoggerLocator.get()).toBe(logger)
+    expect(LoggerLocator.get().context('UseCase')).not.toBe(logger)
   })
 
-  it('overwrites on a second initLogger', () => {
+  it('overwrites on a second init', () => {
     const first = createFakeLogger('first')
     const second = createFakeLogger('second')
 
-    initLogger(first)
-    initLogger(second)
+    LoggerLocator.init(first)
+    LoggerLocator.init(second)
 
-    expect(getLogger()).toBe(second)
+    expect(LoggerLocator.get()).toBe(second)
   })
 
-  it('throws again after resetLogger', () => {
-    initLogger(createFakeLogger('root'))
-    resetLogger()
+  it('throws again after reset', () => {
+    LoggerLocator.init(createFakeLogger('root'))
+    LoggerLocator.reset()
 
-    expect(() => getLogger()).toThrow(LoggerNotInitializedError)
+    expect(() => LoggerLocator.get()).toThrow(LoggerNotInitializedError)
   })
 })

@@ -156,9 +156,9 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-027 — Logger is a platform port + process locator; vendor is Pino
 
-**Decision:** `Logger` lives in `platform` (`context`, level methods, pino-style overloads). Process locator `initLogger` / `getLogger` (throws if uninitialized). Adapter is Pino in `packages/infrastructure/logger`. Not Nest-injectable (`nestjs-pino` rejected). No silent no-op default. No driver switch until a second adapter exists. Production default level `info`; pretty-print only in development. `Error` first argument serializes as `{err}`. Redact authorization headers.
+**Decision:** `Logger` lives in `platform` (`context`, level methods, pino-style overloads). Process locator `LoggerLocator.init` / `LoggerLocator.get` (throws if uninitialized). Adapter is Pino in `packages/infrastructure/logger`. Not Nest-injectable (`nestjs-pino` rejected). No silent no-op default. No driver switch until a second adapter exists. Production default level `info`; pretty-print only in development. `Error` first argument serializes as `{err}`. Redact authorization headers.
 **Options:** (A) Nest-injectable logger; (B) `export const logger` from infrastructure imported by application; (C) platform locator + infra adapter ✓.
-**Rationale:** Application must not import Pino or Nest; constructors must not take `Logger`. Tests swap a memory logger via `initLogger`. See [`infrastructure.md`](./infrastructure.md), [`backend.md`](./backend.md).
+**Rationale:** Application must not import Pino or Nest; constructors must not take `Logger`. Tests swap a memory logger via `LoggerLocator.init`. See [`infrastructure.md`](./infrastructure.md), [`backend.md`](./backend.md).
 
 ## ADR-028 — Dedicated `nest-http` delivery kit (not composition)
 

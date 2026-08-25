@@ -19,7 +19,7 @@ Source of truth: `docs/architecture/backend.md`, `docs/architecture/workspace-to
 ## Layers (dependency points inward)
 
 ```
-apps/api, apps/worker          ← thin transport (initLogger; api also ApiBuilder)
+apps/api, apps/worker          ← thin transport (LoggerLocator.init; api also ApiBuilder)
   → nest-http                  ← HTTP kit (pipe/filter/Swagger/CORS/versioning)
   → composition/<context>      ← Nest modules (port → adapter wiring)
   → infrastructure/{postgres,logger,redis,messaging}
@@ -34,7 +34,7 @@ Bounded contexts are **folders** inside each layer: `identity`, `tenancy`, `auth
 
 ## Apps (thin)
 
-Controllers/processors only: validate with contracts via `nest-http`, map DTO → command, call use cases. No business logic, no TypeORM, no Redis. `apps/api` imports `@b2b-saas-starter-kit/nest-http` and `composition` — not `postgres` / `domain` / `application`. Bootstrap: `initLogger(new PinoLogger(...))` then `ApiBuilder`. Routes are `/v1/...`.
+Controllers/processors only: validate with contracts via `nest-http`, map DTO → command, call use cases. No business logic, no TypeORM, no Redis. `apps/api` imports `@b2b-saas-starter-kit/nest-http` and `composition` — not `postgres` / `domain` / `application`. Bootstrap: `LoggerLocator.init(new PinoLogger(...))` then `ApiBuilder`. Routes are `/v1/...`.
 
 ```typescript
 // apps/api — tenancy controller
@@ -64,7 +64,7 @@ export class InvitationsController {
 - Own transaction boundaries via `UnitOfWork`
 - Own fine-grained authorization
 - Depend on **ports** from `domain` / `platform`, never on infrastructure
-- Log with `getLogger().context(CreateUserUseCase.name)` — **never** `@Inject()` Logger
+- Log with `LoggerLocator.get().context(CreateUserUseCase.name)` — **never** `@Inject()` Logger
 - Never import `@b2b-saas-starter-kit/contracts`
 
 ```typescript
@@ -95,7 +95,7 @@ Pure TypeScript. Repository **ports** live here. No Nest, TypeORM, Redis, or HTT
 
 ## Platform
 
-Capability ports only (`CachePort`, `LockPort`, `PubSubPort`, `UnitOfWork`, `Clock`, `IdGenerator`, `Logger`). `initLogger` / `getLogger` is a process locator, not Nest DI. Pino adapter lives in `packages/infrastructure/logger`.
+Capability ports only (`CachePort`, `LockPort`, `PubSubPort`, `UnitOfWork`, `Clock`, `IdGenerator`, `Logger`). `LoggerLocator` is a process locator, not Nest DI. Pino adapter lives in `packages/infrastructure/logger`.
 
 ## Infrastructure
 
