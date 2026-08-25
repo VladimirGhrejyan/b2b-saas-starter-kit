@@ -58,8 +58,8 @@ export type MembershipOutput = z.infer<typeof MembershipOutputSchema>
 DTO classes may live in `apps/api`. Global validation is the `nest-http` pipe, not a per-controller copy.
 
 ```typescript
-import { createZodDto } from 'nestjs-zod'
-import { InviteMemberInputSchema } from '@b2b-saas-starter-kit/contracts'
+import {createZodDto} from '@b2b-saas-starter-kit/nest-http'
+import {InviteMemberInputSchema} from '@b2b-saas-starter-kit/contracts'
 
 export class InviteMemberInputDto extends createZodDto(InviteMemberInputSchema) {}
 

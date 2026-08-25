@@ -5,8 +5,9 @@
  *   (`@b2b-saas-starter-kit/no-cross-context-imports`), domain-purity
  *   `no-restricted-imports` (`config/eslint/domain.ts`), platform-purity
  *   `no-restricted-imports` (`config/eslint/platform.ts`), application-purity
- *   `no-restricted-imports` (`config/eslint/application.ts`), and infrastructure-purity
- *   `no-restricted-imports` (`config/eslint/infrastructure.ts`).
+ *   `no-restricted-imports` (`config/eslint/application.ts`), infrastructure-purity
+ *   `no-restricted-imports` (`config/eslint/infrastructure.ts`), and contracts-purity
+ *   `no-restricted-imports` (`config/eslint/contracts.ts`).
  */
 export class NxBoundaries {
   static readonly depConstraints = [

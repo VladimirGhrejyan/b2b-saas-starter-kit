@@ -1,33 +1,29 @@
 import type {Linter} from 'eslint'
 
 const purityMessage =
-  'Platform must stay adapter-free: no Nest, TypeORM, Redis, domain, or other layers. Import only shared-kernel-types.'
+  'nest-http is a delivery kit: Nest, contracts, and platform only. No domain, application, postgres, Pino, or composition.'
 
-/** Platform-purity overlay: npm packages and other workspace layers are forbidden. */
-export class PlatformEslintConfig {
+/** nest-http purity overlay: domain and infrastructure stay out. */
+export class NestHttpEslintConfig {
   static readonly config: Linter.Config = {
-    files: ['packages/platform/**/*.{ts,tsx}'],
+    files: ['packages/nest-http/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           paths: [
-            {name: 'typeorm', message: purityMessage},
-            {name: 'ioredis', message: purityMessage},
             {name: 'pino', message: purityMessage},
             {name: 'pino-pretty', message: purityMessage},
-            {name: '@b2b-saas-starter-kit/contracts', message: purityMessage},
-            {name: '@b2b-saas-starter-kit/application', message: purityMessage},
+            {name: 'typeorm', message: purityMessage},
             {name: '@b2b-saas-starter-kit/domain', message: purityMessage},
-            {name: '@b2b-saas-starter-kit/utils', message: purityMessage},
-            {name: '@b2b-saas-starter-kit/config', message: purityMessage},
+            {name: '@b2b-saas-starter-kit/application', message: purityMessage},
+            {name: '@b2b-saas-starter-kit/postgres', message: purityMessage},
             {name: '@b2b-saas-starter-kit/logger', message: purityMessage},
-            {name: '@b2b-saas-starter-kit/nest-http', message: purityMessage},
+            {name: '@b2b-saas-starter-kit/composition', message: purityMessage},
           ],
           patterns: [
             {
               group: [
-                '@nestjs/*',
                 'typeorm/*',
                 '@b2b-saas-starter-kit/postgres',
                 '@b2b-saas-starter-kit/redis',

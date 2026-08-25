@@ -1,12 +1,12 @@
 import type {Linter} from 'eslint'
 
 const purityMessage =
-  'Platform must stay adapter-free: no Nest, TypeORM, Redis, domain, or other layers. Import only shared-kernel-types.'
+  'Contracts must stay wire-only: Zod schemas and inferred types. No Nest, React, domain, or infrastructure.'
 
-/** Platform-purity overlay: npm packages and other workspace layers are forbidden. */
-export class PlatformEslintConfig {
+/** Contracts-purity overlay: framework and other layers are forbidden. */
+export class ContractsEslintConfig {
   static readonly config: Linter.Config = {
-    files: ['packages/platform/**/*.{ts,tsx}'],
+    files: ['packages/shared/contracts/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -15,11 +15,10 @@ export class PlatformEslintConfig {
             {name: 'typeorm', message: purityMessage},
             {name: 'ioredis', message: purityMessage},
             {name: 'pino', message: purityMessage},
-            {name: 'pino-pretty', message: purityMessage},
-            {name: '@b2b-saas-starter-kit/contracts', message: purityMessage},
+            {name: 'react', message: purityMessage},
+            {name: '@b2b-saas-starter-kit/platform', message: purityMessage},
             {name: '@b2b-saas-starter-kit/application', message: purityMessage},
             {name: '@b2b-saas-starter-kit/domain', message: purityMessage},
-            {name: '@b2b-saas-starter-kit/utils', message: purityMessage},
             {name: '@b2b-saas-starter-kit/config', message: purityMessage},
             {name: '@b2b-saas-starter-kit/logger', message: purityMessage},
             {name: '@b2b-saas-starter-kit/nest-http', message: purityMessage},
@@ -28,6 +27,7 @@ export class PlatformEslintConfig {
             {
               group: [
                 '@nestjs/*',
+                'react/*',
                 'typeorm/*',
                 '@b2b-saas-starter-kit/postgres',
                 '@b2b-saas-starter-kit/redis',

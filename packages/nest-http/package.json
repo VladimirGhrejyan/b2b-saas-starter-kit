@@ -1,0 +1,37 @@
+{
+  "name": "@b2b-saas-starter-kit/nest-http",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "nx": {
+    "name": "nest-http",
+    "tags": [
+      "scope:backend",
+      "layer:nest-http"
+    ]
+  },
+  "dependencies": {
+    "@b2b-saas-starter-kit/contracts": "workspace:*",
+    "@b2b-saas-starter-kit/platform": "workspace:*",
+    "@nestjs/common": "^11.2.1",
+    "@nestjs/core": "^11.2.1",
+    "@nestjs/platform-express": "^11.2.1",
+    "@nestjs/serve-static": "^5.0.5",
+    "@nestjs/swagger": "^11.4.7",
+    "helmet": "^8.3.0",
+    "nestjs-zod": "^5.5.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^4.4.3"
+  }
+}

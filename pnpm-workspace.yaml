@@ -13,3 +13,4 @@ allowBuilds:
   '@nestjs/core': false
   esbuild: false
   '@swc/core': true
+  '@scarf/scarf': false

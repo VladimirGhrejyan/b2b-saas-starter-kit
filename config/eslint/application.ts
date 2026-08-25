@@ -19,6 +19,7 @@ export class ApplicationEslintConfig {
             {name: '@b2b-saas-starter-kit/contracts', message: purityMessage},
             {name: '@b2b-saas-starter-kit/config', message: purityMessage},
             {name: '@b2b-saas-starter-kit/logger', message: purityMessage},
+            {name: '@b2b-saas-starter-kit/nest-http', message: purityMessage},
           ],
           patterns: [
             {

@@ -44,6 +44,12 @@
     },
     {
       "path": "./packages/infrastructure/logger"
+    },
+    {
+      "path": "./packages/shared/contracts"
+    },
+    {
+      "path": "./packages/nest-http"
     }
   ]
 }
