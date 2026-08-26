@@ -16,7 +16,7 @@ Related: [`shared-packages.md`](./shared-packages.md), [`backend.md`](./backend.
 Result: **one source of truth**, zero drift, no codegen step.
 
 ```typescript
-// packages/shared/contracts/src/tenancy/invite-member.ts
+// packages/shared/contracts/src/contexts/tenancy/invite-member.ts
 import {z} from 'zod'
 import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
@@ -78,7 +78,7 @@ Retained from the established convention:
 - `*.output.ts` — response DTOs
 - `*.param.ts` — path parameters
 
-Organized by context inside `packages/shared/contracts/src` (`tenancy/…`, `authorization/…`).
+Organized as `common/` (HTTP method/status/error + pagination) and `contexts/<context>/` (`identity/`, `tenancy/`, `authorization/`, …) inside `packages/shared/contracts/src`.
 
 ## Validation
 

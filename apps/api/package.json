@@ -83,7 +83,12 @@
     ]
   },
   "dependencies": {
+    "@b2b-saas-starter-kit/composition": "workspace:*",
     "@b2b-saas-starter-kit/config": "workspace:*",
+    "@b2b-saas-starter-kit/contracts": "workspace:*",
+    "@b2b-saas-starter-kit/logger": "workspace:*",
+    "@b2b-saas-starter-kit/nest-http": "workspace:*",
+    "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
@@ -93,6 +98,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@nestjs/testing": "^11.0.0"
+    "@nestjs/testing": "^11.0.0",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.2.2"
   }
 }

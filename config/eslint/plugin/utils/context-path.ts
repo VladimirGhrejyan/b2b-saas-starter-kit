@@ -3,8 +3,10 @@ import path from 'node:path'
 /** Bounded-context folders that must not import each other's internals. */
 const BOUNDARY_CONTEXTS = new Set(['identity', 'tenancy', 'authorization', 'audit', 'notifications'])
 
-/** Folders that any context may import (domain shared-kernel, application shared). */
-const SHARED_FOLDERS = new Set(['shared-kernel', 'shared'])
+/** Folders that any context may import (domain shared-kernel, application shared, api common). */
+const SHARED_FOLDERS = new Set(['shared-kernel', 'shared', 'common'])
+
+const API_SRC_PATTERN = /(?:^|\/)apps\/api\/src\//
 
 const LAYER_PATTERNS = [
   /(?:^|\/)packages\/domain\/src\/([^/]+)\//,
@@ -32,6 +34,22 @@ export class ContextPath {
   static locate(filePath: string): ContextLocation | null {
     const normalized = ContextPath.normalize(filePath)
     const withSlash = normalized.endsWith('/') ? normalized : `${normalized}/`
+
+    const apiSrc = API_SRC_PATTERN.exec(withSlash)
+
+    if (apiSrc) {
+      const layerRoot = withSlash.slice(0, apiSrc.index + apiSrc[0].length)
+      const afterSrc = withSlash.slice(apiSrc.index + apiSrc[0].length)
+      const [folder, resource] = afterSrc.split('/')
+
+      if (folder === 'modules' && resource) {
+        return {layerRoot, segment: resource}
+      }
+
+      if (folder === 'common') {
+        return {layerRoot, segment: 'common'}
+      }
+    }
 
     for (const pattern of LAYER_PATTERNS) {
       const match = pattern.exec(withSlash)
@@ -65,6 +83,10 @@ export class ContextPath {
 
   static isBoundaryContext(segment: string): boolean {
     return BOUNDARY_CONTEXTS.has(segment)
+  }
+
+  static isApiSrcLayer(layerRoot: string): boolean {
+    return /(?:^|\/)apps\/api\/src\/$/.test(layerRoot)
   }
 
   static isRelativeSpecifier(specifier: string): boolean {

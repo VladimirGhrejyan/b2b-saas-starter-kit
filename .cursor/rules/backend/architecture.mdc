@@ -37,23 +37,15 @@ Bounded contexts are **folders** inside each layer: `identity`, `tenancy`, `auth
 Controllers/processors only: validate with contracts via `nest-http`, map DTO → command, call use cases. No business logic, no TypeORM, no Redis. `apps/api` imports `@b2b-saas-starter-kit/nest-http` and `composition` — not `postgres` / `domain` / `application`. Bootstrap: `LoggerLocator.init(new PinoLogger(...))` then `ApiBuilder`. Routes are `/v1/...`.
 
 ```typescript
-// apps/api — tenancy controller
-@Controller({path: 'tenants/:tenantId/invitations', version: '1'})
-export class InvitationsController {
-  constructor(private readonly inviteMember: InviteMemberUseCase) {}
+// apps/api — members controller
+@Controller()
+export class MembersController {
+  constructor(private readonly members: MembersService) {}
 
   @RequirePermission('tenancy.members.read')
-  @Post()
-  async invite(
-    @Param() { tenantId }: TenantIdParamDto,
-    @Body() body: InviteMemberInputDto,
-  ) {
-    return this.inviteMember.execute({
-      tenantId,
-      email: body.email,
-      roleIds: body.roleIds,
-      actorId: this.currentUser.id,
-    })
+  @ApiRoute(MembersRoutes.list) // path: 'tenants/:tenantId/members'
+  async list(@Param() {tenantId}: TenantIdParamDto) {
+    return this.members.list(tenantId)
   }
 }
 ```

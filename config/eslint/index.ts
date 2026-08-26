@@ -2,8 +2,10 @@ import type {Linter} from 'eslint'
 import prettier from 'eslint-config-prettier'
 
 import {ApplicationEslintConfig} from './application'
+import {AppsEslintConfig} from './apps'
 import {BackendEslintConfig} from './backend'
 import {EslintBase} from './base'
+import {CompositionEslintConfig} from './composition'
 import {ContractsEslintConfig} from './contracts'
 import {DomainEslintConfig} from './domain'
 import {FrontendEslintConfig} from './frontend'
@@ -23,9 +25,11 @@ export class EslintFlatConfig {
     EslintIgnores.config,
     ...EslintBase.configs,
     BackendEslintConfig.config,
+    AppsEslintConfig.config,
     DomainEslintConfig.config,
     PlatformEslintConfig.config,
     ApplicationEslintConfig.config,
+    CompositionEslintConfig.config,
     ContractsEslintConfig.config,
     NestHttpEslintConfig.config,
     InfrastructureEslintConfig.config,

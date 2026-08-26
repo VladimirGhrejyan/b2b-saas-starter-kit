@@ -1,0 +1,20 @@
+---
+description: Apps layer uses private, not ECMAScript # fields
+globs:
+  - "apps/**/*.ts"
+alwaysApply: false
+---
+
+# Apps Layer Visibility
+
+In `apps/` (API, worker), use the TypeScript `private` access modifier. Do not use `#` private fields or methods.
+
+```typescript
+// ✅
+private async authenticate(context: ExecutionContext, next: CallHandler): Promise<unknown> {}
+
+// ❌
+async #authenticate(context: ExecutionContext, next: CallHandler): Promise<unknown> {}
+```
+
+Packages may still use `#` where they already do (for example nest-http filters).

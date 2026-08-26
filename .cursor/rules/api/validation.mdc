@@ -23,32 +23,62 @@ Routes are URI-versioned (`version: '1'` → `/v1/...`). Do not put pipes, excep
 - `*.output.ts` — responses
 - `*.param.ts` — path params
 
-Organize by context under `packages/shared/contracts/src`: `tenancy/`, `authorization/`, …
+Layout under `packages/shared/contracts/src`:
+
+- `common/` — cross-cutting wire primitives (`http/` method/status/error envelope, `pagination/`)
+- `contexts/` — bounded-context request/response schemas (`identity/`, `tenancy/`, `authorization/`, …)
+
+Do not name the common folder `utils` — that collides with `@b2b-saas-starter-kit/utils`.
+
+## OpenAPI meta
+
+Every exported Zod schema (and nested object/enum that is its own OpenAPI shape) must end with `.meta({id, description})`. `id` is the OpenAPI component name (PascalCase, unique). `paginatedOutputSchema` takes `meta` as its second argument.
+
+```typescript
+export const createTenantInputSchema = z
+  .object({
+    name: z.string().trim().min(1),
+  })
+  .meta({
+    id: 'CreateTenantInput',
+    description: 'Body for creating a tenant',
+  })
+```
 
 ## Example
 
 ```typescript
-// packages/shared/contracts/src/tenancy/invite-member.input.ts
+// packages/shared/contracts/src/contexts/tenancy/invite-member.input.ts
 import { z } from 'zod'
 
-export const InviteMemberInputSchema = z.object({
-  email: z.string().email(),
-  roleIds: z.array(z.string().uuid()).min(1),
-})
+export const InviteMemberInputSchema = z
+  .object({
+    email: z.email(),
+    roleIds: z.array(z.uuid()).min(1),
+  })
+  .meta({
+    id: 'InviteMemberInput',
+    description: 'Body for inviting a member',
+  })
 
 export type InviteMemberInput = z.infer<typeof InviteMemberInputSchema>
 ```
 
 ```typescript
-// packages/shared/contracts/src/tenancy/membership.output.ts
+// packages/shared/contracts/src/contexts/tenancy/membership.output.ts
 import { z } from 'zod'
 
-export const MembershipOutputSchema = z.object({
-  id: z.string().uuid(),
-  userId: z.string().uuid(),
-  tenantId: z.string().uuid(),
-  status: z.enum(['invited', 'active', 'suspended']),
-})
+export const MembershipOutputSchema = z
+  .object({
+    id: z.uuid(),
+    userId: z.uuid(),
+    tenantId: z.uuid(),
+    status: z.enum(['invited', 'active', 'suspended']),
+  })
+  .meta({
+    id: 'MembershipOutput',
+    description: 'Membership returned by the API',
+  })
 
 export type MembershipOutput = z.infer<typeof MembershipOutputSchema>
 ```

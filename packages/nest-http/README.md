@@ -56,13 +56,17 @@ await new ApiBuilder(app, apiHttpConfig)
 ## Contracts in controllers
 
 ```typescript
-import {HttpMethod, InviteMemberInputSchema} from '@b2b-saas-starter-kit/contracts'
-import {ApiRoute, createZodDto, Response} from '@b2b-saas-starter-kit/nest-http'
+import {HttpMethod, HttpStatus, InviteMemberInputSchema} from '@b2b-saas-starter-kit/contracts'
+import {ApiErrorResponses, ApiRoute, createZodDto, Response} from '@b2b-saas-starter-kit/nest-http'
 
 export class InviteMemberInputDto extends createZodDto(InviteMemberInputSchema) {}
 
 @ApiRoute({method: HttpMethod.POST, path: 'invites', summary: 'Invite a member', operationId: 'inviteMember'})
-@Response({status: 201, description: 'Created membership', type: MembershipOutputDto})
+@Response({status: HttpStatus.CREATED, description: 'Created membership', type: MembershipOutputDto})
+@ApiErrorResponses([
+  {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
+  {status: HttpStatus.FORBIDDEN, description: 'Missing permission to invite members'},
+])
 async invite(@Body() body: InviteMemberInputDto) {}
 ```
 

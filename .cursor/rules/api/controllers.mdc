@@ -1,0 +1,50 @@
+---
+description: HTTP controllers — success @Response and documented error responses
+globs:
+  - "apps/api/**/*.controller.ts"
+  - "apps/api/**/*.routes.ts"
+  - "packages/nest-http/**/*.ts"
+alwaysApply: false
+---
+
+# HTTP Controllers
+
+## Success response
+
+Always set **status**, **description**, and **type** on `@Response` from `@b2b-saas-starter-kit/nest-http`. That decorator also sets `@HttpCode` — do not add a separate `@HttpCode`.
+
+```typescript
+@Response({
+  status: HttpStatus.CREATED,
+  description: 'Tenant created with Owner, Admin, and Member roles',
+  type: CreateTenantOutputDto,
+})
+```
+
+Use `HttpStatus` from `@b2b-saas-starter-kit/contracts` (`OK`, `CREATED`, …), not a magic number.
+
+## Error responses
+
+Every handler must declare the errors it can return with `@ApiErrorResponses` (same package). Document only statuses this route can produce (validation, auth, permission, domain conflict). The type is the shared `ErrorOutputDto` envelope — do not pass a per-route error DTO.
+
+```typescript
+@ApiErrorResponses([
+  {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
+  {status: HttpStatus.UNAUTHORIZED, description: 'x-user-id is missing or invalid'},
+  {status: HttpStatus.CONFLICT, description: 'Owner user was not found'},
+])
+```
+
+Do not import `@nestjs/swagger` or `nestjs-zod` in `apps/api`.
+
+## Routes
+
+`@Controller()` takes no path and no version. URI versioning is global (`ApiBuilder.enableVersioning()`, default `'1'`). The **full** resource path lives on the resource `*.routes.ts` object passed to `@ApiRoute`.
+
+```typescript
+@Controller()
+export class MembersController {
+  @ApiRoute(MembersRoutes.list) // path: 'tenants/:tenantId/members'
+  list() {}
+}
+```

@@ -15,7 +15,7 @@ describe('createDataSource', () => {
     expect(dataSource.options.type).toBe('postgres')
     expect(dataSource.isInitialized).toBe(false)
     expect(dataSource.options.entities).not.toHaveLength(0)
-    expect(dataSource.options.migrations).toHaveLength(0)
+    expect(dataSource.options.migrations).toHaveLength(3)
     expect(dataSource.options.poolSize).toBe(10)
     expect(dataSource.options.maxQueryExecutionTime).toBe(500)
     expect(dataSource.options.extra).toMatchObject({

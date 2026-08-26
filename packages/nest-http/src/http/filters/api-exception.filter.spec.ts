@@ -53,6 +53,19 @@ describe('ApiExceptionFilter', () => {
     )
   })
 
+  it('maps INSUFFICIENT_PERMISSION to a 403 envelope', () => {
+    const filter = new ApiExceptionFilter()
+    const {host, status, json} = createHost()
+
+    filter.catch({code: 'INSUFFICIENT_PERMISSION', message: "missing permission 'tenancy.members.read'"}, host)
+
+    expect(status).toHaveBeenCalledWith(HttpStatus.FORBIDDEN)
+    expect(json).toHaveBeenCalledWith({
+      code: 'INSUFFICIENT_PERMISSION',
+      message: "missing permission 'tenancy.members.read'",
+    })
+  })
+
   it('maps duck-typed code/message to a 409 envelope', () => {
     const filter = new ApiExceptionFilter()
     const {host, status, json} = createHost()

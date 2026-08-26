@@ -45,7 +45,9 @@ export class ApiExceptionFilter implements ExceptionFilter {
     }
 
     if (this.#isCodedError(exception)) {
-      response.status(HttpStatus.CONFLICT).json({
+      const status = exception.code === 'INSUFFICIENT_PERMISSION' ? HttpStatus.FORBIDDEN : HttpStatus.CONFLICT
+
+      response.status(status).json({
         code: exception.code,
         message: exception.message,
       })

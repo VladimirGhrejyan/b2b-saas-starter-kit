@@ -14,6 +14,21 @@
   "references": [
     {
       "path": "../../packages/shared/config/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/shared/kernel-types/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/shared/contracts/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/infrastructure/logger/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/nest-http/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/composition/tsconfig.lib.json"
     }
   ]
 }

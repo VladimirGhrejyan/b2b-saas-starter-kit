@@ -10,9 +10,9 @@ Architecture: [`docs/architecture/api-contracts.md`](../../../docs/architecture/
 
 ## Purpose
 
-One source of truth for API shapes. This phase ships **envelopes only**. Endpoint DTOs (`tenancy/`, `identity/`, …) land in Phase 11.
+One source of truth for API shapes. Cross-cutting envelopes live in `src/common/` (`http/`, `pagination/`). Endpoint DTOs live in `src/contexts/` (`identity/`, `tenancy/`, `authorization/`, …).
 
-Import only from `@b2b-saas-starter-kit/contracts`. Do not deep-import `src/http/…`.
+Import only from `@b2b-saas-starter-kit/contracts`. Do not deep-import `src/common/…` or `src/contexts/…`.
 
 ## Allowed imports
 

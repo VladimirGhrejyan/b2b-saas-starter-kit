@@ -13,7 +13,11 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'node',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}'],
+    setupFiles: ['./tests/reflect-setup.ts'],
     reporters: ['default'],
+    fileParallelism: false,
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',
       provider: 'v8' as const,

@@ -50,6 +50,9 @@
     },
     {
       "path": "./packages/nest-http"
+    },
+    {
+      "path": "./packages/composition"
     }
   ]
 }

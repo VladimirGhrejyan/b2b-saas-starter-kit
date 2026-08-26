@@ -53,7 +53,10 @@ export const noCrossContextImportsRule = createRule({
         return
       }
 
-      if (!ContextPath.isBoundaryContext(importedLocation.segment)) {
+      if (
+        !ContextPath.isBoundaryContext(importedLocation.segment) &&
+        !ContextPath.isApiSrcLayer(importedLocation.layerRoot)
+      ) {
         return
       }
 
