@@ -2,6 +2,7 @@ import type {ArgumentsHost, ExceptionFilter} from '@nestjs/common'
 import {Catch, HttpException} from '@nestjs/common'
 import {ZodSerializationException, ZodValidationException} from 'nestjs-zod'
 
+import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 import {HttpStatus} from '@b2b-saas-starter-kit/contracts'
 
 import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
@@ -109,7 +110,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
   #httpExceptionMessage(exception: HttpException): string {
     const body: unknown = exception.getResponse()
 
-    if (typeof body === 'string' && body.length > 0) {
+    if (TypeScriptUtils.isNonEmptyString(body)) {
       return body
     }
 
@@ -119,14 +120,14 @@ export class ApiExceptionFilter implements ExceptionFilter {
 
     const message: unknown = body.message
 
-    if (typeof message === 'string' && message.length > 0) {
+    if (TypeScriptUtils.isNonEmptyString(message)) {
       return message
     }
 
     if (Array.isArray(message)) {
       const first: unknown = message[0]
 
-      if (typeof first === 'string') {
+      if (TypeScriptUtils.isString(first)) {
         return first
       }
     }

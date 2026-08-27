@@ -23,6 +23,7 @@
   "dependencies": {
     "@b2b-saas-starter-kit/contracts": "workspace:*",
     "@b2b-saas-starter-kit/platform": "workspace:*",
+    "@b2b-saas-starter-kit/utils": "workspace:*",
     "@nestjs/common": "^11.2.1",
     "@nestjs/core": "^11.2.1",
     "@nestjs/platform-express": "^11.2.1",

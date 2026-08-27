@@ -10,6 +10,10 @@ describe('TypeScriptUtils', () => {
     expect(TypeScriptUtils.isDefined(0)).toBe(true)
     expect(TypeScriptUtils.isDefined(null)).toBe(false)
     expect(TypeScriptUtils.isString('a')).toBe(true)
+    expect(TypeScriptUtils.isNonEmptyString('a')).toBe(true)
+    expect(TypeScriptUtils.isNonEmptyString('')).toBe(false)
+    expect(TypeScriptUtils.isNonEmptyString('  ')).toBe(true)
+    expect(TypeScriptUtils.isNonEmptyString(undefined)).toBe(false)
     expect(TypeScriptUtils.isNumber(Number.NaN)).toBe(true)
     expect(TypeScriptUtils.isNumber('1')).toBe(false)
   })
@@ -39,6 +43,14 @@ describe('TypeScriptUtils', () => {
     expect(() => {
       TypeScriptUtils.assertNever(value as never)
     }).toThrow()
+  })
+
+  it('isNonEmptyString narrows types', () => {
+    const value: unknown = 'ok'
+
+    if (TypeScriptUtils.isNonEmptyString(value)) {
+      expectTypeOf(value).toEqualTypeOf<string>()
+    }
   })
 
   it('assertDefined narrows types', () => {

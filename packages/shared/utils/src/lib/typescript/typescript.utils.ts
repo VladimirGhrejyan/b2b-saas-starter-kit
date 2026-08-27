@@ -97,6 +97,19 @@ export class TypeScriptUtils {
   }
 
   /**
+   * Type guard: `value` is a string with `length > 0`.
+   *
+   * Whitespace-only strings are non-empty — use {@link StringUtils.isNotBlank} when
+   * blank input should be treated as absent.
+   *
+   * @param value - Value to test.
+   * @returns `true` if `value` is a non-empty string.
+   */
+  static isNonEmptyString(value: unknown): value is string {
+    return TypeScriptUtils.isString(value) && value.length > 0
+  }
+
+  /**
    * Type guard: `typeof value === 'number'` (includes `NaN` and `±Infinity`).
    *
    * Prefer {@link NumberUtils.isFiniteNumber} for numeric validation.

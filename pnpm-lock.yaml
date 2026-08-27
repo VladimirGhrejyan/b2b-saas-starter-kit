@@ -226,6 +226,9 @@ importers:
       '@b2b-saas-starter-kit/shared-kernel-types':
         specifier: workspace:*
         version: link:../../packages/shared/kernel-types
+      '@b2b-saas-starter-kit/utils':
+        specifier: workspace:*
+        version: link:../../packages/shared/utils
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.1)
@@ -413,6 +416,9 @@ importers:
       '@b2b-saas-starter-kit/platform':
         specifier: workspace:*
         version: link:../platform
+      '@b2b-saas-starter-kit/utils':
+        specifier: workspace:*
+        version: link:../shared/utils
       '@nestjs/common':
         specifier: ^11.2.1
         version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.1)

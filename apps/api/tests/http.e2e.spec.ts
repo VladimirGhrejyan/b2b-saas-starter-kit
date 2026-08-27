@@ -42,6 +42,8 @@ describe('HTTP e2e', () => {
       .send({email: 'ada@example.com', displayName: 'Ada'})
       .expect(201)
 
+    expect(createdUser.headers['x-request-id']).toEqual(expect.stringMatching(/^[0-9a-f-]{36}$/i))
+
     const userId = UserId.parse(createdUser.body.id)
 
     const createdTenant = await request(app.getHttpServer())

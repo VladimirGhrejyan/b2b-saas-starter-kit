@@ -177,7 +177,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 - **Pluggable tenant isolation** (schema/DB-per-tenant) — seam designed, not built.
 - **Realtime `gateway` app** — introduce when notifications/live features demand it.
-- **Request/tenant ALS log mixin** — bind `tenantId` / `actorId` / request id onto the logger; locator exists first.
+- **Request/tenant ALS log mixin** — done: `RequestContextLocator` on `platform` + Pino mixin + HTTP access logs in `nest-http`.
 - **Mapper boilerplate reduction** — standard convention now; possible codegen/Cursor skill later.
 - **Extension contexts** (billing, files, webhooks, feature-flags) — follow existing rules when added.
 - **Auth token strategy specifics** (storage, refresh rotation) — pattern set; concrete choice at implementation.

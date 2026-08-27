@@ -1,5 +1,7 @@
 import {describe, expect, it} from 'vitest'
 
+import {RequestContextLocator} from '@b2b-saas-starter-kit/platform'
+
 import {PinoLogger} from './pino-logger'
 
 function createCapture(): {destination: {write: (msg: string) => void}; records: () => Record<string, unknown>[]} {
@@ -90,5 +92,36 @@ describe('PinoLogger', () => {
 
     expect(headers.authorization).toBe('[Redacted]')
     expect(headers.Authorization).toBe('[Redacted]')
+  })
+
+  it('mixes request context fields onto records', async () => {
+    const capture = createCapture()
+    const logger = new PinoLogger({destination: capture.destination})
+
+    await RequestContextLocator.run({requestId: 'req-1'}, async () => {
+      RequestContextLocator.bind({actorId: 'user-1', tenantId: 'tenant-1'})
+      logger.info('inside')
+    })
+
+    const record = capture.records()[0]
+
+    expect(record?.msg).toBe('inside')
+    expect(record?.requestId).toBe('req-1')
+    expect(record?.actorId).toBe('user-1')
+    expect(record?.tenantId).toBe('tenant-1')
+  })
+
+  it('omits request context fields outside a scope', () => {
+    const capture = createCapture()
+    const logger = new PinoLogger({destination: capture.destination})
+
+    logger.info('outside')
+
+    const record = capture.records()[0]
+
+    expect(record?.msg).toBe('outside')
+    expect(record?.requestId).toBeUndefined()
+    expect(record?.actorId).toBeUndefined()
+    expect(record?.tenantId).toBeUndefined()
   })
 })

@@ -11,7 +11,7 @@ import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {TenantContext} from '@b2b-saas-starter-kit/composition'
 import {AssertActiveMembership, TENANT_CONTEXT} from '@b2b-saas-starter-kit/composition'
 
-import {IS_PUBLIC_KEY} from '@b2b-saas-starter-kit/nest-http'
+import {IS_PUBLIC_KEY, RequestContextLocator} from '@b2b-saas-starter-kit/nest-http'
 
 import {readHeader} from '../http/read-header'
 
@@ -61,6 +61,7 @@ export class DevPrincipalInterceptor implements NestInterceptor {
       }
 
       request[DEV_PRINCIPAL_KEY] = {userId} satisfies DevPrincipal
+      RequestContextLocator.bind({actorId: userId})
 
       return lastValueFrom(next.handle())
     }
@@ -73,6 +74,7 @@ export class DevPrincipalInterceptor implements NestInterceptor {
     }
 
     request[DEV_PRINCIPAL_KEY] = {userId, tenantId} satisfies DevPrincipal
+    RequestContextLocator.bind({actorId: userId, tenantId})
 
     return this.tenantContext.run({tenantId, actorId: userId}, () => lastValueFrom(next.handle()))
   }

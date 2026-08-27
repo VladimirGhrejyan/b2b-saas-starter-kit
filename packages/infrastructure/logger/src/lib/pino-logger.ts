@@ -2,6 +2,7 @@ import type {Logger as PinoInstance, LoggerOptions} from 'pino'
 import pino from 'pino'
 
 import type {Logger, LogLevel} from '@b2b-saas-starter-kit/platform'
+import {RequestContextLocator} from '@b2b-saas-starter-kit/platform'
 
 import type {PinoLoggerOptions} from './pino-logger.types'
 
@@ -51,6 +52,9 @@ export class PinoLogger implements Logger {
     const pinoOptions: LoggerOptions = {
       level,
       redact: [...PinoLogger.#redactPaths],
+      mixin() {
+        return PinoLogger.#requestContextFields()
+      },
     }
 
     if (isPretty) {
@@ -65,6 +69,20 @@ export class PinoLogger implements Logger {
     }
 
     return destination === undefined ? pino(pinoOptions) : pino(pinoOptions, destination)
+  }
+
+  static #requestContextFields(): Record<string, string> {
+    const context = RequestContextLocator.get()
+
+    if (context === undefined) {
+      return {}
+    }
+
+    return {
+      requestId: context.requestId,
+      ...(context.tenantId === undefined ? {} : {tenantId: context.tenantId}),
+      ...(context.actorId === undefined ? {} : {actorId: context.actorId}),
+    }
   }
 
   #log(level: LogLevel, dataOrMessage: object | string, message?: string): void {

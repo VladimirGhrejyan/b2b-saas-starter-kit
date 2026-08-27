@@ -76,7 +76,7 @@ LoggerLocator.reset(): void
 Bootstrap (`apps/api`, `apps/worker`): `LoggerLocator.init(new PinoLogger({level, isPretty}))`. Tests: `LoggerLocator.init(memoryLogger)` in `beforeEach`.
 
 - **Adapter:** `packages/infrastructure/logger` (`@b2b-saas-starter-kit/logger`). One class wrapping `pino` + `pino.child({context})`. Typed levels. Production default **`info`**. `pino-pretty` only when `isPretty`. `Error` as first argument → `{err}`. Redact `req.headers.authorization` (and similar). No driver registry until a second adapter exists.
-- Structured logs **should** eventually include `tenantId`, `actorId`, and request/correlation IDs from ambient `TenantContext` ALS. That mixin is a later increment; the locator is the commitment.
+- Structured logs include `requestId`, and `tenantId` / `actorId` when a request scope is active. `RequestContextLocator` (`run` / `get` / `bind`) is a process ALS on `platform`, mixed into Pino automatically. HTTP access logs (`method`, templated `route`, `statusCode`, `durationMs`) are emitted by `nest-http` `HttpRequestInterceptor`. Do not reuse postgres `TenantContext` ALS for correlation.
 
 ## Configuration
 

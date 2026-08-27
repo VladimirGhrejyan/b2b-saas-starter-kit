@@ -37,7 +37,7 @@ Import only from `@b2b-saas-starter-kit/utils`. Do not deep-import `src/lib/...`
 | `StringUtils`     | Blank checks, truncate, conservative ASCII casing (`camel` / `pascal` / `kebab` / `snake`)       |
 | `NumberUtils`     | Finite / integer guards, range, `clamp`, `parseFinite`                                           |
 | `DateUtils`       | UTC/ISO-only date helpers (no local timezone APIs)                                               |
-| `TypeScriptUtils` | `isNil` / `isEmpty` / `isString` / `isNumber`, assertions, exhaustiveness                        |
+| `TypeScriptUtils` | `isNil` / `isEmpty` / `isString` / `isNonEmptyString` / `isNumber`, assertions, exhaustiveness   |
 
 ### Utility types
 
