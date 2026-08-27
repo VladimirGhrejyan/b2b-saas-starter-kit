@@ -1,105 +1,37 @@
-# Design System & Tenant Theming
+# Frontend UI kit
 
-A single, themeable `frontend/ui` library shared by `web` and `admin`, built to support **per-tenant white-labeling** — at minimum brand-color customization, with light/dark support.
+Shared presentation library for `web` and `admin`. UI **technology is TBD** — this document defines the **package boundary**, not a component/CSS stack.
 
-Related: [`frontend.md`](./frontend.md).
+Related: [`frontend.md`](./frontend.md). ADR: [ADR-030](./decisions.md).
 
 ## Ownership
 
-**Decision:** one design-system library, `packages/frontend/ui`, owns:
+**Decision:** one presentation library, `packages/frontend/ui-kit` (`@b2b-saas-starter-kit/ui-kit`), tags `scope:frontend`, `layer:ui`.
 
-- Components (built on **shadcn/ui** patterns over **Radix** primitives).
-- **Design tokens** expressed as **CSS variables**.
-- A shared **Tailwind preset** mapping utility classes to those tokens.
-- The `ThemeProvider` that applies tenant branding at runtime.
+It owns reusable presentational components. It is **presentation-only**: no data fetching, no business logic, no RTK, no `contracts` dependency for behavior. It may use `utils`.
 
-`ui` is presentation-only: no data fetching, no business logic, no `contracts` dependency for behavior. It may use `utils`.
+**Not in this package (until a later ADR):** Tailwind, Radix, shadcn, CSS-variable tokens, `ThemeProvider`, light/dark theming, per-tenant branding.
 
-## Why shadcn + Radix + Tailwind for theming
+## Foundation surface
 
-- **Radix** gives unstyled, accessible primitives — accessibility survives any theming because behavior is decoupled from appearance.
-- **shadcn/ui** components are copied into `ui` and styled with Tailwind classes that reference **semantic tokens**, not hard-coded colors.
-- **Tailwind** (via a shared preset) resolves those semantic utilities to **CSS variables**, which is what makes runtime, per-tenant re-theming possible **without rebuilding**.
-
-## Token layering
-
-Three levels keep branding flexible but consistent:
-
-```
-1. Primitive tokens      --color-brand-500, --radius-md         (raw scale values)
-2. Semantic tokens       --background, --foreground, --primary, (roles that components use)
-                         --primary-foreground, --border, --ring
-3. Component usage        bg-primary text-primary-foreground     (Tailwind → var(--primary))
-```
-
-Components only ever reference **semantic** tokens. Branding changes a small set of primitives/semantics; every component updates automatically.
-
-```css
-/* ui/theme/base.css — defaults (light) */
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --primary: 222 47% 40%; /* overridden per tenant */
-  --primary-foreground: 0 0% 100%;
-  --ring: var(--primary);
-  --radius: 0.5rem;
-}
-.dark {
-  --background: 222 47% 11%;
-  --foreground: 0 0% 98%;
-  /* … */
-}
-```
-
-```ts
-// ui/tailwind-preset.ts (shared by web + admin tailwind configs)
-export default {
-  theme: {
-    extend: {
-      colors: {
-        background: 'hsl(var(--background) / <alpha-value>)',
-        foreground: 'hsl(var(--foreground) / <alpha-value>)',
-        primary: {
-          DEFAULT: 'hsl(var(--primary) / <alpha-value>)',
-          foreground: 'hsl(var(--primary-foreground) / <alpha-value>)',
-        },
-        // border, ring, muted, accent, destructive, …
-      },
-      borderRadius: {lg: 'var(--radius)', md: 'calc(var(--radius) - 2px)'},
-    },
-  },
-}
-```
-
-## Runtime per-tenant branding
-
-Tenant branding (brand color, optional logo, radius, light/dark preference) is **tenant configuration data**, loaded at runtime and applied by injecting CSS variables — no rebuild, no per-tenant bundle.
+The kit ships so apps import a real package instead of inventing local buttons. The only component for now is a native HTML button:
 
 ```tsx
-// ui/ThemeProvider.tsx
-export function ThemeProvider({branding, children}: {branding: TenantBranding; children: ReactNode}) {
-  useEffect(() => {
-    const root = document.documentElement
-    if (branding.primaryHsl) root.style.setProperty('--primary', branding.primaryHsl)
-    if (branding.radius) root.style.setProperty('--radius', branding.radius)
-    root.classList.toggle('dark', branding.mode === 'dark')
-  }, [branding])
-  return <>{children}</>
+import type {ButtonHTMLAttributes} from 'react'
+
+export function Button(props: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button type="button" {...props} />
 }
 ```
 
-- **Where branding comes from:** a tenant-settings endpoint (part of the `tenancy` context) returns the active tenant's branding; the app passes it to `ThemeProvider`. The **shape** of branding is defined in `contracts` so backend and frontend agree.
-- **Scope:** applied on `:root` for a single-tenant session; can be scoped to a container if multiple tenants ever render together.
-- **Minimum viable customization:** brand color + light/dark. Extensible to logo, accent, radius, and a fuller token set.
+No class libraries, no CSS framework, no theme wrapper.
 
-## Accessibility & consistency guarantees
+## Deferred (product goals, not current implementation)
 
-- Radix ensures keyboard/focus/ARIA correctness regardless of theme.
-- Because components consume only semantic tokens, a tenant cannot break contrast rules by editing raw component styles — they adjust tokens within validated ranges (branding input is validated via its `contracts` schema; contrast-safe foreground tokens are derived where feasible).
-- One `ui` library ⇒ `web` and `admin` stay visually consistent while each tenant can be branded.
+Per-tenant white-labeling (brand color, light/dark, runtime tokens) remains a **later** design-system concern. It is **not** implemented until UI technology is chosen. Do not add a `ThemeProvider` or token layer as a placeholder.
 
-## What does NOT go in `ui`
+## What does NOT go in `ui-kit`
 
 - API calls, RTK Query, business rules (those live in `frontend/core` / features).
-- Tenant-fetching logic (the app fetches branding and hands it to `ThemeProvider`).
 - App-specific layouts that aren't reusable (keep in the app until shared).
+- Tailwind, Radix, shadcn, or any other UI stack until an ADR selects them.

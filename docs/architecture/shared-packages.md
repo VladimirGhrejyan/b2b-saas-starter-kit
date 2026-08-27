@@ -56,7 +56,7 @@ It has **zero dependencies** (aside from Zod for the schemas) and **no framework
 | Nest HTTP kit            | `packages/nest-http` | NestJS delivery helpers             |
 | Backend domain           | `domain/*`           | business rules + backend primitives |
 | Backend capability ports | `platform`           | server capabilities                 |
-| Frontend UI              | `frontend/ui`        | React/DOM                           |
+| Frontend UI              | `frontend/ui-kit`    | React/DOM                           |
 | Frontend state/data      | `frontend/core`      | RTK/browser concerns                |
 
 Sharing anything from these across the FE/BE line is a boundary violation (see [`boundaries.md`](./boundaries.md)).

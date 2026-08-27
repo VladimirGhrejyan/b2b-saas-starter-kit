@@ -35,7 +35,7 @@ Every Nx project carries a **scope** tag and a **layer** tag.
 | `logger`                                | `scope:backend`, `layer:infrastructure`, `layer:logger` |
 | `nest-http`                             | `scope:backend`, `layer:nest-http`                      |
 | `composition`                           | `scope:backend`, `layer:composition`                    |
-| `frontend/ui`                           | `scope:frontend`, `layer:ui`                            |
+| `frontend/ui-kit`                       | `scope:frontend`, `layer:ui`                            |
 | `frontend/core`                         | `scope:frontend`, `layer:frontend-core`                 |
 | `apps/api`,`apps/worker`                | `scope:backend`, `type:app`                             |
 | `apps/web`,`apps/admin`                 | `scope:frontend`, `type:app`                            |

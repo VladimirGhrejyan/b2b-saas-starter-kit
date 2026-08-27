@@ -1,26 +1,28 @@
-# Backend Foundation — Implementation Plan
+# Implementation Plan
 
-Architecture-driven, phase-by-phase plan for the backend foundation of the B2B multi-tenant SaaS starter kit. It is derived **from the existing architecture docs and Cursor rules** (the source of truth), not from the investigated reference repositories.
+Architecture-driven, phase-by-phase plan for the B2B multi-tenant SaaS starter kit. It is derived **from the existing architecture docs and Cursor rules** (the source of truth), not from the investigated reference repositories. The frontend runtime-host direction (one product SPA, thin Electron/Capacitor hosts) is taken from [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md); it does not replace [`architecture/frontend.md`](./architecture/frontend.md) or the ADRs.
 
-> Status: Phases 1–8 are implemented. Phases 9–11 below are the remaining foundation (Logger, Nest HTTP kit, then composition + versioned HTTP e2e). This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
+> Status: **Backend foundation (Phases 1–11) is implemented.** **Frontend foundation (Phases 12–17)** is the remaining work in this document. This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
 
-Related source-of-truth docs: [`architecture/workspace-topology.md`](./architecture/workspace-topology.md), [`architecture/backend.md`](./architecture/backend.md), [`architecture/bounded-contexts.md`](./architecture/bounded-contexts.md), [`architecture/persistence.md`](./architecture/persistence.md), [`architecture/multi-tenancy.md`](./architecture/multi-tenancy.md), [`architecture/authorization.md`](./architecture/authorization.md), [`architecture/api-contracts.md`](./architecture/api-contracts.md), [`architecture/shared-packages.md`](./architecture/shared-packages.md), [`architecture/boundaries.md`](./architecture/boundaries.md), [`architecture/decisions.md`](./architecture/decisions.md).
+Related source-of-truth docs: [`architecture/workspace-topology.md`](./architecture/workspace-topology.md), [`architecture/backend.md`](./architecture/backend.md), [`architecture/bounded-contexts.md`](./architecture/bounded-contexts.md), [`architecture/persistence.md`](./architecture/persistence.md), [`architecture/multi-tenancy.md`](./architecture/multi-tenancy.md), [`architecture/authorization.md`](./architecture/authorization.md), [`architecture/api-contracts.md`](./architecture/api-contracts.md), [`architecture/frontend.md`](./architecture/frontend.md), [`architecture/design-system.md`](./architecture/design-system.md), [`architecture/shared-packages.md`](./architecture/shared-packages.md), [`architecture/boundaries.md`](./architecture/boundaries.md), [`architecture/decisions.md`](./architecture/decisions.md). Investigation (not source of truth): [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md).
 
 ---
 
+# Part 1 — Backend Foundation
+
 ## 1. Scope of this plan (locked decisions)
 
-These were confirmed for the initial foundation and constrain the whole plan:
+These were confirmed for the **backend** foundation (Part 1, Phases 1–11) and constrain that work. Frontend locked decisions are in §9.
 
 | Decision            | Choice for the foundation                                                                                                                                                                                                                                                                                                                                    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **RBAC breadth**    | **Lean-but-generic.** `identity` (User), `tenancy` (Tenant, Membership), `authorization` (Role, Permission) with a **fixed system-permission catalog** + seeded **system roles** (Owner/Admin/Member). One permission enforced end-to-end. Custom tenant-defined roles CRUD + invitations **deferred** (the seams are built so they slot in without rework). |
 | **Authentication**  | **Stubbed principal.** No password/JWT/refresh/sessions yet. The API edge injects an authenticated principal (dev middleware) and establishes `TenantContext`. Real credentials/tokens are a **later plan**, localized to the `identity` context + edge, so nothing else changes when they land.                                                             |
-| **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → logger → nest-http → composition → apps/api`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Routes are URI-versioned (`/v1/...`). Frontend excluded.                                                                                                   |
+| **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → logger → nest-http → composition → apps/api`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Routes are URI-versioned (`/v1/...`). Frontend is **Part 2 (Phases 12–17)**.                                                                               |
 | **Logging**         | **Pino**, not Nest-injectable. `Logger` port + `LoggerLocator` on `platform`; adapter in `packages/infrastructure/logger`.                                                                                                                                                                                                                                   |
 | **Redis**           | **Deferred.** Effective permissions are resolved directly from Postgres (via context repositories). `platform` Cache/Lock/PubSub ports + `packages/infrastructure/redis` + permission caching come later. All keys/queries are designed **cache- and tenant-prefix-ready** now.                                                                              |
 
-Out of scope for this plan (see §7 Deferred): real authentication, Redis, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime, request-id ALS log mixin.
+Out of scope for **Part 1 (backend)**: real authentication, Redis, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime. Frontend is **Part 2**, not deferred as a blob.
 
 ---
 
@@ -184,7 +186,7 @@ Ordering follows **actual architectural dependencies**, not a rote "types → do
                                                                 10 contracts envelopes + nest-http ──▶ 11 composition + apps/api + HTTP e2e
 ```
 
-Phases 4 and 5 are independent (both pure domain) and may be done in either order. Phase 6 depends on 3–5. Phases 7–11 are strictly sequential.
+Phases 4 and 5 are independent (both pure domain) and may be done in either order. Phase 6 depends on 3–5. Phases 7–11 are strictly sequential. **Frontend foundation continues as Phases 12–17 in Part 2.**
 
 ---
 
@@ -342,7 +344,8 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 - `nx lint` (incl. module-boundaries + context-isolation + import-order) and `nx test`/`nx typecheck` green for affected projects.
 - No forbidden dependency edge introduced (verified via `nx graph`/affected).
 - Public surface exported from the package entry; internal types not leaked across layers.
-- Tests written at the layer's prescribed level (§2.9); domain/application need **no** DB.
+- Tests written at the layer's prescribed level (§2.9 backend, §10.6 frontend); domain/application need **no** DB.
+- Frontend apps: FSD folder lint (`app → pages → features → shared`); no `scope:backend` imports; product features stay out of Electron/Capacitor hosts.
 
 ---
 
@@ -358,7 +361,7 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 | **Custom roles + invitations**         | Custom-role CRUD and membership invitation/role-assignment use cases reuse the tenant-scoped `RoleRepository` + `MembershipRepository`.                                                             |
 | **Postgres RLS "secure profile"**      | Opt-in defense-in-depth; session `app.tenant_id` + policies alongside the base-repo filter.                                                                                                         |
 | **Policy seam (ABAC-lite)**            | Resource/ownership checks behind `AuthorizationPort` (e.g. CASL adapter) without controller/use-case changes.                                                                                       |
-| **Frontend**                           | `contracts` already shared; `frontend/core` consumes `/v1/me` effective permissions + `can()` in a later plan.                                                                                      |
+| **Frontend (historical)**              | Moved to **Part 2 (Phases 12–17)**. What remains after that foundation is listed in §14.                                                                                                            |
 | **Request/tenant log mixin**           | Bind `tenantId` / `actorId` / request id onto Pino via ALS after the locator exists (ADR-027 deferred increment).                                                                                   |
 
 ---
@@ -373,3 +376,268 @@ These were decided with rationale (not blocking) and can be revisited when the r
 - **Worked permission enforced end-to-end** is `tenancy.members.read` on `GET /v1/tenants/:tenantId/members`; the catalog ships a small fixed set with Owner/Admin/Member bundles.
 - **`AuthorizationPort` and `MembershipRolesPort` are application-layer published ports** (§2.5); if a future need makes authorization heavier, they can move behind a dedicated port project without changing callers.
 - **`Logger` is not injectable**; `IdGenerator`/`Clock` remain injected (§2.8).
+
+---
+
+# Part 2 — Frontend Foundation
+
+Phases 12–17. Derived from [`architecture/frontend.md`](./architecture/frontend.md), [`architecture/design-system.md`](./architecture/design-system.md), ADR-021–022, ADR-030, and the runtime-host direction in [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md). Existing `apps/web` and `apps/admin` are Hello World Vite apps; `packages/frontend/ui-kit` and `packages/frontend/core` do not exist yet.
+
+**Out of scope for this part:** ESLint, Prettier, commitlint, Git hooks, Nx/workspace TypeScript/test infrastructure (owned centrally). Do not clone a fat in-app `shared/libs` tree. Do not triplicate FSD across Electron/Capacitor.
+
+---
+
+## 9. Scope of the frontend foundation (locked decisions)
+
+| Decision               | Choice for the foundation                                                                                                                                                                                                                                                                           |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Audience apps**      | **Two Vite apps** (ADR-021): `apps/web` (tenant product) and `apps/admin` (back-office). Different permissions, bundle, and deploy cadence.                                                                                                                                                         |
+| **Runtime hosts**      | **One tenant-product SPA.** Electron (`apps/desktop`) and Capacitor (`apps/mobile`) are **thin hosts** that load `apps/web` dist. They are not sibling FSD products. Admin stays web-only.                                                                                                          |
+| **FSD hybrid**         | Shared `frontend/ui-kit` + `frontend/core`; features as **folders in the app** (ADR-022). Promote to `frontend/feature-*` only when **admin** needs the same feature. **Runtime hosts do not count** as a second app.                                                                               |
+| **UI kit**             | `frontend/ui-kit` is the presentation package (ADR-030). UI technology is **TBD**: **no** Tailwind, Radix, shadcn, tokens, or `ThemeProvider`. Foundation export is a native HTML `Button`. Presentation-only (no RTK, no `contracts` for behavior).                                                |
+| **State**              | RTK Query for server state (empty `createApi` + `injectEndpoints`); RTK slices for session/UI; `/me` is server-authoritative for effective permissions; `useCan` / unstyled `<Can>` in `core`. Backend remains authoritative.                                                                       |
+| **Auth on the wire**   | **Stubbed principal**, matching the API. `prepareHeaders` sends `x-user-id` / `x-tenant-id` from session. No Bearer/JWT/refresh until the real-auth plan. A local-only principal picker in `apps/web` is in scope so the slice is demoable.                                                         |
+| **Config**             | App Zod schema + `ConfigLoader` at **Vite plugin / Electron main** time (YAML uses `node:fs`). Bake a virtual module into the bundle. **Never** call `ConfigLoader` from React or `frontend/core` runtime. `baseUrl` is not `import.meta.env.VITE_API_URL` alone.                                   |
+| **Platform isolation** | Ports in `frontend/core` (`StoragePort`, `LoggerPort`, `LinkingPort`, optional `WindowPort`). Web adapters in `core`. Host adapters live in `apps/desktop` / `apps/mobile` and are injected at bootstrap. Product/feature code must not import `electron`, `@capacitor/*`, or `window.electronAPI`. |
+| **i18n**               | Lean typed i18next: engine in `core`, locale **content** in the owning app (`common`, `tenancy`, …). Lazy locale packs. Persist language via `StoragePort`.                                                                                                                                         |
+| **Meet the backend**   | Only at `contracts`, `shared-kernel-types`, `utils`, `config`. Map the **contracts error envelope** in the RTK base query. No OpenAPI codegen internally. No backend Pino / `LoggerLocator` in the frontend.                                                                                        |
+
+---
+
+## 10. Frontend architecture design
+
+### 10.1 Nx projects, tags, and dependency direction
+
+From [`boundaries.md`](./architecture/boundaries.md) and [`workspace-topology.md`](./architecture/workspace-topology.md). Hosts are added in Phase 16 (not listed in topology today).
+
+| Project           | Tags                                    | May depend on                                                                                                                |
+| ----------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `frontend/ui-kit` | `scope:frontend`, `layer:ui`            | `utils` (+ React). **Not** Tailwind / Radix / theme. **Not** `contracts`, **not** `core`.                                    |
+| `frontend/core`   | `scope:frontend`, `layer:frontend-core` | `contracts`, `shared-kernel-types`, `utils`, `config` (types only — no `ConfigLoader` at runtime). **Not** `ui-kit`.         |
+| `apps/web`        | `scope:frontend`, `type:app`            | `ui-kit`, `core`, `contracts`, `shared-kernel-types`, `utils`, `config`                                                      |
+| `apps/admin`      | `scope:frontend`, `type:app`            | same as `web`                                                                                                                |
+| `apps/desktop`    | `scope:frontend`, `type:app`            | `config` (main process); **must not** import `nest-http` / `composition` / backend layers. Must **not** contain product FSD. |
+| `apps/mobile`     | `scope:frontend`, `type:app`            | Capacitor config; `webDir` = `apps/web` dist. Same forbidden edges as desktop.                                               |
+
+**Forbidden edges:** `scope:backend ↔ scope:frontend`; `layer:ui → contracts|core`; `layer:frontend-core → ui`; `type:app → type:app`; product/feature code → Electron/Capacitor APIs.
+
+Optional later (not this foundation): `packages/frontend/platform` for port types; `packages/frontend/vite-config` if the ConfigLoader plugin is copied into a third Vite app. Prefer copy-once-then-extract.
+
+### 10.2 Layering (audience vs runtime)
+
+```text
+Audience     web (tenant product)     admin (ops)
+Runtime      Browser    Electron      Capacitor
+```
+
+```
+packages/frontend/ui-kit      presentation (native Button; UI tech TBD)
+packages/frontend/core        store factory, RTK Query, session, can(), ports, i18n engine
+apps/web                      product SPA (FSD: app / pages / features / shared)
+apps/admin                    back-office SPA (own FSD folders)
+apps/desktop                  Electron main + preload; loads the web build
+apps/mobile                   Capacitor shell; webDir = apps/web dist
+```
+
+Do **not** create `apps/desktop/src/features/members`. That is the failure mode.
+
+### 10.3 Where each concern lives
+
+| Concern                                                     | Package / app                                                                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| RTK store, base API, 401 handling, session, `useCan`, `/me` | `frontend/core`                                                                      |
+| Native `Button` (no theme / Tailwind / Radix)               | `frontend/ui-kit`                                                                    |
+| Tenant product screens                                      | `apps/web` FSD until **admin** needs them                                            |
+| Admin-only screens                                          | `apps/admin` FSD                                                                     |
+| Vite HTML, Capacitor config, Electron main                  | Host apps                                                                            |
+| Storage, deep link, window                                  | Ports in `core`; adapters in hosts (web adapters ship with `core`)                   |
+| Zod wire types                                              | `contracts` (already exist)                                                          |
+| Pure helpers                                                | `@b2b-saas-starter-kit/utils`                                                        |
+| YAML/env validation                                         | `ConfigLoader` in Vite plugin / Electron main                                        |
+| Locale JSON                                                 | Owning app (`apps/web/src/shared/assets/locales`, …)                                 |
+| Path constants + `buildPath`                                | `apps/web` (product routes). Router **factory** (browser vs hash) is a host concern. |
+
+App `shared/` stays **thin**. Anything reused goes to `ui-kit` / `core` / `utils`. Do not recreate Backgammon’s in-app `shared/libs` framework.
+
+### 10.4 Ports (in `core`, no Electron/Capacitor types)
+
+| Port                                               | Web adapter (this plan)                       | Later host adapters                                            |
+| -------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------- |
+| `StoragePort` (`get` / `set` / `remove`)           | memory + `localStorage`                       | Electron `safeStorage`; Capacitor Preferences / Secure Storage |
+| `LoggerPort` (`debug` / `info` / `warn` / `error`) | `console` in dev; `error` (and above) in prod | Electron file log; native crash later                          |
+| `LinkingPort`                                      | no-op / `window` location                     | custom protocol; App Links                                     |
+| `WindowPort` (optional)                            | no-ops                                        | `setTitle` / minimize                                          |
+
+Bootstrap injection: `createProductApp({storage, logger, routerHistory, …})` so hosts pass adapters. Web uses the web adapters by default.
+
+### 10.5 Auth, API, and `/me` (stubbed principal)
+
+The API still trusts `x-user-id` / `x-tenant-id` (not production). The frontend foundation matches that seam:
+
+- Session slice holds `userId`, `activeTenantId`, and (after `/me`) effective permissions.
+- `fetchBaseQuery` `prepareHeaders` sets those two headers. `authorization: Bearer` is **deferred** with real auth.
+- `baseUrl` comes from baked app config (Phase 14), not a raw `VITE_API_URL` read inside `core`.
+- Tag types start from the existing slice: `Me`, `Tenant`, `Membership` (add `Role` / others when screens exist).
+- `401` in the base query maps to a missing-principal / “set principal” path, not a JWT refresh.
+- `useCan(permission)` / `<Can>` gate UX only. Permission identifiers come from `contracts` (same catalog as the API).
+
+### 10.6 Testing strategy (frontend)
+
+| Layer             | Test type          | Tooling / notes                                                                                                      |
+| ----------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `frontend/ui-kit` | Unit               | Native `Button` renders. No MSW. No theme tests.                                                                     |
+| `frontend/core`   | Unit               | Store factory, `can()`, header injection, error-envelope mapping, port fakes. `./testing` exports `createTestStore`. |
+| `apps/web`        | Unit / integration | `renderWithProviders` (store + router; i18n wrappers in the app). MSW handlers typed with **contracts**.             |
+| `apps/web`        | Optional later     | Playwright against running `apps/api` — not required for Phase 15 DoD.                                               |
+
+---
+
+## 11. Key frontend decisions & trade-offs (summary)
+
+1. **One product SPA + thin hosts** — maximize reuse; Electron/Capacitor are shells, not FSD copies. Admin remains a **second audience** app.
+2. **Runtime hosts do not trigger `feature-*` extraction** — only a second _audience_ (admin) does. Document this when Phase 16 lands (ADR-022 clarification).
+3. **`ui-kit` and `core` stay strictly split** — `Can` in `core` is an unstyled children gate; `Button` lives in `ui-kit`. Apps compose both.
+4. **ConfigLoader at build time** — YAML cannot run in the renderer/WebView. Desktop may re-load in **main** later; Capacitor bakes at `nx build web`.
+5. **Stubbed principal headers** — the vertical slice works against today’s API without inventing JWT on the client.
+6. **UI technology is TBD (ADR-030)** — this foundation ships a native HTML `Button` only. No Tailwind, Radix, tokens, or `ThemeProvider`.
+7. **Copy the Vite ConfigLoader plugin into `admin`** (Phase 17) rather than extracting a `frontend/vite-config` package on day one.
+8. **i18n engine in `core`, copy in the app** — same pattern as Backgammon, SaaS namespaces, no game leftovers.
+
+---
+
+## 12. Frontend implementation order
+
+```
+12 frontend/ui-kit (native Button; UI tech TBD)
+        │
+13 frontend/core (store, RTK API, session, can(), ports, testing)
+        │
+14 apps/web FSD shell (providers, router factory, ConfigLoader plugin, i18n, error boundary)
+        │
+15 product vertical slice (GET /v1/me + members, useCan, MSW)
+        │
+        ├─▶ 16 thin desktop + mobile hosts (load web dist)
+        └─▶ 17 apps/admin FSD shell (own audience; reuse ui-kit + core)
+```
+
+Phases 12 and 13 are independent (`ui-kit` ↛ `core`, `core` ↛ `ui-kit`) and may be done in either order; both must exist before 14. Phases 16 and 17 are independent of each other; both depend on 15 (a real web dist / shared libs). Do not start Phase 16 by copying features into the hosts.
+
+---
+
+## 13. Frontend phases
+
+Each phase lists Goal · Scope · Packages · Tasks · Tests · Verification · Definition of Done · Deferred, same as Part 1.
+
+### Phase 12 — `frontend/ui-kit` (presentation package)
+
+- **Goal:** stand up the presentation package so apps import a real shared `Button` instead of inventing local ones.
+- **Scope:** `packages/frontend/ui-kit` — a native HTML `<button>` wrapper only. No Tailwind, Radix, shadcn, CSS tokens, or `ThemeProvider`. No RTK. No `contracts` import.
+- **Packages/projects:** create `packages/frontend/ui-kit` (tags `scope:frontend`, `layer:ui`). Use the workspace Nx React library generator (`--no-interactive`); wire as `@b2b-saas-starter-kit/ui-kit`.
+- **Implementation tasks:**
+  - Generate the lib; add tags; export from the package entry.
+  - Implement `Button` as a native `<button type="button">` forwarding standard HTML button attributes.
+  - Do **not** add a CSS framework, theme provider, or design tokens.
+- **Tests:** unit — `Button` renders and forwards `disabled` / `onClick`.
+- **Verification:** `nx lint/typecheck/test` on the ui-kit project; `nx graph` shows `ui-kit → utils` only (plus React).
+- **Definition of Done:** package exported; apps can depend on it; no data-fetching in `ui-kit`.
+- **Deferred:** UI component library, Tailwind/Radix, tokens, `ThemeProvider`, toast/forms, tenant branding.
+
+### Phase 13 — `frontend/core` (store, API, session, ports)
+
+- **Goal:** the shared state/data kernel used by web, admin, and (later) every product host.
+- **Scope:** store factory (extra slices/middleware from the app), empty RTK Query `createApi`, session slice (`userId`, `activeTenantId`, permissions from `/me`), `useCan` + unstyled `<Can>`, frontend **ports** + **web adapters**, contracts error-envelope mapping in `baseQuery`, `./testing` (`createTestStore`).
+- **Packages/projects:** create `packages/frontend/core` (tags `scope:frontend`, `layer:frontend-core`) → `@b2b-saas-starter-kit/frontend-core` (or the workspace’s established name). Must **not** import `ui-kit` or backend packages.
+- **Implementation tasks:**
+  - `createStore({preloadedState, extraSlices, ports})`; typed `useAppDispatch` / `useAppSelector`.
+  - Empty `createApi` + `fetchBaseQuery`: `baseUrl` from **injected config**; `prepareHeaders` sets `x-user-id` / `x-tenant-id` from session (no Bearer yet).
+  - Map `{code, message}` (contracts envelope) to a typed frontend error; do not invent a parallel code list for wire errors (`UNAUTHORIZED`, `INSUFFICIENT_PERMISSION`, `VALIDATION_ERROR`, …).
+  - `LoggerPort` / `StoragePort` / `LinkingPort` (+ optional `WindowPort`) with web adapters. Do not `redux-persist` the session until a storage port is used deliberately (memory default).
+  - `can(permissions, permission)` helper + `useCan` / `<Can>`.
+  - Frontend logger: `debug`/`info`/`warn`/`error`; production still emits `error` (not a total console no-op).
+- **Tests:** unit — header injection; `can()` allow/deny; envelope mapping; store factory; port fakes; locator-style ports do not throw when web adapters are passed in.
+- **Verification:** `nx lint/typecheck/test` on core; graph shows `core → contracts + shared-kernel-types + utils` (and `config` types if used); a deliberate `core → ui-kit` import fails boundaries.
+- **Definition of Done:** apps can `createStore` + `api.injectEndpoints`; session + `can()` work without a browser host.
+- **Deferred:** JWT refresh in base query; `redux-persist`; Sentry/Crashlytics adapters; Electron/Capacitor adapters (Phase 16+).
+
+### Phase 14 — `apps/web` FSD shell + config + i18n + router
+
+- **Goal:** grow Hello World into the product **app shell** (providers, routing, config, i18n, errors) with adapter injection, still without product screens.
+- **Scope:** `apps/web/src/{app,pages,features,shared}` FSD folders + downward import lint; Vite plugin that runs `ConfigLoader` and exposes a virtual module; typed i18n (engine from `core`, JSON in the app); router **factory** (default `createBrowserRouter`; hash is a host option); error boundary; `createProductApp({storage, logger, …})`.
+- **Packages/projects:** existing `apps/web`. Add FSD path aliases **inside the app only** (`@/app`, `@/pages`, `@/features`, `@/shared`). Packages stay `@b2b-saas-starter-kit/*`.
+- **Implementation tasks:**
+  - FSD folders; `app/` owns providers (store → i18n ready → router → error boundary). Keep `shared/` thin.
+  - App Zod config schema; Vite plugin: `ConfigLoader` (`source: 'yaml'` and/or env) → virtual module. `core` receives the baked object; React modules never import `@b2b-saas-starter-kit/config` loaders that touch `node:fs`.
+  - Typed `paths` / `buildPath` / Zod `useRouteParams`. Do **not** hard-code `createBrowserRouter` inside features.
+  - i18n: lazy locale import, typed keys, SaaS namespaces (`common`, `tenancy`, …). Persist locale via `StoragePort`.
+  - Error boundary in `app/` using `ui-kit` `Button` or plain markup for fallback chrome; log via `LoggerPort`.
+  - Write a short ADR for i18n (not in kit ADRs today) when this phase lands.
+- **Tests:** unit — `renderWithProviders` (store + router + i18n); config schema parse/reject; a sample typed path builder.
+- **Verification:** `nx lint/typecheck/test web`; FSD folder lint (`app → pages → features → shared`); `nx serve web` boots the shell.
+- **Definition of Done:** shell renders with i18n + empty routes; config is baked; injection point exists for hosts.
+- **Deferred:** product pages (Phase 15); hash router until a host needs it; extracting the Vite plugin to its own package.
+
+### Phase 15 — Product vertical slice (`/me` + members)
+
+- **Goal:** prove FE/BE integration on the **same** HTTP slice the API already e2e-tests: session from `/v1/me`, members list gated by `tenancy.members.read`.
+- **Scope:** `apps/web` features/pages for **me** (profile + effective permissions) and **tenant members**; RTK `injectEndpoints` using **contracts** DTOs; local-only **dev principal picker** (sets `userId` / `tenantId` in session; hidden unless config says dev). Permission-aware UI via `useCan` / `<Can>` + `ui-kit` `Button`.
+- **Packages/projects:** `apps/web` (folders, not a `feature-*` lib). Endpoints that belong only to this audience stay in the app until admin needs them.
+- **Implementation tasks:**
+  - `GET /v1/me` → session permissions; tenant switcher stub that re-fetches `/me` and invalidates tenant-scoped tags (even if only one tenant in the stub).
+  - `GET /v1/tenants/:tenantId/members` — show list when `useCan('tenancy.members.read')`; disable/hide otherwise (UX only).
+  - Dev principal picker writing session ids used by `prepareHeaders`.
+  - MSW handlers from contract schemas for page tests.
+- **Tests:** MSW — me payload hydrates `can()`; members query allowed vs denied; 401 → principal picker; 403 envelope surfaced.
+- **Verification:** `nx test web`; manual: API up + picker + Owner sees members, Member principal does not. Optional Playwright is **not** DoD.
+- **Definition of Done:** the kit’s first UI slice talks to `/v1` through `contracts` with permission-aware chrome; frontend still imports no backend layers.
+- **Deferred:** create-user / create-tenant forms, invitations, real login, tenant branding from API (waits on UI tech).
+
+### Phase 16 — Thin runtime hosts (desktop + mobile)
+
+- **Goal:** prove **one SPA** before native plugins: Electron and Capacitor load `apps/web` dist and do not grow their own features.
+- **Scope:** `apps/desktop` (Electron main + preload + `BrowserWindow` loading the web build); `apps/mobile` (Capacitor config, `webDir` → web dist). Empty of product FSD. Web adapters remain the default; native `StoragePort` / `LinkingPort` adapters are **out of this phase** except a documented injection seam.
+- **Packages/projects:** create `apps/desktop` and `apps/mobile` (`scope:frontend`, `type:app`). Update [`workspace-topology.md`](./architecture/workspace-topology.md) and [`boundaries.md`](./architecture/boundaries.md) to list them. Clarify ADR-022: runtime hosts do not count as a second app for `feature-*` promotion.
+- **Implementation tasks:**
+  - Desktop: main process only (window chrome); renderer **is** the web bundle, not a second React tree.
+  - Mobile: Capacitor shell; `nx build web` is the payload.
+  - Document history-mode caveat (hash / custom protocol) without implementing native plugins.
+  - Graph/lint: hosts must not depend on `nest-http`, `composition`, `postgres`, `domain`.
+- **Tests:** smoke — project targets exist; desktop/mobile configs point at web dist (unit or script assertion). Full native e2e deferred.
+- **Verification:** `nx graph` shows hosts → web artifact / `config`, not backend layers; a deliberate `apps/desktop` feature folder for members is rejected in review.
+- **Definition of Done:** both hosts exist as empty shells; product code still lives only in `apps/web` + `ui-kit` + `core`.
+- **Deferred:** `safeStorage` / Secure Storage adapters, deep links, push, splash, updater, Electron file logger, hash router switch.
+
+### Phase 17 — `apps/admin` FSD shell
+
+- **Goal:** the **second audience** app exists as a real shell on `ui-kit` + `core`, without copying product features.
+- **Scope:** grow `apps/admin` to FSD (`app` / `pages` / `features` / `shared`); reuse ConfigLoader Vite plugin (copy from web, do not extract a package yet); own locale packs; placeholder home (not the members feature).
+- **Packages/projects:** existing `apps/admin`. Same tags as `web`.
+- **Implementation tasks:** providers + router factory + baked config; do **not** extract `apps/web` features into `frontend/feature-*` until a screen is actually shared.
+- **Tests:** shell render test; boundaries green.
+- **Verification:** `nx lint/typecheck/test admin`; graph `admin → ui-kit + core + contracts`, not `web`.
+- **Definition of Done:** admin boots as a separate audience app sharing libs; members UI remains web-only.
+- **Deferred:** admin-only ops screens, impersonation, support tools.
+
+---
+
+## 14. Deferred after the frontend foundation
+
+| Area                                             | Why deferred / how it slots in later                                                                                                   |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Real authentication UI**                       | Login, refresh cookie, Bearer `prepareHeaders`, 401 refresh — lands with the identity/JWT plan; replace the dev principal picker only. |
+| **UI component / CSS stack**                     | ADR-030: tech TBD. Add Tailwind/Radix/tokens/`ThemeProvider` only after a new ADR. Forms/toasts wait on that choice.                   |
+| **Native adapters**                              | Electron `safeStorage` / file log; Capacitor Secure Storage, push, back button — implement behind existing ports.                      |
+| **`frontend/feature-*` libs**                    | Only when **admin** needs a web feature. Hosts never justify this.                                                                     |
+| **`packages/frontend/platform` / `vite-config`** | Extract if port types or the Vite plugin are shared widely; not on day one.                                                            |
+| **Playwright e2e / Sentry**                      | Optional after the MSW slice is green.                                                                                                 |
+| **Tenant branding from API**                     | Product goal; needs UI tech + `ThemeProvider` (not in this foundation).                                                                |
+| **Embed SDK / extra FSD layers**                 | Out of scope (`widgets/`, `entities/`, Phaser, iframe SDK).                                                                            |
+
+---
+
+## 15. Frontend assumptions & recommendations
+
+- **ADR-030 is source of truth for `ui-kit`:** native `Button` only; UI technology (Tailwind, Radix, theme) is TBD. Do not reintroduce ADR-023 in implementation.
+- **`import.meta.env.VITE_API_URL` in `frontend.md` is insufficient for packaged clients.** This plan uses ConfigLoader-at-build; update `frontend.md` when Phase 14 lands.
+- **i18n is a new ADR** at Phase 14 (i18next, lazy packs, typed keys, content in the app).
+- **Integration against compose `apps/api`** is the intended manual path for Phase 15; MSW is the automated path. Testcontainers/Playwright remain optional.
+- **Dev principal picker is local-only** and must not appear when the API is in production (the API already refuses DevPrincipal there).

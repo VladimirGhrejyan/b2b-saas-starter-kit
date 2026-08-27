@@ -35,11 +35,11 @@ Aligned with `docs/architecture/` (layer-first Nx topology, SaaS bounded context
 
 ### Frontend
 
-| File                            | Purpose                          |
-| ------------------------------- | -------------------------------- |
-| `frontend/fsd-architecture.mdc` | web/admin + FSD hybrid           |
-| `frontend/state-management.mdc` | RTK Query + contracts + `can()`  |
-| `frontend/design-system.mdc`    | Tokens + runtime tenant branding |
+| File                            | Purpose                                  |
+| ------------------------------- | ---------------------------------------- |
+| `frontend/fsd-architecture.mdc` | web/admin + FSD hybrid                   |
+| `frontend/state-management.mdc` | RTK Query + contracts + `can()`          |
+| `frontend/design-system.mdc`    | `ui-kit` presentation package (tech TBD) |
 
 ### API / Testing / Tooling / Nx
 

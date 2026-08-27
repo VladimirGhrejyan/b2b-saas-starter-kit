@@ -26,7 +26,7 @@ Every project: `scope:*` + `layer:*` (apps also `type:app`).
 | `logger` (path `packages/infrastructure/logger`) | `scope:backend`, `layer:infrastructure`, `layer:logger` |
 | `nest-http` | `scope:backend`, `layer:nest-http` |
 | `composition` | `scope:backend`, `layer:composition` |
-| `frontend-ui` | `scope:frontend`, `layer:ui` |
+| `ui-kit` | `scope:frontend`, `layer:ui` |
 | `frontend-core` | `scope:frontend`, `layer:frontend-core` |
 | `api`, `worker` | `scope:backend`, `type:app` |
 | `web`, `admin` | `scope:frontend`, `type:app` |

@@ -1,8 +1,8 @@
 # Frontend Architecture
 
-React + Vite, two applications sharing libraries, Redux Toolkit + RTK Query for state, Tailwind + shadcn/Radix for UI.
+React + Vite, two applications sharing libraries, Redux Toolkit + RTK Query for state. UI component/CSS technology is **TBD**.
 
-Related: [`design-system.md`](./design-system.md), [`api-contracts.md`](./api-contracts.md), [`authorization.md`](./authorization.md).
+Related: [`design-system.md`](./design-system.md), [`api-contracts.md`](./api-contracts.md), [`authorization.md`](./authorization.md). Investigation of runtime hosts (Electron / Capacitor): [`frontend-foundation-investigation.md`](./frontend-foundation-investigation.md).
 
 ## Applications
 
@@ -18,14 +18,14 @@ Both are thin shells composing shared libraries. Splitting them keeps audiences,
 **Decision:** Feature-Sliced Design applied pragmatically.
 
 - **Shared libraries** (Nx projects), reused by both apps:
-  - `frontend/ui` — the design system (see [`design-system.md`](./design-system.md)).
+  - `frontend/ui-kit` — presentation package (native `Button` for now; UI tech TBD — see [`design-system.md`](./design-system.md)).
   - `frontend/core` — RTK store setup, RTK Query base API, auth/tenant/permission state, the `can()` helper, API client wiring, shared hooks.
   - `contracts`, `shared-kernel-types`, `utils`, `config` — shared with the backend.
 - **Features live as FSD folders inside each app** (`apps/web/src/{app,pages,features,shared}`), and are **promoted to a `frontend/feature-*` library only when a second app needs them.** This avoids premature libraries while keeping the door open.
 
 ```
 apps/web/src/
-  app/        # entry, providers (Redux, Theme, Router), app shell
+  app/        # entry, providers (Redux, Router), app shell
   pages/      # route-level composition
   features/   # feature slices (ui + model + api usage) — folders, not libs (yet)
   shared/     # app-local helpers (thin; truly-shared code goes to frontend/* libs)
@@ -78,6 +78,8 @@ export const api = createApi({
 - These are **UX-only**; the backend is authoritative. Never rely on hiding a control for security.
 
 ```tsx
+import {Button} from '@b2b-saas-starter-kit/ui-kit'
+
 const canInvite = useCan('tenant.members.invite')
 return (
   <Button disabled={!canInvite} onClick={invite}>
@@ -88,11 +90,11 @@ return (
 
 ## App shell
 
-Both apps share a shell pattern (from `frontend/core` + `frontend/ui`): providers (Redux, Theme/branding, Router), authenticated layout (tenant switcher, nav, user menu), and route guards that check authentication + coarse permissions before rendering a route.
+Both apps share a shell pattern (from `frontend/core` + `frontend/ui-kit`): providers (Redux, Router), authenticated layout (tenant switcher, nav, user menu), and route guards that check authentication + coarse permissions before rendering a route.
 
 ## Boundaries recap
 
 - Frontend never imports backend layers; they meet only at `contracts`, `shared-kernel-types`, `utils`, `config`.
-- `ui` contains **no** data-fetching or business logic (presentation only).
+- `ui-kit` contains **no** data-fetching or business logic (presentation only).
 - `core` contains **no** presentational components (state/data only).
-- Features compose `ui` + `core` + `contracts`.
+- Features compose `ui-kit` + `core` + `contracts`.

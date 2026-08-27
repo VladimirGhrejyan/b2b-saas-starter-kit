@@ -16,10 +16,12 @@ This directory is the **source of truth** for the architecture of the B2B multi-
 8. [`authorization.md`](./authorization.md) — authentication, RBAC, policies.
 9. [`api-contracts.md`](./api-contracts.md) — Zod contracts shared between backend and frontend.
 10. [`frontend.md`](./frontend.md) — React/Vite apps, state, permission-aware UI.
-11. [`design-system.md`](./design-system.md) — the themeable `ui` library and tenant branding.
+11. [`design-system.md`](./design-system.md) — `ui-kit` presentation package (UI tech TBD).
 12. [`shared-packages.md`](./shared-packages.md) — what may and may not be shared.
 13. [`boundaries.md`](./boundaries.md) — Nx tags, dependency constraints, enforcement.
 14. [`decisions.md`](./decisions.md) — the decision log (ADRs) with rationale.
+
+Investigation (not source of truth): [`frontend-foundation-investigation.md`](./frontend-foundation-investigation.md) — Web / Electron / Capacitor hosts vs the existing `web` / `admin` audience split.
 
 ## Architectural goal
 
@@ -32,28 +34,28 @@ A reusable foundation for future B2B SaaS products. It should provide, as generi
 - Notifications
 - Background jobs, caching, messaging
 - Typed API contracts
-- A frontend application shell + a themeable design system
+- A frontend application shell + a shared presentation package (`ui-kit`)
 
 These are **not implemented** here. This documentation defines _how they are to be architected_ so that each can be built, replaced, or extended without eroding the boundaries.
 
 ## Chosen technologies (explicitly selected, not merely observed)
 
-| Area                    | Chosen                           | Notes                                                                    |
-| ----------------------- | -------------------------------- | ------------------------------------------------------------------------ |
-| Backend framework       | **NestJS**                       | Delivery + DI/composition only (see [`backend.md`](./backend.md))        |
-| Language                | **TypeScript (strict)**          | Locked in `tsconfig.base.json`                                           |
-| Database                | **PostgreSQL**                   | Single instance, pool multi-tenancy                                      |
-| ORM                     | **TypeORM**                      | Persistence layer only; never in domain                                  |
-| Cache / locks / pub-sub | **Redis**                        | Behind capability ports (see [`infrastructure.md`](./infrastructure.md)) |
-| Jobs                    | **BullMQ + outbox**              | Reliable async work                                                      |
-| Validation / contracts  | **Zod + nestjs-zod**             | Single source of truth for API shapes                                    |
-| Logging                 | **Pino**                         | `Logger` port + process locator; adapter in `infrastructure/logger`      |
-| HTTP kit                | **`packages/nest-http`**         | ApiBuilder, pipe/filter/interceptor, Swagger, CORS, URI `/v1`            |
-| Frontend                | **React + Vite**                 | Two apps: `web`, `admin`                                                 |
-| Frontend state          | **Redux Toolkit + RTK Query**    | Server state via RTK Query                                               |
-| Styling / UI            | **Tailwind + shadcn/ui + Radix** | Themeable, per-tenant branding                                           |
-| Testing                 | **Vitest**                       | All projects                                                             |
-| Monorepo                | **Nx + pnpm**                    | Boundaries enforced via tags                                             |
+| Area                    | Chosen                        | Notes                                                                    |
+| ----------------------- | ----------------------------- | ------------------------------------------------------------------------ |
+| Backend framework       | **NestJS**                    | Delivery + DI/composition only (see [`backend.md`](./backend.md))        |
+| Language                | **TypeScript (strict)**       | Locked in `tsconfig.base.json`                                           |
+| Database                | **PostgreSQL**                | Single instance, pool multi-tenancy                                      |
+| ORM                     | **TypeORM**                   | Persistence layer only; never in domain                                  |
+| Cache / locks / pub-sub | **Redis**                     | Behind capability ports (see [`infrastructure.md`](./infrastructure.md)) |
+| Jobs                    | **BullMQ + outbox**           | Reliable async work                                                      |
+| Validation / contracts  | **Zod + nestjs-zod**          | Single source of truth for API shapes                                    |
+| Logging                 | **Pino**                      | `Logger` port + process locator; adapter in `infrastructure/logger`      |
+| HTTP kit                | **`packages/nest-http`**      | ApiBuilder, pipe/filter/interceptor, Swagger, CORS, URI `/v1`            |
+| Frontend                | **React + Vite**              | Two apps: `web`, `admin`                                                 |
+| Frontend state          | **Redux Toolkit + RTK Query** | Server state via RTK Query                                               |
+| Styling / UI            | **TBD**                       | `ui-kit` package exists; native `Button` only (no Tailwind/Radix/theme)  |
+| Testing                 | **Vitest**                    | All projects                                                             |
+| Monorepo                | **Nx + pnpm**                 | Boundaries enforced via tags                                             |
 
 Technologies observed in the investigated repositories but **not adopted by default** (e.g. WebSocket gateways as a separate app, project-specific game/poker infrastructure) are treated as optional extensions, not part of the core kit.
 

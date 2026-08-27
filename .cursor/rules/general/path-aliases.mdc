@@ -28,7 +28,7 @@ Canonical packages (see `docs/architecture/workspace-topology.md`):
 | `@b2b-saas-starter-kit/postgres` | Postgres adapters (`packages/infrastructure/postgres`; later `redis`, `messaging`) |
 | `@b2b-saas-starter-kit/nest-http` | Nest HTTP kit (ApiBuilder, pipe/filter, Swagger) |
 | `@b2b-saas-starter-kit/composition` | NestJS DI wiring (context folders) |
-| `@b2b-saas-starter-kit/frontend-ui` | Design system |
+| `@b2b-saas-starter-kit/ui-kit` | Presentation (`Button`; UI tech TBD) |
 | `@b2b-saas-starter-kit/frontend-core` | RTK store, auth/tenant/`can()` |
 
 ## Backend Examples
@@ -45,7 +45,7 @@ import type { UnitOfWork } from '@b2b-saas-starter-kit/platform'
 
 ```typescript
 import { InviteMemberInput } from '@b2b-saas-starter-kit/contracts'
-import { Button } from '@b2b-saas-starter-kit/frontend-ui'
+import {Button} from '@b2b-saas-starter-kit/ui-kit'
 import { useCan, useActiveTenant } from '@b2b-saas-starter-kit/frontend-core'
 ```
 

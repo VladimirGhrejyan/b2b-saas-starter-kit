@@ -43,7 +43,7 @@ packages/
 
   # ── frontend (scope:frontend) ──
   frontend/
-    ui/                    # design system (see design-system.md)
+    ui-kit/                # presentation package; UI tech TBD (see design-system.md)
     core/                  # RTK store, RTK Query base, auth/tenant/permission state, can()
 
 apps/
@@ -88,11 +88,11 @@ A single `infrastructure` project with subfolders is a valid alternative (fewer 
 | `logger`              | lib  | infrastructure | `platform` (Pino adapter; no Nest, no domain)                                    |
 | `nest-http`           | lib  | nest-http      | `contracts`, `platform`, shared (`config`/`utils` as needed)                     |
 | `composition`         | lib  | composition    | `domain`, `application`, `infrastructure`, `platform`                            |
-| `frontend/ui`         | lib  | ui             | `utils` (+ React/Radix/Tailwind)                                                 |
+| `frontend/ui-kit`     | lib  | ui             | `utils` (+ React). **Not** Tailwind / Radix / theme.                             |
 | `frontend/core`       | lib  | feature/core   | `contracts`, `shared-kernel-types`, `utils`                                      |
 | `apps/api`            | app  | app            | `nest-http`, `composition`, `contracts`, `config`, `utils`, `logger` (bootstrap) |
 | `apps/worker`         | app  | app            | `composition`, `config`, `utils`, `logger` (bootstrap)                           |
-| `apps/web`            | app  | app            | `frontend/ui`, `frontend/core`, `contracts`, `utils`, `config`                   |
+| `apps/web`            | app  | app            | `frontend/ui-kit`, `frontend/core`, `contracts`, `utils`, `config`               |
 | `apps/admin`          | app  | app            | same as `web`                                                                    |
 
 ## Dependency graph (the DAG)
@@ -115,7 +115,7 @@ flowchart TB
   api[apps/api]
   worker[apps/worker]
 
-  ui[frontend/ui]
+  ui[frontend/ui-kit]
   core[frontend/core]
   web[apps/web]
   admin[apps/admin]
@@ -165,7 +165,7 @@ flowchart TB
 
 ## What is a project vs. a folder
 
-- **Project** (has `package.json` + `tsconfig`): a _layer_ (`domain`), an _infra concern_ (`packages/infrastructure/postgres`), a _shared leaf_ (`contracts`), a _frontend lib_ (`ui`), or an _app_.
+- **Project** (has `package.json` + `tsconfig`): a _layer_ (`domain`), an _infra concern_ (`packages/infrastructure/postgres`), a _shared leaf_ (`contracts`), a _frontend lib_ (`ui-kit`), or an _app_.
 - **Folder** (no project boundary): a _bounded context_ inside a layer (`domain/src/identity`), an _aggregate_, a _use case_, an FSD _feature_ inside an app.
 
 Guideline: promote a folder to a project only when it must be (a) independently versioned/built, (b) shared across apps, or (c) boundary-enforced by Nx. Frontend features start as folders and become libs only when a second app needs them (see [`frontend.md`](./frontend.md)).

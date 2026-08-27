@@ -26,7 +26,7 @@ The workspace is currently **empty by design**. No applications or libraries hav
 **Future Stack:**
 
 - Backend: NestJS, TypeScript, Postgres, TypeORM, Redis, Zod, Vitest
-- Frontend: React, Vite, TypeScript, Redux Toolkit, Tailwind CSS, Zod, Vitest
+- Frontend: React, Vite, TypeScript, Redux Toolkit, Zod, Vitest
 - Shared: TypeScript, Zod, Vitest
 
 ## Getting Started

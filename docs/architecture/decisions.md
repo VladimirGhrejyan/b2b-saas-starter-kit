@@ -122,20 +122,21 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-021 — Two frontend apps (`web`, `admin`) sharing libs
 
-**Decision:** Separate tenant-facing and back-office apps over shared `ui`/`core` libs.
+**Decision:** Separate tenant-facing and back-office apps over shared `ui-kit`/`core` libs.
 **Options:** (A) two apps ✓; (B) web now, admin later; (C) single app.
 **Rationale:** Realistic SaaS shape; clean audience/permission/deploy separation. See [`frontend.md`](./frontend.md).
 
 ## ADR-022 — FSD hybrid on the frontend
 
-**Decision:** Shared `ui` + `core` libs; features as FSD folders inside apps, promoted to libs only when shared by both apps.
+**Decision:** Shared `ui-kit` + `core` libs; features as FSD folders inside apps, promoted to libs only when shared by both apps.
 **Options:** (A) folders + minimal libs; (B) feature libraries; (C) hybrid ✓.
 **Rationale:** Avoids premature libraries while keeping shared boundaries clean. See [`frontend.md`](./frontend.md).
 
-## ADR-023 — Single themeable `ui` design system with runtime tenant branding
+## ADR-023 — Single themeable `ui` design system with runtime tenant branding · **Superseded** by ADR-030
 
-**Decision:** One `frontend/ui` lib (shadcn + Radix + Tailwind preset + CSS-variable tokens); per-tenant branding applied at runtime; brand-color + light/dark minimum.
-**Rationale:** Supports B2B white-labeling without rebuilds; accessibility preserved via Radix; consistency across web/admin. See [`design-system.md`](./design-system.md).
+**Decision (historical):** One `frontend/ui` lib (shadcn + Radix + Tailwind preset + CSS-variable tokens); per-tenant branding applied at runtime; brand-color + light/dark minimum.
+**Rationale (historical):** Supports B2B white-labeling without rebuilds; accessibility preserved via Radix; consistency across web/admin.
+**Superseded because:** UI technology is not locked; the presentation package is `ui-kit` with a native `Button` only. See ADR-030.
 
 ## ADR-024 — Two-axis Nx tags + folder-level context-isolation lint
 
@@ -171,6 +172,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Decision:** `VersioningType.URI` default `'1'` (`/v1/...`). CORS from typed env config; **fail closed in production** if origins unset (no silent `origin: '*'`). `helmet()` (document staging HTTP/Swagger exception). `enableShutdownHooks()`. Optional `API_GLOBAL_PREFIX`. Swagger at `/docs`. Structured 400s; hide internals on 500. Applied via `ApiBuilder` in `apps/api` `main.ts`.
 **Rationale:** Public API hygiene from the first HTTP slice so later consumers do not inherit unversioned routes. See [`api-contracts.md`](./api-contracts.md).
 
+## ADR-030 — `ui-kit` package; UI technology TBD · **Supersedes** ADR-023
+
+**Decision:** Presentation library is `packages/frontend/ui-kit` (`@b2b-saas-starter-kit/ui-kit`, tags `scope:frontend`, `layer:ui`). Component and CSS technology is **not chosen**. The foundation exports a native HTML `Button` so the package is real and importable. **No** Tailwind, Radix, shadcn, design tokens, or `ThemeProvider` until a later ADR.
+**Options:** (A) lock shadcn + Radix + Tailwind now (ADR-023); (B) package boundary + native placeholder, tech TBD ✓.
+**Rationale:** Keep a shared presentation seam (`web` and `admin` import one package) without committing the kit to a CSS/component stack. Per-tenant white-labeling remains a product goal, not a current implementation. See [`design-system.md`](./design-system.md).
+
 ---
 
 ## Deferred decisions
@@ -181,4 +188,5 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 - **Mapper boilerplate reduction** — standard convention now; possible codegen/Cursor skill later.
 - **Extension contexts** (billing, files, webhooks, feature-flags) — follow existing rules when added.
 - **Auth token strategy specifics** (storage, refresh rotation) — pattern set; concrete choice at implementation.
+- **UI component / CSS stack** (Tailwind, Radix, shadcn, tokens, `ThemeProvider`) — package boundary is `ui-kit`; technology is TBD (ADR-030).
 - **CI/CD pipeline** — out of scope for this phase.

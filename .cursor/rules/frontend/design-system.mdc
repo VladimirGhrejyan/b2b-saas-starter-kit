@@ -1,35 +1,33 @@
 ---
-description: Themeable design system — tokens, Tailwind preset, runtime tenant branding
+description: ui-kit presentation package — native Button; UI tech TBD
 globs:
-  - "packages/frontend-ui/**/*.{ts,tsx,css}"
+  - "packages/frontend/ui-kit/**/*.{ts,tsx,css}"
   - "apps/web/**/*.{ts,tsx,css}"
   - "apps/admin/**/*.{ts,tsx,css}"
 alwaysApply: false
 ---
 
-# Design System & Tenant Theming
+# Frontend UI kit
 
-Source of truth: `docs/architecture/design-system.md`.
+Source of truth: `docs/architecture/design-system.md` (ADR-030).
 
 ## Ownership
 
-`packages/frontend-ui`: shadcn/ui over Radix, semantic CSS-variable tokens, shared Tailwind preset, `ThemeProvider`.
+`packages/frontend/ui-kit` (`@b2b-saas-starter-kit/ui-kit`): presentation only.
 
-- Presentation only — no RTK Query, no business logic
-- Components use **semantic** tokens (`bg-primary`), never hard-coded brand hex
+- No RTK Query, no business logic, no `contracts` for behavior
+- Foundation export: native HTML `Button` (`<button type="button">`)
+- **No** Tailwind, Radix, shadcn, design tokens, or `ThemeProvider` until a later ADR
 
-## Runtime Branding
+```tsx
+import {Button} from '@b2b-saas-starter-kit/ui-kit'
 
-Tenant branding (brand color, light/dark, optional radius/logo) is applied at runtime via CSS variables — no rebuild.
-
-```typescript
-<ThemeProvider branding={tenantBranding}>
-  <App />
-</ThemeProvider>
+<Button disabled={!canInvite} onClick={invite}>
+  Invite member
+</Button>
 ```
 
-Branding shape comes from `contracts`; app fetches and passes it to `ThemeProvider`.
+## Forbidden
 
-## Minimum
-
-Brand color + light/dark must work. Extend tokens carefully; keep Radix accessibility intact.
+- Do not add a CSS framework or theme wrapper as a placeholder
+- Do not put data-fetching in this package

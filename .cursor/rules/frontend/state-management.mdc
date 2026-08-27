@@ -81,4 +81,4 @@ On tenant switch: refetch `/me` and invalidate tenant-scoped tags.
 
 - Re-derive permissions from roles on the FE
 - Generate internal API types from OpenAPI (OpenAPI is for external consumers only)
-- Put API slices inside `frontend-ui`
+- Put API slices inside `ui-kit`

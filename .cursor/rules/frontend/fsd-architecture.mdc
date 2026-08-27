@@ -1,9 +1,9 @@
 ---
-description: Frontend FSD hybrid — apps/web + apps/admin with shared ui/core libs
+description: Frontend FSD hybrid — apps/web + apps/admin with shared ui-kit/core libs
 globs:
   - "apps/web/**/*.{ts,tsx}"
   - "apps/admin/**/*.{ts,tsx}"
-  - "packages/frontend*/**/*.{ts,tsx}"
+  - "packages/frontend/**/*.{ts,tsx}"
 alwaysApply: false
 ---
 
@@ -15,8 +15,8 @@ Source of truth: `docs/architecture/frontend.md`, `docs/architecture/design-syst
 
 - `apps/web` — tenant-facing
 - `apps/admin` — back-office
-- `packages/frontend-ui` — design system (shadcn/Radix/Tailwind tokens)
-- `packages/frontend-core` — RTK store, base API, auth/tenant/`can()`
+- `packages/frontend/ui-kit` — presentation (`Button`; UI tech TBD)
+- `packages/frontend/core` — RTK store, base API, auth/tenant/`can()`
 
 Features live as **folders inside each app**. Promote to a `frontend-feature-*` lib only when both apps need them.
 
@@ -61,14 +61,14 @@ features/members/
 
 ```typescript
 // features/members/components/member-card.tsx
-import { Badge } from '@b2b-saas-starter-kit/frontend-ui'
-import type { MembershipOutput } from '@b2b-saas-starter-kit/contracts'
+import {Button} from '@b2b-saas-starter-kit/ui-kit'
+import type {MembershipOutput} from '@b2b-saas-starter-kit/contracts'
 
-export function MemberCard({ member }: { member: MembershipOutput }) {
+export function MemberCard({member}: {member: MembershipOutput}) {
   return (
     <div>
       <span>{member.userId}</span>
-      <Badge>{member.status}</Badge>
+      <Button disabled>{member.status}</Button>
     </div>
   )
 }
@@ -76,7 +76,7 @@ export function MemberCard({ member }: { member: MembershipOutput }) {
 
 ## Shared Lib Boundaries
 
-- `frontend-ui`: presentation only — no RTK Query, no business rules
+- `ui-kit`: presentation only — no RTK Query, no business rules
 - `frontend-core`: state/data only — no presentational components
 - Never import backend packages (`domain`, `application`, `infrastructure`)
 
@@ -86,6 +86,6 @@ export function MemberCard({ member }: { member: MembershipOutput }) {
 // ❌ Feature importing another feature's internals
 import { x } from '@/features/tenants/components/internal'
 
-// ❌ Putting design-system components only in one app when both need them
+// ❌ Putting ui-kit components only in one app when both need them
 // ❌ OpenAPI codegen as the internal type channel (use contracts)
 ```
