@@ -95,8 +95,8 @@ Infrastructure may use NestJS (`@Injectable`, module providers) where it is a Ne
 `@b2b-saas-starter-kit/nest-http` provides:
 
 - `ApiBuilder` — helmet, CORS (fail-closed in production if origins unset), URI versioning (default `'1'` → `/v1/...`), optional global prefix, shutdown hooks, Swagger, listen
-- `createHttpProviders()` — global `APP_PIPE` / `APP_FILTER` / `APP_INTERCEPTOR` (nestjs-zod validation + serializer)
-- Exception filter — Zod 400s, `HttpException`, duck-typed `{code, message}` mapped with the **contracts** error envelope and `HttpStatus` (no domain error class imports)
+- `createHttpProviders({codedErrorHttpStatuses?})` — global `APP_PIPE` / `APP_FILTER` / `APP_INTERCEPTOR` (nestjs-zod validation + serializer). The optional map is app-owned string codes → `HttpStatus`; unmapped coded errors are **409** + `warn`.
+- Exception filter — Zod 400s, `HttpException` (5xx logged, internals hidden), duck-typed `{code, message}` mapped with the **contracts** error envelope and `HttpStatus` (no domain error class imports)
 - OpenAPI setup (`cleanupOpenApiDoc`); basic-auth on `/docs` optional
 - `@Public()` metadata decorator (JWT / `RequirePermission` stay in `apps/api`)
 - Process handlers — `unhandledRejection` / `uncaughtException` → `LoggerLocator.get().fatal`

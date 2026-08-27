@@ -5,7 +5,11 @@ import {ApiExceptionFilter} from '../filters/api-exception.filter'
 import {ApiSerializerInterceptor} from '../interceptors/api-serializer.interceptor'
 import {ApiValidationPipe} from '../pipes/api-validation.pipe'
 
-export function createHttpProviders(): Provider[] {
+import type {CreateHttpProvidersOptions} from './create-http-providers.types'
+
+export function createHttpProviders(options: CreateHttpProvidersOptions = {}): Provider[] {
+  const codedErrorHttpStatuses = options.codedErrorHttpStatuses ?? {}
+
   return [
     {
       provide: APP_PIPE,
@@ -13,7 +17,7 @@ export function createHttpProviders(): Provider[] {
     },
     {
       provide: APP_FILTER,
-      useClass: ApiExceptionFilter,
+      useFactory: () => new ApiExceptionFilter(codedErrorHttpStatuses),
     },
     {
       provide: APP_INTERCEPTOR,

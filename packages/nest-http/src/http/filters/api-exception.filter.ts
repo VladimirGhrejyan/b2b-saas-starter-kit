@@ -5,12 +5,19 @@ import {ZodSerializationException, ZodValidationException} from 'nestjs-zod'
 import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 import {HttpStatus} from '@b2b-saas-starter-kit/contracts'
 
+import type {Logger} from '@b2b-saas-starter-kit/platform'
 import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
 
 import type {HttpResponseWriter} from './http-response-writer.types'
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
+  readonly #codedErrorHttpStatuses: Readonly<Record<string, number>>
+
+  constructor(codedErrorHttpStatuses: Readonly<Record<string, number>> = {}) {
+    this.#codedErrorHttpStatuses = codedErrorHttpStatuses
+  }
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<HttpResponseWriter>()
 
@@ -35,23 +42,13 @@ export class ApiExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof HttpException) {
-      const status = exception.getStatus()
-
-      response.status(status).json({
-        code: this.#httpExceptionCode(status),
-        message: this.#httpExceptionMessage(exception),
-      })
+      this.#respondHttpException(exception, response)
 
       return
     }
 
     if (this.#isCodedError(exception)) {
-      const status = exception.code === 'INSUFFICIENT_PERMISSION' ? HttpStatus.FORBIDDEN : HttpStatus.CONFLICT
-
-      response.status(status).json({
-        code: exception.code,
-        message: exception.message,
-      })
+      this.#respondCodedError(exception, response)
 
       return
     }
@@ -63,7 +60,49 @@ export class ApiExceptionFilter implements ExceptionFilter {
     })
   }
 
-  #logger() {
+  #respondHttpException(exception: HttpException, response: HttpResponseWriter): void {
+    const status = exception.getStatus()
+
+    if (status >= 500) {
+      this.#logger().error(exception, 'Http exception')
+      response.status(status).json({
+        code: this.#httpExceptionCode(status),
+        message: 'Internal server error',
+      })
+
+      return
+    }
+
+    response.status(status).json({
+      code: this.#httpExceptionCode(status),
+      message: this.#httpExceptionMessage(exception),
+    })
+  }
+
+  #respondCodedError(exception: {code: string; message: string}, response: HttpResponseWriter): void {
+    if (!(exception.code in this.#codedErrorHttpStatuses)) {
+      this.#logger().warn({code: exception.code}, 'unmapped coded error; defaulting to 409')
+      response.status(HttpStatus.CONFLICT).json({
+        code: exception.code,
+        message: exception.message,
+      })
+
+      return
+    }
+
+    const mapped = this.#codedErrorHttpStatuses[exception.code]
+
+    if (mapped >= 500) {
+      this.#logger().error(exception, 'Coded error')
+    }
+
+    response.status(mapped).json({
+      code: exception.code,
+      message: exception.message,
+    })
+  }
+
+  #logger(): Logger {
     return LoggerLocator.get().context(ApiExceptionFilter.name)
   }
 

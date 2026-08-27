@@ -128,4 +128,14 @@ describe('HTTP e2e', () => {
 
     expect(response.body.code).toBe('UNAUTHORIZED')
   })
+
+  it('returns 404 when creating a tenant for an unknown owner', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', '00000000-0000-4000-8000-000000000001')
+      .send({name: 'Acme'})
+      .expect(404)
+
+    expect(response.body.code).toBe('OWNER_USER_NOT_FOUND')
+  })
 })

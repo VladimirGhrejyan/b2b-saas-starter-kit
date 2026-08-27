@@ -7,6 +7,7 @@ import {LoggerLocator, PinoLogger} from '@b2b-saas-starter-kit/logger'
 import {ApiBuilder, registerProcessErrorHandlers} from '@b2b-saas-starter-kit/nest-http'
 
 import {AppModule} from './app/app.module'
+import {assertDevPrincipalAllowed} from './common/auth/assert-dev-principal-allowed'
 import {ApiEnvSchema} from './common/config/env.schema'
 import {mapApiHttpConfig} from './common/config/map-api-http-config'
 
@@ -32,6 +33,8 @@ async function bootstrap() {
       'LOG_PRETTY',
     ],
   })
+
+  assertDevPrincipalAllowed(env.NODE_ENV)
 
   LoggerLocator.init(
     new PinoLogger({

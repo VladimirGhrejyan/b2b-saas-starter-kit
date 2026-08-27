@@ -27,7 +27,7 @@ export class TenantsController {
   @ApiErrorResponses([
     {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
     {status: HttpStatus.UNAUTHORIZED, description: 'x-user-id is missing or invalid'},
-    {status: HttpStatus.CONFLICT, description: 'Owner user was not found'},
+    {status: HttpStatus.NOT_FOUND, description: 'Owner user was not found'},
   ])
   create(
     @Body() body: CreateTenantInputDto,

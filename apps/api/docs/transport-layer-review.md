@@ -109,21 +109,25 @@ Whichever is chosen, keep the wiring in `main.ts` / `nest-http` so the domain st
 
 **Recommendation.** Use `@nestjs/terminus`. Liveness is a trivial process check. Readiness needs a DB ping — but `apps/api` must not import `postgres`. Respect the boundary by exposing a lightweight readiness capability from `composition` (e.g. a `checkDatabase()` / `HealthCheckPort`) that the terminus indicator in `apps/api` calls. Mark health routes `@Public()` and exclude them from access logs/metrics.
 
-## 5. Exception filter observability & correctness gaps — **Medium, Architectural Weakness / Bug**
+## 5. Exception filter observability & correctness gaps — **done**
 
 **Location:** `packages/nest-http/src/http/filters/api-exception.filter.ts`.
 
-Three distinct issues:
+**Done.** 5xx `HttpException`s are logged and internals are hidden. Apps pass `codedErrorHttpStatuses` into `createHttpProviders`; unmapped codes are 409 + `warn`. Request id / tenant / actor on error logs come from the Pino mixin (Finding 1).
+
+Three distinct issues (historical):
 
 - **5xx `HttpException`s are not logged.** Only `ZodSerializationException` and the final unhandled branch log. A raw `HttpException(500/502/503)` returns to the client silently. Recommend: log **any** response with `status >= 500` regardless of exception type, and include the request id.
 - **Coded errors collapse to 409.** Every coded error except `INSUFFICIENT_PERMISSION` becomes `409 Conflict`. A semantically-404 error (`USER_NOT_FOUND`) is returned as 409. This is both a correctness smell and an observability one — unmapped codes are silently miscategorized and never logged. Recommend an explicit `code → HttpStatus` map, with a `warn` log (or dev-time throw) for any code not in the map, defaulting to 409/500 intentionally.
 - **No request context in error logs.** Tie the filter's log lines to the RequestContext from Finding 1 (route, method, requestId, tenantId) so a logged error is actionable.
 
-## 6. DevPrincipal header-trust has no environment guard — **High, Security (production-readiness)**
+## 6. DevPrincipal header-trust has no environment guard — **done**
 
-**Location:** `apps/api/src/common/auth/dev-principal.interceptor.ts`, `common/common.module.ts`.
+**Location:** `apps/api/src/common/auth/assert-dev-principal-allowed.ts`, `main.ts`.
 
-**Problem.** Authentication is a stub that trusts `x-user-id` / `x-tenant-id` request headers. This is intended and documented (JWT replaces it later), **but nothing prevents it from running in production.** If this build shipped as-is, any client could impersonate any user/tenant by setting two headers.
+**Done.** `assertDevPrincipalAllowed` refuses to boot when `NODE_ENV === 'production'`. When JWT lands, this stub should be removed from the production composition, not merely overridden.
+
+**Problem (historical).** Authentication is a stub that trusts `x-user-id` / `x-tenant-id` request headers. This is intended and documented (JWT replaces it later), **but nothing prevents it from running in production.** If this build shipped as-is, any client could impersonate any user/tenant by setting two headers.
 
 **Why it matters.** It's a total authz bypass if it ever reaches a real environment. The seam is fine; the missing guardrail is the risk.
 
@@ -149,11 +153,13 @@ Three distinct issues:
 
 **Recommendation.** Add optional `bodyLimit` and server timeout settings to `ApiHttpConfig`, applied in `ApiBuilder` (`app.use(json({limit}))`, `server.requestTimeout`, `server.headersTimeout`). Keep defaults permissive in dev, tightened in prod.
 
-## 9. `CurrentPrincipal` missing-principal → 500 — **Low, Improvement**
+## 9. `CurrentPrincipal` missing-principal → 500 — **done**
 
-**Location:** `apps/api/src/common/auth/current-principal.decorator.ts`.
+**Location:** `apps/api/src/common/auth/read-dev-principal.ts`, `current-principal.decorator.ts`.
 
-If the principal isn't established (misordering, or a route that forgot the interceptor), the decorator throws a plain `Error`, which the filter maps to 500. A missing principal is really a 401. Minor robustness: throw `UnauthorizedException` (or rely on the ordering test from Finding 7).
+**Done.** Missing principal throws `UnauthorizedException` (HTTP 401).
+
+If the principal isn't established (misordering, or a route that forgot the interceptor), a missing principal is a 401 rather than a 500.
 
 ## 10. Redaction is narrow — **Low, Improvement (observability-linked)**
 
@@ -176,8 +182,8 @@ Concrete, in suggested order:
 1. **RequestContext ALS in `platform`** + Pino mixin in `logger` (Finding 1). Foundation.
 2. **Access-log interceptor in `nest-http`** (Finding 2), consuming the RequestContext.
 3. **Health/readiness via terminus**, DB indicator through a `composition` capability (Finding 4).
-4. **Exception-filter hardening**: log all 5xx, explicit code→status map, request context on errors (Finding 5).
-5. **Production guard on DevPrincipal** (Finding 6) — small, high-value safety.
+4. **Exception-filter hardening** — done: log all 5xx, app-owned code→status map, request context via Pino mixin (Finding 5).
+5. **Production guard on DevPrincipal** — done (Finding 6).
 6. **Body limits + server timeouts** in `ApiBuilder` config (Finding 8).
 
 ---
@@ -205,7 +211,7 @@ Worth introducing for a production-bound B2B SaaS:
 
 # Final Assessment
 
-- **What should change (soon):** introduce the request-scoped context (correlation id + tenant/actor) and access logging; add health/readiness; harden the exception filter's 5xx logging and code→status mapping; put an environment guard on the DevPrincipal header-trust stub.
+- **What should change (soon):** add health/readiness (Finding 4); body limits + server timeouts (Finding 8). Request-scoped context, access logs, exception-filter 5xx/code mapping, DevPrincipal production guard, and missing-principal → 401 are done.
 - **What should remain as-is:** the layering, `ApiBuilder`, fail-closed CORS, Swagger basic-auth, the coded-error envelope, and the `@Public`/`@RequirePermission` seam. These are solid.
 - **What can be deferred:** full OpenTelemetry, worker-spanning tracing, rate limiting, log sampling.
-- **Architectural decision required?** One small, deliberate decision: **where the request-scoped ALS lives.** Recommendation — a generic `RequestContextLocator` in `platform` (peer to `LoggerLocator`), consumed by `nest-http` and the Pino mixin in `infrastructure/logger`. This keeps observability enrichment inside the existing dependency rules and unblocks logs, metrics, and tracing from a single primitive. This extends ADR-027's deferred "request/tenant log mixin" into a concrete design; adopt it before building the observability features above.
+- **Architectural decision required?** The request-scoped ALS lives on `platform` as `RequestContextLocator` (peer of `LoggerLocator`), consumed by `nest-http` and the Pino mixin. Coded-error HTTP mapping is app-owned and passed into `createHttpProviders`.

@@ -10,11 +10,11 @@ import {createHttpProviders} from './create-http-providers'
 describe('createHttpProviders', () => {
   it('registers kit pipe, exception filter, and serializer', () => {
     const providers = createHttpProviders()
+    const filterProvider = providers[1] as {provide: unknown; useFactory: () => ApiExceptionFilter}
 
-    expect(providers).toEqual([
-      {provide: APP_PIPE, useClass: ApiValidationPipe},
-      {provide: APP_FILTER, useClass: ApiExceptionFilter},
-      {provide: APP_INTERCEPTOR, useClass: ApiSerializerInterceptor},
-    ])
+    expect(providers[0]).toEqual({provide: APP_PIPE, useClass: ApiValidationPipe})
+    expect(filterProvider.provide).toBe(APP_FILTER)
+    expect(filterProvider.useFactory()).toBeInstanceOf(ApiExceptionFilter)
+    expect(providers[2]).toEqual({provide: APP_INTERCEPTOR, useClass: ApiSerializerInterceptor})
   })
 })

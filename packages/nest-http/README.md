@@ -49,7 +49,7 @@ await new ApiBuilder(app, apiHttpConfig)
   .listen()
 ```
 
-`createHttpProviders()` registers `ApiValidationPipe`, `ApiExceptionFilter`, and `ApiSerializerInterceptor`. CORS throws when `isProduction` is true and `corsOrigins` is empty. Helmet is skipped when `isPlainHttp` is true. URI versioning defaults to `'1'`.
+`createHttpProviders()` registers `ApiValidationPipe`, `ApiExceptionFilter`, and `ApiSerializerInterceptor`. Pass optional `codedErrorHttpStatuses` so duck-typed `{code, message}` errors map to HTTP status; unmapped codes become **409** and are logged at `warn`. `HttpException`s with `status >= 500` are logged and do not leak internals. CORS throws when `isProduction` is true and `corsOrigins` is empty. Helmet is skipped when `isPlainHttp` is true. URI versioning defaults to `'1'`.
 
 `OpenApi.setup` (via `ApiBuilder.setupSwagger`) mounts Swagger UI, optional basic-auth (including `/docs-json` and `/docs-yaml`), bearer auth, and writes `openapi.json` into the static directory when `staticAssets` or `swagger.schema` is set.
 

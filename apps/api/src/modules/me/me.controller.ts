@@ -21,7 +21,7 @@ export class MeController {
   @ApiErrorResponses([
     {status: HttpStatus.UNAUTHORIZED, description: 'x-user-id or x-tenant-id is missing or invalid'},
     {status: HttpStatus.FORBIDDEN, description: 'Active membership is required'},
-    {status: HttpStatus.CONFLICT, description: 'Actor user was not found'},
+    {status: HttpStatus.NOT_FOUND, description: 'Actor user was not found'},
   ])
   get(): Promise<MeOutputDto> {
     return this.me.get()
