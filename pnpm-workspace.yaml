@@ -2,6 +2,7 @@ packages:
   - 'packages/*'
   - 'packages/shared/*'
   - 'packages/infrastructure/*'
+  - 'packages/frontend/*'
   - 'apps/*'
 
 autoInstallPeers: true

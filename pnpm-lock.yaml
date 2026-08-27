@@ -350,6 +350,21 @@ importers:
         specifier: workspace:*
         version: link:../shared/kernel-types
 
+  packages/frontend/ui-kit:
+    devDependencies:
+      '@testing-library/react':
+        specifier: 16.3.0
+        version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      jsdom:
+        specifier: ^27.4.0
+        version: 27.4.0
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.8
+        version: 19.2.8(react@19.2.8)
+
   packages/infrastructure/logger:
     dependencies:
       '@b2b-saas-starter-kit/platform':

@@ -12,7 +12,7 @@ export class FrontendEslintConfig {
     files: [
       'apps/web/**/*.{ts,tsx,jsx}',
       'apps/admin/**/*.{ts,tsx,jsx}',
-      'packages/frontend*/**/*.{ts,tsx,jsx}',
+      'packages/frontend/**/*.{ts,tsx,jsx}',
       '**/*.{tsx,jsx}',
     ],
     languageOptions: {

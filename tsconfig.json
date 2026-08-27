@@ -53,6 +53,9 @@
     },
     {
       "path": "./packages/composition"
+    },
+    {
+      "path": "./packages/frontend/ui-kit"
     }
   ]
 }

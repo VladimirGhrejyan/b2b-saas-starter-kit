@@ -15,6 +15,7 @@ import {NestHttpEslintConfig} from './nest-http'
 import {PlatformEslintConfig} from './platform'
 import {TestsEslintConfig} from './tests'
 import {ToolingEslintConfig} from './tooling'
+import {UiKitEslintConfig} from './ui-kit'
 
 /**
  * Ordered flat-config fragments for the workspace root entry.
@@ -34,6 +35,7 @@ export class EslintFlatConfig {
     NestHttpEslintConfig.config,
     InfrastructureEslintConfig.config,
     FrontendEslintConfig.config,
+    UiKitEslintConfig.config,
     TestsEslintConfig.config,
     ToolingEslintConfig.config,
     prettier,

@@ -38,7 +38,7 @@ export class ImportGroups {
       '^@b2b-saas-starter-kit/shared-kernel-types',
       '^@b2b-saas-starter-kit/utils',
       '^@b2b-saas-starter-kit/config',
-      '^@b2b-saas-starter-kit/frontend-ui',
+      '^@b2b-saas-starter-kit/ui-kit',
       '^@b2b-saas-starter-kit/frontend-core',
     ],
     ['^@b2b-saas-starter-kit/'],
