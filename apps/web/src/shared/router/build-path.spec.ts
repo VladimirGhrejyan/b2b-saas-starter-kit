@@ -7,10 +7,10 @@ describe('buildPath', () => {
   })
 
   it('substitutes named params', () => {
-    expect(buildPath(paths.demoItem, {id: 'abc'})).toBe('/demo/abc')
+    expect(buildPath(paths.members, {tenantId: 'abc'})).toBe('/tenants/abc/members')
   })
 
   it('throws when a param is missing', () => {
-    expect(() => buildPath(paths.demoItem)).toThrow('Missing path param "id"')
+    expect(() => buildPath(paths.members)).toThrow('Missing path param "tenantId"')
   })
 })

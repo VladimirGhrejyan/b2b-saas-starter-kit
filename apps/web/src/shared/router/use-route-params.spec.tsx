@@ -5,16 +5,16 @@ import {z} from 'zod'
 import {paths} from './paths'
 import {useRouteParams} from './use-route-params'
 
-function DemoParams() {
-  const {id} = useRouteParams(z.object({id: z.string()}))
+function MembersParams() {
+  const {tenantId} = useRouteParams(z.object({tenantId: z.string()}))
 
-  return <span>{id}</span>
+  return <span>{tenantId}</span>
 }
 
 describe('useRouteParams', () => {
   it('parses params from the active route', () => {
-    const router = createMemoryRouter([{path: paths.demoItem, element: <DemoParams />}], {
-      initialEntries: ['/demo/abc'],
+    const router = createMemoryRouter([{path: paths.members, element: <MembersParams />}], {
+      initialEntries: ['/tenants/abc/members'],
     })
 
     render(<RouterProvider router={router} />)

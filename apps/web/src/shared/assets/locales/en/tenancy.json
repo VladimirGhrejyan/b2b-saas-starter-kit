@@ -1,1 +1,11 @@
-{}
+{
+  "meTitle": "Me",
+  "meEmail": "Email",
+  "meDisplayName": "Name",
+  "mePermissions": "Permissions",
+  "meNoMembership": "No membership in this tenant",
+  "switchTenant": "Active tenant",
+  "switchTenantApply": "Switch tenant",
+  "membersTitle": "Members",
+  "membersEmpty": "No members"
+}

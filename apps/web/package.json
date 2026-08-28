@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@b2b-saas-starter-kit/config": "workspace:*",
+    "@b2b-saas-starter-kit/contracts": "workspace:*",
     "@b2b-saas-starter-kit/frontend-core": "workspace:*",
+    "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*",
     "@b2b-saas-starter-kit/ui-kit": "workspace:*",
     "@b2b-saas-starter-kit/utils": "workspace:*",
     "i18next": "^26.4.0",
@@ -26,6 +28,7 @@
   "devDependencies": {
     "@testing-library/react": "16.3.0",
     "jiti": "^2.6.1",
-    "jsdom": "^27.4.0"
+    "jsdom": "^27.4.0",
+    "msw": "^2.15.0"
   }
 }

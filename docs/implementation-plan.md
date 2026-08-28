@@ -2,7 +2,7 @@
 
 Architecture-driven, phase-by-phase plan for the B2B multi-tenant SaaS starter kit. It is derived **from the existing architecture docs and Cursor rules** (the source of truth), not from the investigated reference repositories. The frontend runtime-host direction (one product SPA, thin Electron/Capacitor hosts) is taken from [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md); it does not replace [`architecture/frontend.md`](./architecture/frontend.md) or the ADRs.
 
-> Status: **Backend foundation (Phases 1–11) is implemented.** **Frontend foundation (Phases 12–17)** is the remaining work in this document. This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
+> Status: **Backend foundation (Phases 1–11) is implemented.** **Frontend Phases 12–15 are implemented** (`ui-kit`, `frontend-core`, `apps/web` FSD shell, `/me` + members vertical slice). **Phases 16–17 remain.** This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
 
 Related source-of-truth docs: [`architecture/workspace-topology.md`](./architecture/workspace-topology.md), [`architecture/backend.md`](./architecture/backend.md), [`architecture/bounded-contexts.md`](./architecture/bounded-contexts.md), [`architecture/persistence.md`](./architecture/persistence.md), [`architecture/multi-tenancy.md`](./architecture/multi-tenancy.md), [`architecture/authorization.md`](./architecture/authorization.md), [`architecture/api-contracts.md`](./architecture/api-contracts.md), [`architecture/frontend.md`](./architecture/frontend.md), [`architecture/design-system.md`](./architecture/design-system.md), [`architecture/shared-packages.md`](./architecture/shared-packages.md), [`architecture/boundaries.md`](./architecture/boundaries.md), [`architecture/decisions.md`](./architecture/decisions.md). Investigation (not source of truth): [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md).
 
@@ -578,18 +578,37 @@ Each phase lists Goal · Scope · Packages · Tasks · Tests · Verification · 
 
 ### Phase 15 — Product vertical slice (`/me` + members)
 
-- **Goal:** prove FE/BE integration on the **same** HTTP slice the API already e2e-tests: session from `/v1/me`, members list gated by `tenancy.members.read`.
-- **Scope:** `apps/web` features/pages for **me** (profile + effective permissions) and **tenant members**; RTK `injectEndpoints` using **contracts** DTOs; local-only **dev principal picker** (sets `userId` / `tenantId` in session; hidden unless config says dev). Permission-aware UI via `useCan` / `<Can>` + `ui-kit` `Button`.
-- **Packages/projects:** `apps/web` (folders, not a `feature-*` lib). Endpoints that belong only to this audience stay in the app until admin needs them.
+- **Goal:** prove FE/BE integration on the **same** HTTP slice the API already e2e-tests: session from `GET /v1/me`, members list gated by `tenancy.members.read`.
+- **Scope:** `apps/web` features/pages for **me** (profile + effective permissions) and **tenant members**; RTK `injectEndpoints` using **contracts** DTOs; local-only **dev principal picker** (sets `userId` / `tenantId` in session; hidden unless baked config `env` is `development`). Permission-aware UI via `useCan` / `<Can>` + `ui-kit` `Button`.
+  - **Preconditions (Phase 14 landed):** FSD `app → pages → features → shared`; `@/` aliases; `createProductApp` + providers; baked `virtual:web-config` / `environment` (`env`, `apiBaseUrl`); `FrontendApi.instance` (empty endpoints, tags `Me` | `Tenant` | `Membership`, `prepareHeaders` already sets `x-user-id` / `x-tenant-id`); session slice (`userId`, `activeTenantId`, `effectivePermissions`); `useCan` / `<Can>`; i18n namespaces `common` / `tenancy`; typed `paths` in `@/shared/router`. Native `Button` only (ADR-030). No MSW yet.
+  - **HTTP slice (already on `apps/api`):** `GET /v1/me` and `GET /v1/tenants/:tenantId/members`. `baseUrl` is already `…/v1`, so RTK paths are `/me` and `/tenants/${tenantId}/members`. `GET /me` is **not** `@TenantOptional` — both headers are required. Missing `x-user-id` → **401**. No active membership or missing `tenancy.members.read` → **403** `{code, message}` (`errorOutputSchema`). Use `PermissionName.tenancyMembersRead` from contracts (`tenancy.members.read`), **not** the stale `tenant.members.invite` example in `frontend.md`.
+- **Packages/projects:** `apps/web` (folders, not a `feature-*` lib). Endpoints that belong only to this audience stay in the app until admin needs them. Add `msw` via pnpm (web or root `devDependency`); do not hand-edit the lockfile. Frontend must not import backend packages (`domain`, `application`, `composition`, `postgres`, `nest-http`).
+- **Target FSD:**
+
+```
+pages/me/me-page.tsx
+pages/members/members-page.tsx
+features/me/             # getMe injectEndpoints + session hydration
+features/members/        # listMembers injectEndpoints
+features/dev-principal/  # picker; hidden unless environment.appEnv === 'development'
+shared/router/paths.ts   # /me, /tenants/:tenantId/members
+shared/testing/          # MSW server + contract-parsed fixtures
+app/providers/router     # register routes only
+```
+
+Pages compose features. Features do not import `@/app`. `createWebRouter` only wires routes.
+
 - **Implementation tasks:**
-  - `GET /v1/me` → session permissions; tenant switcher stub that re-fetches `/me` and invalidates tenant-scoped tags (even if only one tenant in the stub).
-  - `GET /v1/tenants/:tenantId/members` — show list when `useCan('tenancy.members.read')`; disable/hide otherwise (UX only).
-  - Dev principal picker writing session ids used by `prepareHeaders`.
-  - MSW handlers from contract schemas for page tests.
-- **Tests:** MSW — me payload hydrates `can()`; members query allowed vs denied; 401 → principal picker; 403 envelope surfaced.
-- **Verification:** `nx test web`; manual: API up + picker + Owner sees members, Member principal does not. Optional Playwright is **not** DoD.
-- **Definition of Done:** the kit’s first UI slice talks to `/v1` through `contracts` with permission-aware chrome; frontend still imports no backend layers.
-- **Deferred:** create-user / create-tenant forms, invitations, real login, tenant branding from API (waits on UI tech).
+  - **MSW:** handlers parse fixtures with `meOutputSchema`, `tenantMembersOutputSchema`, and `errorOutputSchema`. Wire into `renderWithProviders` (or a test-only wrapper) so page tests do not hit a real API.
+  - **`getMe`:** `FrontendApi.instance.injectEndpoints` in `features/me`. `GET /me`; `providesTags: ['Me']`. On success `dispatch(setSession({ userId: data.user.id, activeTenantId: data.membership.tenantId, effectivePermissions: data.effectivePermissions }))`. Do not invent a second permissions store. Fetch after the picker writes ids, or on layout mount when session ids already exist.
+  - **`listMembers`:** inject in `features/members`. `GET /tenants/${tenantId}/members`; `providesTags: ['Membership']`. Members page uses `useCan(PermissionName.tenancyMembersRead)` / `<Can>` to hide or disable the list (UX only). **403 remains authoritative.**
+  - **Dev principal picker:** inputs for `userId` + `tenantId` → `setSession` (permissions `[]` until `/me` succeeds). `prepareHeaders` already reads those ids. Hide when `environment.appEnv !== 'development'`. A 401 (`UNAUTHORIZED`) on `/me` or members shows the picker — not a login page. In-memory session is enough; `StoragePort` persistence is optional if it stays a few lines.
+  - **Tenant switcher stub:** even with one tenant, changing `activeTenantId` must refetch `getMe` and `invalidateTags(['Me', 'Membership'])`.
+  - **Chrome:** simple nav — Home, Me, Members (`<Can>` on Members). Register routes in `app/providers/router`. Native `Button` only. i18n keys in existing `common` / `tenancy` JSON; add a namespace only if those two are genuinely insufficient.
+- **Tests:** MSW + `renderWithProviders`. `/me` hydrates session so `useCan(PermissionName.tenancyMembersRead)` is true for an Owner fixture and false for a Member fixture. Members list visible (Owner) vs hidden/disabled (Member). 401 → picker. 403 envelope `code` / `message` surfaced in the UI. No Playwright.
+- **Verification:** `pnpm nx run-many -t lint,typecheck,test -p web`. Manual (not DoD): `pnpm infra:up`, `pnpm nx serve api`, `pnpm nx serve web`; seed via the existing HTTP e2e flow (create user → create tenant → paste ids into the picker). Owner sees members; Member principal does not. Optional Playwright is **not** DoD.
+- **Definition of Done:** the kit’s first UI slice talks to `/v1` through `contracts` with permission-aware chrome; frontend still imports no backend layers; picker is absent when baked `env` is not `development`.
+- **Deferred:** create-user / create-tenant forms, invitations, real login / JWT / Bearer `prepareHeaders`, tenant branding from API (waits on UI tech), copying members into `apps/admin` or a `frontend/feature-*` lib.
 
 ### Phase 16 — Thin runtime hosts (desktop + mobile)
 

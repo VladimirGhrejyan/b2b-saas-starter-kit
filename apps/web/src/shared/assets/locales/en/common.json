@@ -2,5 +2,13 @@
   "appTitle": "B2B SaaS Starter",
   "errorTitle": "Something went wrong",
   "retry": "Retry",
-  "reload": "Reload"
+  "reload": "Reload",
+  "navHome": "Home",
+  "navMe": "Me",
+  "navMembers": "Members",
+  "principalTitle": "Dev principal",
+  "principalUserId": "User ID",
+  "principalTenantId": "Tenant ID",
+  "principalApply": "Apply",
+  "principalInvalid": "Enter valid user and tenant IDs"
 }

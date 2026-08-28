@@ -1,4 +1,5 @@
 export const paths = {
   home: '/',
-  demoItem: '/demo/:id',
+  me: '/me',
+  members: '/tenants/:tenantId/members',
 } as const
