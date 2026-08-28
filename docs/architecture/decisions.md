@@ -128,9 +128,10 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-022 — FSD hybrid on the frontend
 
-**Decision:** Shared `ui-kit` + `core` libs; features as FSD folders inside apps, promoted to libs only when shared by both apps.
+**Decision:** Shared `ui-kit` + `core` libs; features as FSD folders inside **audience** apps (`web`, `admin`), promoted to `frontend/feature-*` libs only when a second _audience_ needs them.
+**Clarification:** Electron (`apps/desktop`) and Capacitor (`apps/mobile`) are **runtime hosts** of the `apps/web` dist. They do **not** count as a second app for feature-lib promotion and must not grow product FSD (`features/members`, …). Admin still does.
 **Options:** (A) folders + minimal libs; (B) feature libraries; (C) hybrid ✓.
-**Rationale:** Avoids premature libraries while keeping shared boundaries clean. See [`frontend.md`](./frontend.md).
+**Rationale:** Avoids premature libraries while keeping shared boundaries clean. Hosts wrap one SPA; extracting `feature-*` because Electron exists would triplicate the product. See [`frontend.md`](./frontend.md).
 
 ## ADR-023 — Single themeable `ui` design system with runtime tenant branding · **Superseded** by ADR-030
 
@@ -146,7 +147,8 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-025 — Applications: api, worker, web, admin (gateway deferred)
 
-**Decision:** Four thin apps; a realtime WebSocket `gateway` is deferred (realtime can ride on `api` + Redis pub/sub initially).
+**Decision:** Four thin **delivery** apps (`api`, `worker`, `web`, `admin`); a realtime WebSocket `gateway` is deferred (realtime can ride on `api` + Redis pub/sub initially).
+**Later:** `apps/desktop` and `apps/mobile` are **runtime hosts** of the web dist, not additional audience/delivery apps. See ADR-022.
 **Rationale:** Covers the core SaaS shape without over-provisioning. See [`workspace-topology.md`](./workspace-topology.md).
 
 ## ADR-026 — Containerized infra baseline (Compose for Postgres+Redis; apps on host in dev)

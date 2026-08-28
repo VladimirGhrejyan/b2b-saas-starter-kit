@@ -49,8 +49,10 @@ packages/
 apps/
   api/                     # NestJS HTTP — thin: transport; bootstraps nest-http + composition
   worker/                  # BullMQ consumers + outbox relay — thin; bootstraps Logger
-  web/                     # React + Vite — tenant-facing app
-  admin/                   # React + Vite — back-office app
+  web/                     # React + Vite — tenant-facing product SPA
+  admin/                   # React + Vite — back-office audience app
+  desktop/                 # Electron main + preload; loads `apps/web` dist (no product FSD)
+  mobile/                  # Capacitor config; `webDir` = `apps/web` dist (no product FSD)
 ```
 
 ### Why layer-first (and what we gave up)
@@ -94,6 +96,8 @@ A single `infrastructure` project with subfolders is a valid alternative (fewer 
 | `apps/worker`         | app  | app            | `composition`, `config`, `utils`, `logger` (bootstrap)                           |
 | `apps/web`            | app  | app            | `frontend/ui-kit`, `frontend/core`, `contracts`, `utils`, `config`               |
 | `apps/admin`          | app  | app            | same as `web`                                                                    |
+| `apps/desktop`        | app  | app            | Electron only; **Nx** `implicitDependencies: ["web"]` (no TS import of `web`)    |
+| `apps/mobile`         | app  | app            | Capacitor config; same implicit `web` artifact edge                              |
 
 ## Dependency graph (the DAG)
 
@@ -119,6 +123,8 @@ flowchart TB
   core[frontend/core]
   web[apps/web]
   admin[apps/admin]
+  desktop[apps/desktop]
+  mobile[apps/mobile]
 
   contracts --> skt
   cfg --> utils
@@ -154,6 +160,8 @@ flowchart TB
   admin --> ui
   admin --> core
   admin --> contracts
+  desktop -.->|"web dist"| web
+  mobile -.->|"web dist"| web
 ```
 
 **Key invariants**
@@ -176,7 +184,11 @@ Apps are **thin**: transport + composition, **no business logic**.
 
 - `api` — NestJS HTTP. Bootstraps Pino via `LoggerLocator.init`, then `ApiBuilder` from `@b2b-saas-starter-kit/nest-http` (URI versioning, CORS, helmet, Swagger, global pipe/filter/interceptor). Imports `composition` context modules, exposes controllers, maps `contracts` DTOs → application commands, applies coarse auth guards. Routes are versioned (`/v1/...`).
 - `worker` — BullMQ consumers + the outbox relay. Bootstraps the same `Logger` locator. Imports the same `composition` modules; re-establishes tenant context from job payloads. Does **not** import `nest-http`.
-- `web` — tenant-facing React/Vite app.
-- `admin` — internal back-office React/Vite app.
+- `web` — tenant-facing React/Vite product SPA.
+- `admin` — internal back-office React/Vite audience app.
+- `desktop` — Electron main + preload. Loads `apps/web` dist; no product FSD.
+- `mobile` — Capacitor shell. `webDir` points at `apps/web` dist; no product FSD.
+
+Runtime hosts (`desktop`, `mobile`) wrap the web **artifact**. They must not import `@b2b-saas-starter-kit/web` (`type:app → type:app`). Nx `implicitDependencies` records the build-order edge only.
 
 A realtime `gateway` (WebSocket) app is **deferred**; realtime can initially ride on `api` + Redis pub/sub. See [`decisions.md`](./decisions.md).

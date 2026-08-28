@@ -70,6 +70,10 @@ apps/__scratch__
 .claude/worktrees
 .claude/settings.local.json
 
+# Capacitor native projects (generated with `cap add`; not part of Phase 16)
+apps/mobile/ios
+apps/mobile/android
+
 # Misc
 .DS_Store
 Thumbs.db

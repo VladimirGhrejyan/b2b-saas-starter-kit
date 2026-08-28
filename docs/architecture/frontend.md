@@ -1,17 +1,19 @@
 # Frontend Architecture
 
-React + Vite, two applications sharing libraries, Redux Toolkit + RTK Query for state. UI component/CSS technology is **TBD**.
+React + Vite, **audience** applications sharing libraries, Redux Toolkit + RTK Query for state. UI component/CSS technology is **TBD**. Thin Electron/Capacitor **hosts** load the web dist (they are not extra FSD products).
 
 Related: [`design-system.md`](./design-system.md), [`api-contracts.md`](./api-contracts.md), [`authorization.md`](./authorization.md). Investigation of runtime hosts (Electron / Capacitor): [`frontend-foundation-investigation.md`](./frontend-foundation-investigation.md).
 
 ## Applications
 
-**Decision:** two apps sharing libraries.
+**Decision:** two _audience_ apps sharing libraries, plus thin _runtime hosts_ of the tenant SPA.
 
-- **`apps/web`** — tenant-facing product app.
+- **`apps/web`** — tenant-facing product SPA.
 - **`apps/admin`** — internal back-office (support/ops), different audience, permissions, and deploy cadence.
+- **`apps/desktop`** — Electron main + preload. Loads `apps/web` dist. No product FSD.
+- **`apps/mobile`** — Capacitor config (`webDir` → web dist). No product FSD.
 
-Both are thin shells composing shared libraries. Splitting them keeps audiences, bundles, and permission surfaces separate, and demonstrates the shared-lib boundaries a starter kit should teach.
+`web` and `admin` are thin shells composing shared libraries. Splitting them keeps audiences, bundles, and permission surfaces separate. **Runtime hosts do not count as a second app** for promoting `frontend/feature-*` (ADR-022). They must not import `@b2b-saas-starter-kit/web`; Nx `implicitDependencies` tracks the artifact edge.
 
 ## Library vs. folder — FSD hybrid
 
@@ -21,7 +23,7 @@ Both are thin shells composing shared libraries. Splitting them keeps audiences,
   - `frontend/ui-kit` — presentation package (native `Button` for now; UI tech TBD — see [`design-system.md`](./design-system.md)).
   - `frontend/core` — RTK store setup, RTK Query base API, auth/tenant/permission state, the `can()` helper, API client wiring, shared hooks.
   - `contracts`, `shared-kernel-types`, `utils`, `config` — shared with the backend.
-- **Features live as FSD folders inside each app** (`apps/web/src/{app,pages,features,shared}`), and are **promoted to a `frontend/feature-*` library only when a second app needs them.** This avoids premature libraries while keeping the door open.
+- **Features live as FSD folders inside each _audience_ app** (`apps/web/src/{app,pages,features,shared}`), and are **promoted to a `frontend/feature-*` library only when a second audience app (admin) needs them.** Runtime hosts never justify that promotion.
 
 ```
 apps/web/src/

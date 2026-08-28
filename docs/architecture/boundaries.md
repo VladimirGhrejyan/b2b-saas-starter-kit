@@ -39,6 +39,7 @@ Every Nx project carries a **scope** tag and a **layer** tag.
 | `frontend/core`                         | `scope:frontend`, `layer:frontend-core`                 |
 | `apps/api`,`apps/worker`                | `scope:backend`, `type:app`                             |
 | `apps/web`,`apps/admin`                 | `scope:frontend`, `type:app`                            |
+| `apps/desktop`,`apps/mobile`            | `scope:frontend`, `type:app`                            |
 
 ## Dependency constraints (`@nx/enforce-module-boundaries`)
 
@@ -138,7 +139,7 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
 - `application → infrastructure` — enforces dependency inversion (application uses ports, not adapters).
 - `scope:shared → scope:backend|frontend` — a shared package can never pull framework/infra code.
 - `scope:backend ↔ scope:frontend` — the two never import each other.
-- `type:app → type:app` — apps don't depend on other apps.
+- `type:app → type:app` — apps don't **import** other apps. Runtime hosts (`apps/desktop`, `apps/mobile`) load the `apps/web` **dist** and may declare Nx `implicitDependencies: ["web"]` for graph/build order only.
 - `type:app → postgres/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Bootstrap may import `logger` (`layer:logger`) without opening `postgres`.
 - `nest-http → domain/application/postgres` — the HTTP kit is delivery, not composition.
 

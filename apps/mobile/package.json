@@ -1,0 +1,39 @@
+{
+  "name": "@b2b-saas-starter-kit/mobile",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "nx": {
+    "name": "mobile",
+    "tags": [
+      "scope:frontend",
+      "type:app"
+    ],
+    "implicitDependencies": [
+      "web"
+    ],
+    "targets": {
+      "sync": {
+        "dependsOn": [
+          {
+            "projects": [
+              "web"
+            ],
+            "target": "build"
+          }
+        ],
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "cap sync",
+          "cwd": "apps/mobile"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0"
+  }
+}
