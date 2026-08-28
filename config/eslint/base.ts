@@ -111,6 +111,7 @@ export class EslintBase {
     '@b2b-saas-starter-kit/max-standalone-functions': 'error',
     '@b2b-saas-starter-kit/max-classes-per-file': 'error',
     '@b2b-saas-starter-kit/no-mixed-file-declarations': 'error',
+    '@b2b-saas-starter-kit/dts-in-types-folder': 'error',
   }
 
   /** Type-aware strict preset + default shared rules for all source files. */

@@ -2,7 +2,7 @@ import {configureStore} from '@reduxjs/toolkit'
 
 import {FrontendCoreConfigLocator} from '../../config/frontend-core-config.locator'
 import {sessionReducer} from '../../session/session.slice'
-import {api} from '../api/api'
+import {FrontendApi} from '../api/frontend-api'
 
 import type {AppStore, AppThunkExtra, CreateStoreOptions} from './create-store.types'
 
@@ -14,7 +14,7 @@ export function createStore(options: CreateStoreOptions = {}): AppStore {
   return configureAppStore({
     reducer: {
       session: sessionReducer,
-      [api.reducerPath]: api.reducer,
+      [FrontendApi.instance.reducerPath]: FrontendApi.instance.reducer,
       ...options.extraSlices,
     },
     preloadedState: options.preloadedState,
@@ -27,6 +27,6 @@ export function createStore(options: CreateStoreOptions = {}): AppStore {
         thunk: {
           extraArgument: {ports: config.ports},
         },
-      }).concat(api.middleware, ...extraMiddleware),
+      }).concat(FrontendApi.instance.middleware, ...extraMiddleware),
   })
 }

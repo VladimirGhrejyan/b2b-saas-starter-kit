@@ -1,0 +1,28 @@
+---
+description: Ambient .d.ts files always live in an @types folder
+globs: "**/*.d.ts"
+alwaysApply: true
+---
+
+# Declaration files
+
+Ambient TypeScript declarations (`.d.ts`) always live in a folder named `@types`, colocated with the owning package or FSD layer.
+
+```
+apps/web/src/app/@types/
+  i18next.d.ts
+  virtual-web-config.d.ts
+
+packages/frontend/core/src/@types/   # if a package needs ambient types
+```
+
+Do not drop `.d.ts` files at `src/` root or next to runtime modules.
+
+```typescript
+// ❌ apps/web/src/i18next.d.ts
+// ❌ apps/web/src/app/virtual-web-config.d.ts
+
+// ✅ apps/web/src/app/@types/i18next.d.ts
+```
+
+Enforced by ESLint `@b2b-saas-starter-kit/dts-in-types-folder`.

@@ -178,6 +178,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) lock shadcn + Radix + Tailwind now (ADR-023); (B) package boundary + native placeholder, tech TBD ✓.
 **Rationale:** Keep a shared presentation seam (`web` and `admin` import one package) without committing the kit to a CSS/component stack. Per-tenant white-labeling remains a product goal, not a current implementation. See [`design-system.md`](./design-system.md).
 
+## ADR-031 — i18next engine in `frontend-core`; locale copy in the owning app
+
+**Decision:** Internationalization uses **i18next** + `react-i18next`. The **engine** (`createI18n`) lives in `packages/frontend/core` (`lib/i18n`): instance factory, default locale `en`, namespace list, lazy `loadNamespace` callbacks supplied by the app, and locale persistence through `StoragePort` (not raw `localStorage`). **Locale JSON** lives in the owning app (`apps/web/src/shared/assets/locales/...`; admin will own its own packs). Typed keys are **app-side** `i18next` module augmentation from those JSON files; the engine stays content-free. Namespaces are SaaS-oriented (`common`, `tenancy`, …), not a copy of Backgammon `lobby` / `game` packs.
+**Options:** (A) engine + copy in each app; (B) engine in core, copy in the app ✓; (C) a shared `locales` package.
+**Rationale:** Same split as the RTK/router kernels: one runtime, many hosts. Apps control wording and lazy packs; hosts inject `StoragePort`. A shared locales package would couple audiences that should diverge (product vs admin).
+
 ---
 
 ## Deferred decisions

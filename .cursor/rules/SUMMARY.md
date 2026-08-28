@@ -12,13 +12,14 @@ Aligned with `docs/architecture/` (layer-first Nx topology, SaaS bounded context
 
 ### General
 
-| File                          | Purpose                                                       |
-| ----------------------------- | ------------------------------------------------------------- |
-| `general/typescript.mdc`      | Strict TS, `import type`, no `any`                            |
-| `general/path-aliases.mdc`    | Package imports for layer-first monorepo                      |
-| `general/shared-packages.mdc` | Allow/forbid for contracts / kernel types / utils / config    |
-| `general/utils.mdc`           | Always use `@b2b-saas-starter-kit/utils`; extend in-package   |
-| `general/config.mdc`          | Always use `ConfigLoader` from `@b2b-saas-starter-kit/config` |
+| File                            | Purpose                                                       |
+| ------------------------------- | ------------------------------------------------------------- |
+| `general/typescript.mdc`        | Strict TS, `import type`, no `any`                            |
+| `general/path-aliases.mdc`      | Package imports for layer-first monorepo                      |
+| `general/shared-packages.mdc`   | Allow/forbid for contracts / kernel types / utils / config    |
+| `general/utils.mdc`             | Always use `@b2b-saas-starter-kit/utils`; extend in-package   |
+| `general/config.mdc`            | Always use `ConfigLoader` from `@b2b-saas-starter-kit/config` |
+| `general/declaration-files.mdc` | Ambient `.d.ts` files always live in an `@types` folder       |
 
 ### Backend
 

@@ -22,10 +22,13 @@ Features live as **folders inside each app**. Promote to a `frontend-feature-*` 
 
 ```
 apps/web/src/
-  app/        # providers, router, shell
-  pages/      # routes compose features
-  features/   # members, tenants, roles, …
-  shared/     # app-local only (thin)
+  app/
+    create-product-app.tsx   # bootstrap / injection seam
+    providers/               # store, i18n, error-boundary, router
+    @types/                  # ambient .d.ts only
+  pages/                     # routes compose features
+  features/                  # members, tenants, roles, …
+  shared/                    # app-local only (thin)
 ```
 
 Import direction: `app → pages → features → shared` (+ workspace packages).
