@@ -1,8 +1,9 @@
 /// <reference types='vitest' />
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react'
 import {defineConfig} from 'vite'
+import checker from 'vite-plugin-checker'
 
-export default defineConfig(() => ({
+export default defineConfig((env) => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/admin',
   server: {
@@ -13,7 +14,12 @@ export default defineConfig(() => ({
     port: 4201,
     host: 'localhost',
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    ...(env.command === 'serve' && env.mode === 'development' && !process.env.VITEST
+      ? [checker({typescript: {tsconfigPath: 'tsconfig.app.json'}})]
+      : []),
+  ],
   // Uncomment this if you are using workers.
   // worker: {
   //  plugins: [],

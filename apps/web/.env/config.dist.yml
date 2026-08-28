@@ -2,5 +2,9 @@
 #   cp .env/config.dist.yml .env/config.yml
 #
 # Values are baked into the Vite bundle at build time — rebuild after edits.
+#
+# env is the deploy environment (development | staging | production).
+# It is distinct from Vite MODE (development | production).
 
+env: development
 apiBaseUrl: http://localhost:3000/v1

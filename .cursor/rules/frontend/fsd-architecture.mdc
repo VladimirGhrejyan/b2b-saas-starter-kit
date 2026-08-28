@@ -28,10 +28,10 @@ apps/web/src/
     @types/                  # ambient .d.ts only
   pages/                     # routes compose features
   features/                  # members, tenants, roles, …
-  shared/                    # app-local only (thin): router, i18n, testing
+  shared/                    # app-local only (thin): router, environment, i18n, testing
 ```
 
-Pages and features import route helpers from `@/shared/router` (`paths`, `buildPath`, `useRouteParams`). Router **wiring** (`createWebRouter`) stays in `app/providers/router`.
+Pages and features import route helpers from `@/shared/router` (`paths`, `buildPath`, `useRouteParams`) and runtime flags/config from `@/shared/environment`. Router **wiring** (`createWebRouter`) stays in `app/providers/router`.
 
 Import direction: `app → pages → features → shared` (+ workspace packages).
 

@@ -1,7 +1,6 @@
-import {webConfig} from 'virtual:web-config'
-
 import {configureFrontendCore, createStore, I18n} from '@b2b-saas-starter-kit/frontend-core'
 
+import {environment} from '@/shared/environment'
 import {loadWebLocaleNamespace} from '@/shared/i18n/load-web-locale-namespace'
 
 import {createWebRouter} from './providers/router'
@@ -10,7 +9,7 @@ import {Providers} from './providers'
 
 export async function createProductApp(options: CreateProductAppOptions) {
   configureFrontendCore({
-    baseUrl: webConfig.apiBaseUrl,
+    baseUrl: environment.apiBaseUrl,
     ports: options.ports,
   })
 
