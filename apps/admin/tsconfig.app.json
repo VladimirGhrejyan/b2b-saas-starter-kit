@@ -6,8 +6,41 @@
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
     "emitDeclarationOnly": true,
     "types": ["vite/client"],
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/app/*": ["./src/app/*"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/shared/*": ["./src/shared/*"]
+    },
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "src/**/*.spec.tsx", "src/**/*.test.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "src/**/*.json"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.spec.tsx",
+    "src/**/*.test.tsx",
+    "src/shared/testing/**"
+  ],
+  "references": [
+    {
+      "path": "../../packages/shared/utils/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/frontend/ui-kit/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/frontend/core/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/shared/config/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/shared/contracts/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/shared/kernel-types/tsconfig.lib.json"
+    }
+  ]
 }

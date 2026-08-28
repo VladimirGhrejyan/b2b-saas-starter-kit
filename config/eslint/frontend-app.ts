@@ -1,7 +1,7 @@
 import type {Linter} from 'eslint'
 
 const configMessage =
-  'Do not import ConfigLoader in app src. Bake config in the Vite plugin and import virtual:web-config (or the admin equivalent).'
+  'Do not import ConfigLoader in app src. Bake config in the Vite plugin and import virtual:web-config or virtual:admin-config.'
 
 /** FSD downward imports + no ConfigLoader in React modules. */
 export class FrontendAppEslintConfig {

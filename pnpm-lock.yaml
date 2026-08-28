@@ -195,16 +195,52 @@ importers:
 
   apps/admin:
     dependencies:
+      '@b2b-saas-starter-kit/config':
+        specifier: workspace:*
+        version: link:../../packages/shared/config
+      '@b2b-saas-starter-kit/contracts':
+        specifier: workspace:*
+        version: link:../../packages/shared/contracts
+      '@b2b-saas-starter-kit/frontend-core':
+        specifier: workspace:*
+        version: link:../../packages/frontend/core
+      '@b2b-saas-starter-kit/shared-kernel-types':
+        specifier: workspace:*
+        version: link:../../packages/shared/kernel-types
+      '@b2b-saas-starter-kit/ui-kit':
+        specifier: workspace:*
+        version: link:../../packages/frontend/ui-kit
+      '@b2b-saas-starter-kit/utils':
+        specifier: workspace:*
+        version: link:../../packages/shared/utils
+      i18next:
+        specifier: ^26.4.0
+        version: 26.4.0(typescript@6.0.3)
       react:
         specifier: ^19.2.8
         version: 19.2.8
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
+      react-i18next:
+        specifier: ^17.0.12
+        version: 17.0.12(i18next@26.4.0(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
+      react-redux:
+        specifier: ^9.3.0
+        version: 9.3.0(@types/react@19.2.18)(react@19.2.8)(redux@5.0.1)
+      react-router:
+        specifier: ^8.3.0
+        version: 8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@testing-library/react':
         specifier: 16.3.0
         version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      jiti:
+        specifier: ^2.6.1
+        version: 2.6.1
       jsdom:
         specifier: ^27.4.0
         version: 27.4.0

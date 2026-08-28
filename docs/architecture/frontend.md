@@ -23,7 +23,7 @@ Related: [`design-system.md`](./design-system.md), [`api-contracts.md`](./api-co
   - `frontend/ui-kit` — presentation package (native `Button` for now; UI tech TBD — see [`design-system.md`](./design-system.md)).
   - `frontend/core` — RTK store setup, RTK Query base API, auth/tenant/permission state, the `can()` helper, API client wiring, shared hooks.
   - `contracts`, `shared-kernel-types`, `utils`, `config` — shared with the backend.
-- **Features live as FSD folders inside each _audience_ app** (`apps/web/src/{app,pages,features,shared}`), and are **promoted to a `frontend/feature-*` library only when a second audience app (admin) needs them.** Runtime hosts never justify that promotion.
+- **Features live as FSD folders inside each _audience_ app** (`apps/web` and `apps/admin` each have `src/{app,pages,features,shared}`), and are **promoted to a `frontend/feature-*` library only when a second audience app (admin) needs them.** Runtime hosts never justify that promotion. Members UI stays in `apps/web` until admin actually needs it.
 
 ```
 apps/web/src/
@@ -31,6 +31,12 @@ apps/web/src/
   pages/      # route-level composition
   features/   # feature slices (ui + model + api usage) — folders, not libs (yet)
   shared/     # app-local helpers (thin; truly-shared code goes to frontend/* libs)
+
+apps/admin/src/
+  app/        # entry, providers (Redux, Router)
+  pages/      # route-level composition (placeholder home)
+  features/   # empty until an admin-only capability exists
+  shared/     # app-local helpers and locale packs
 ```
 
 FSD layer rule inside an app: `app → pages → features → shared` (imports point downward). Enforced by the same folder-level import lint used on the backend (see [`boundaries.md`](./boundaries.md)).
