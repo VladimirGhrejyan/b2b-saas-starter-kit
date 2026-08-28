@@ -1,0 +1,45 @@
+{
+  "name": "@b2b-saas-starter-kit/frontend-core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./testing": {
+      "types": "./src/testing/index.ts",
+      "import": "./src/testing/index.ts",
+      "default": "./src/testing/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "nx": {
+    "name": "frontend-core",
+    "tags": [
+      "scope:frontend",
+      "layer:frontend-core"
+    ]
+  },
+  "peerDependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.0",
+    "jsdom": "^27.4.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "dependencies": {
+    "@b2b-saas-starter-kit/contracts": "workspace:*",
+    "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*",
+    "@b2b-saas-starter-kit/utils": "workspace:*",
+    "@reduxjs/toolkit": "^2.12.0",
+    "react-redux": "^9.3.0"
+  }
+}

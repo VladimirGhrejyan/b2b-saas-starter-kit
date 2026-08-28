@@ -9,6 +9,7 @@ import {CompositionEslintConfig} from './composition'
 import {ContractsEslintConfig} from './contracts'
 import {DomainEslintConfig} from './domain'
 import {FrontendEslintConfig} from './frontend'
+import {FrontendCoreEslintConfig} from './frontend-core'
 import {EslintIgnores} from './ignores'
 import {InfrastructureEslintConfig} from './infrastructure'
 import {NestHttpEslintConfig} from './nest-http'
@@ -36,6 +37,7 @@ export class EslintFlatConfig {
     InfrastructureEslintConfig.config,
     FrontendEslintConfig.config,
     UiKitEslintConfig.config,
+    FrontendCoreEslintConfig.config,
     TestsEslintConfig.config,
     ToolingEslintConfig.config,
     prettier,
