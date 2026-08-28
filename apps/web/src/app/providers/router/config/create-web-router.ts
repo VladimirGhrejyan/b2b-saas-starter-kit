@@ -2,8 +2,7 @@ import type {AppRouter, AppRouterHistory} from '@b2b-saas-starter-kit/frontend-c
 import {createAppRouter} from '@b2b-saas-starter-kit/frontend-core'
 
 import {HomePage} from '@/pages/home/home-page'
-
-import {paths} from '../model/paths'
+import {paths} from '@/shared/router'
 
 export function createWebRouter(history: AppRouterHistory): AppRouter {
   return createAppRouter({

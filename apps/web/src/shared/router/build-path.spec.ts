@@ -1,6 +1,5 @@
-import {paths} from '../model/paths'
-
 import {buildPath} from './build-path'
+import {paths} from './paths'
 
 describe('buildPath', () => {
   it('returns a static path unchanged', () => {

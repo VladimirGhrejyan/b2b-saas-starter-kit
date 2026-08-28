@@ -40,6 +40,14 @@ ruleTester.run('no-fsd-upward-imports', noFsdUpwardImportsRule, {
     },
     {
       filename: webPages,
+      code: `import {paths, useRouteParams} from '@/shared/router'`,
+    },
+    {
+      filename: webApp,
+      code: `import {paths} from '@/shared/router'`,
+    },
+    {
+      filename: webPages,
       code: `import {HomePage} from './home-page'`,
     },
     {

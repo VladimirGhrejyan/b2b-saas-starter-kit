@@ -2,8 +2,7 @@ import {render, screen} from '@testing-library/react'
 import {createMemoryRouter, RouterProvider} from 'react-router'
 import {z} from 'zod'
 
-import {paths} from '../model/paths'
-
+import {paths} from './paths'
 import {useRouteParams} from './use-route-params'
 
 function DemoParams() {
