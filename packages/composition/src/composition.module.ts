@@ -8,6 +8,7 @@ import {
 } from '@b2b-saas-starter-kit/application'
 
 import {loadPostgresConfigFromEnv, PostgresInfrastructureModule} from '@b2b-saas-starter-kit/postgres'
+import {loadRedisConfigFromEnv, RedisInfrastructureModule} from '@b2b-saas-starter-kit/redis'
 
 import {AuthorizationModule} from './authorization/authorization.module'
 import {IdentityModule} from './identity/identity.module'
@@ -19,6 +20,9 @@ import {compositionProviders} from './composition.providers'
   imports: [
     PostgresInfrastructureModule.forRootAsync({
       useFactory: () => loadPostgresConfigFromEnv(),
+    }),
+    RedisInfrastructureModule.forRootAsync({
+      useFactory: () => loadRedisConfigFromEnv(),
     }),
     IdentityModule,
     TenancyModule,

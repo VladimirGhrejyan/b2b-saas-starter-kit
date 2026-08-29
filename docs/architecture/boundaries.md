@@ -22,24 +22,26 @@ Every Nx project carries a **scope** tag and a **layer** tag.
 - `layer:ui`, `layer:frontend-core`, `layer:feature` (frontend)
 - `type:app` for applications
 
-| Project                                 | Tags                                                    |
-| --------------------------------------- | ------------------------------------------------------- |
-| `shared-kernel-types`                   | `scope:shared`, `layer:shared-types`                    |
-| `contracts`                             | `scope:shared`, `layer:contracts`                       |
-| `utils`                                 | `scope:shared`, `layer:utils`                           |
-| `config`                                | `scope:shared`, `layer:config`                          |
-| `domain`                                | `scope:backend`, `layer:domain`                         |
-| `application`                           | `scope:backend`, `layer:application`                    |
-| `platform`                              | `scope:backend`, `layer:platform`                       |
-| `postgres` (later `redis`, `messaging`) | `scope:backend`, `layer:infrastructure`                 |
-| `logger`                                | `scope:backend`, `layer:infrastructure`, `layer:logger` |
-| `nest-http`                             | `scope:backend`, `layer:nest-http`                      |
-| `composition`                           | `scope:backend`, `layer:composition`                    |
-| `frontend/ui-kit`                       | `scope:frontend`, `layer:ui`                            |
-| `frontend/core`                         | `scope:frontend`, `layer:frontend-core`                 |
-| `apps/api`,`apps/worker`                | `scope:backend`, `type:app`                             |
-| `apps/web`,`apps/admin`                 | `scope:frontend`, `type:app`                            |
-| `apps/desktop`,`apps/mobile`            | `scope:frontend`, `type:app`                            |
+| Project                      | Tags                                                    |
+| ---------------------------- | ------------------------------------------------------- |
+| `shared-kernel-types`        | `scope:shared`, `layer:shared-types`                    |
+| `contracts`                  | `scope:shared`, `layer:contracts`                       |
+| `utils`                      | `scope:shared`, `layer:utils`                           |
+| `config`                     | `scope:shared`, `layer:config`                          |
+| `domain`                     | `scope:backend`, `layer:domain`                         |
+| `application`                | `scope:backend`, `layer:application`                    |
+| `platform`                   | `scope:backend`, `layer:platform`                       |
+| `postgres`                   | `scope:backend`, `layer:infrastructure`                 |
+| `redis`                      | `scope:backend`, `layer:infrastructure`                 |
+| `messaging` (later)          | `scope:backend`, `layer:infrastructure`                 |
+| `logger`                     | `scope:backend`, `layer:infrastructure`, `layer:logger` |
+| `nest-http`                  | `scope:backend`, `layer:nest-http`                      |
+| `composition`                | `scope:backend`, `layer:composition`                    |
+| `frontend/ui-kit`            | `scope:frontend`, `layer:ui`                            |
+| `frontend/core`              | `scope:frontend`, `layer:frontend-core`                 |
+| `apps/api`,`apps/worker`     | `scope:backend`, `type:app`                             |
+| `apps/web`,`apps/admin`      | `scope:frontend`, `type:app`                            |
+| `apps/desktop`,`apps/mobile` | `scope:frontend`, `type:app`                            |
 
 ## Dependency constraints (`@nx/enforce-module-boundaries`)
 
@@ -140,7 +142,7 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
 - `scope:shared → scope:backend|frontend` — a shared package can never pull framework/infra code.
 - `scope:backend ↔ scope:frontend` — the two never import each other.
 - `type:app → type:app` — apps don't **import** other apps. Runtime hosts (`apps/desktop`, `apps/mobile`) load the `apps/web` **dist** and may declare Nx `implicitDependencies: ["web"]` for graph/build order only.
-- `type:app → postgres/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Bootstrap may import `logger` (`layer:logger`) without opening `postgres`.
+- `type:app → postgres/redis/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Bootstrap may import `logger` (`layer:logger`) without opening `postgres` or `redis`.
 - `nest-http → domain/application/postgres` — the HTTP kit is delivery, not composition.
 
 ## Context isolation (the gap layer-first leaves)

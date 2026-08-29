@@ -1,41 +1,84 @@
 import type {Linter} from 'eslint'
 
-const purityMessage =
-  'Infrastructure may use TypeORM, pg, and @nestjs/common. Do not import contracts, composition, or other Nest packages.'
+const postgresLoggerMessage =
+  'Infrastructure may use TypeORM, pg, and @nestjs/common. Do not import contracts, composition, Redis clients, or other Nest packages.'
 
-/** Infrastructure overlay: wire DTOs and composition stay out. */
+const redisMessage =
+  'Redis adapters may use ioredis and @nestjs/common. Do not import TypeORM, contracts, composition, or other Nest packages.'
+
+/** Infrastructure overlay: postgres/logger stay Redis-free; redis stays TypeORM-free. */
 export class InfrastructureEslintConfig {
-  static readonly config: Linter.Config = {
-    files: ['packages/infrastructure/**/*.{ts,tsx}'],
-    ignores: ['**/*.{spec,test}.ts', '**/*.integration.spec.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {name: 'ioredis', message: purityMessage},
-            {name: '@b2b-saas-starter-kit/contracts', message: purityMessage},
-            {name: '@nestjs/typeorm', message: purityMessage},
-            {name: 'nestjs-cls', message: purityMessage},
-          ],
-          patterns: [
-            {
-              group: [
-                '@nestjs/core',
-                '@nestjs/platform-*',
-                '@nestjs/testing',
-                '@nestjs/swagger',
-                '@nestjs/config',
-                '@nestjs/cqrs',
-                '@nestjs/microservices',
-                '@nestjs/websockets',
-                '@b2b-saas-starter-kit/composition*',
-              ],
-              message: purityMessage,
-            },
-          ],
-        },
-      ],
+  static readonly config: Linter.Config[] = [
+    {
+      files: ['packages/infrastructure/postgres/**/*.{ts,tsx}', 'packages/infrastructure/logger/**/*.{ts,tsx}'],
+      ignores: ['**/*.{spec,test}.ts', '**/*.integration.spec.ts'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              {name: 'ioredis', message: postgresLoggerMessage},
+              {name: '@b2b-saas-starter-kit/contracts', message: postgresLoggerMessage},
+              {name: '@nestjs/typeorm', message: postgresLoggerMessage},
+              {name: 'nestjs-cls', message: postgresLoggerMessage},
+            ],
+            patterns: [
+              {
+                group: [
+                  '@nestjs/core',
+                  '@nestjs/platform-*',
+                  '@nestjs/testing',
+                  '@nestjs/swagger',
+                  '@nestjs/config',
+                  '@nestjs/cqrs',
+                  '@nestjs/microservices',
+                  '@nestjs/websockets',
+                  '@b2b-saas-starter-kit/composition*',
+                  '@b2b-saas-starter-kit/redis',
+                ],
+                message: postgresLoggerMessage,
+              },
+            ],
+          },
+        ],
+      },
     },
-  }
+    {
+      files: ['packages/infrastructure/redis/**/*.{ts,tsx}'],
+      ignores: ['**/*.{spec,test}.ts', '**/*.integration.spec.ts'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              {name: 'typeorm', message: redisMessage},
+              {name: 'pg', message: redisMessage},
+              {name: '@b2b-saas-starter-kit/contracts', message: redisMessage},
+              {name: '@b2b-saas-starter-kit/domain', message: redisMessage},
+              {name: '@b2b-saas-starter-kit/application', message: redisMessage},
+              {name: '@nestjs/typeorm', message: redisMessage},
+              {name: 'nestjs-cls', message: redisMessage},
+            ],
+            patterns: [
+              {
+                group: [
+                  '@nestjs/core',
+                  '@nestjs/platform-*',
+                  '@nestjs/testing',
+                  '@nestjs/swagger',
+                  '@nestjs/config',
+                  '@nestjs/cqrs',
+                  '@nestjs/microservices',
+                  '@nestjs/websockets',
+                  '@b2b-saas-starter-kit/composition*',
+                  '@b2b-saas-starter-kit/postgres',
+                ],
+                message: redisMessage,
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ]
 }

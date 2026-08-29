@@ -13,6 +13,7 @@ import {ListTenantMembersQuery} from '../tenancy/list-tenant-members.query'
 import {MembershipRolesService} from '../tenancy/membership-roles.service'
 
 import {FixedClock} from './fixed-clock'
+import {InMemoryCache} from './in-memory-cache'
 import {InMemoryMembershipRepository} from './in-memory-membership.repository'
 import {InMemoryRoleRepository} from './in-memory-role.repository'
 import {InMemoryTenantRepository} from './in-memory-tenant.repository'
@@ -33,7 +34,7 @@ function createFlow() {
   const uow = new InMemoryUnitOfWork(users, tenants, roles, memberships)
   const clock = new FixedClock(OCCURRED_AT)
   const ids = new SequentialIdGenerator()
-  const authz = new AuthorizationService(roles, new MembershipRolesService(memberships))
+  const authz = new AuthorizationService(roles, new MembershipRolesService(memberships), new InMemoryCache())
   const createUser = new CreateUserUseCase(uow, clock, ids, users)
   const createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships)
   const listMembers = new ListTenantMembersQuery(authz, memberships)

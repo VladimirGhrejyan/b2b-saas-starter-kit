@@ -35,7 +35,7 @@ export class EslintFlatConfig {
     CompositionEslintConfig.config,
     ContractsEslintConfig.config,
     NestHttpEslintConfig.config,
-    InfrastructureEslintConfig.config,
+    ...InfrastructureEslintConfig.config,
     FrontendEslintConfig.config,
     UiKitEslintConfig.config,
     FrontendCoreEslintConfig.config,

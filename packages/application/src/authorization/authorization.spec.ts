@@ -6,6 +6,7 @@ import {Membership, PermissionCatalog, Role} from '@b2b-saas-starter-kit/domain'
 
 import {InsufficientPermissionError} from '../shared/errors/insufficient-permission.error'
 import type {MembershipRolesPort} from '../shared/membership-roles.port'
+import {InMemoryCache} from '../testing/in-memory-cache'
 import {InMemoryMembershipRepository} from '../testing/in-memory-membership.repository'
 import {InMemoryRoleRepository} from '../testing/in-memory-role.repository'
 
@@ -37,9 +38,10 @@ function membershipRolesFrom(memberships: InMemoryMembershipRepository): Members
 function createAuthz() {
   const roles = new InMemoryRoleRepository()
   const memberships = new InMemoryMembershipRepository()
-  const authz = new AuthorizationService(roles, membershipRolesFrom(memberships))
+  const cache = new InMemoryCache()
+  const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache)
 
-  return {roles, memberships, authz}
+  return {roles, memberships, cache, authz}
 }
 
 describe('AuthorizationService', () => {
@@ -108,5 +110,43 @@ describe('AuthorizationService', () => {
     await expect(
       authz.require(USER_ID, PermissionCatalog.tenancyMembersRead, {tenantId: TENANT_A}),
     ).rejects.toBeInstanceOf(InsufficientPermissionError)
+  })
+
+  it('serves a second getEffectivePermissions from cache without role lookups', async () => {
+    const roles = new InMemoryRoleRepository()
+    const memberships = new InMemoryMembershipRepository()
+    const cache = new InMemoryCache()
+    let roleLookups = 0
+    const membershipRoles: MembershipRolesPort = {
+      async roleIdsFor(userId, tenantId) {
+        roleLookups += 1
+
+        return membershipRolesFrom(memberships).roleIdsFor(userId, tenantId)
+      },
+    }
+    const authz = new AuthorizationService(roles, membershipRoles, cache)
+    const ownerRole = Role.createSystemRole(OWNER_ROLE_A, TENANT_A, 'Owner', OCCURRED_AT)
+
+    await roles.save(ownerRole)
+    await memberships.save(Membership.createOwner(MEMBERSHIP_A, TENANT_A, USER_ID, ownerRole.id, OCCURRED_AT))
+
+    const first = await authz.getEffectivePermissions(USER_ID, TENANT_A)
+    const second = await authz.getEffectivePermissions(USER_ID, TENANT_A)
+
+    expect(first).toEqual([...PermissionCatalog.all])
+    expect(second).toEqual(first)
+    expect(roleLookups).toBe(1)
+  })
+
+  it('does not leak tenant A permissions into tenant B', async () => {
+    const {roles, memberships, authz} = createAuthz()
+    const ownerRole = Role.createSystemRole(OWNER_ROLE_A, TENANT_A, 'Owner', OCCURRED_AT)
+
+    await roles.save(ownerRole)
+    await memberships.save(Membership.createOwner(MEMBERSHIP_A, TENANT_A, USER_ID, ownerRole.id, OCCURRED_AT))
+
+    await authz.getEffectivePermissions(USER_ID, TENANT_A)
+
+    await expect(authz.getEffectivePermissions(USER_ID, TENANT_B)).resolves.toEqual([])
   })
 })

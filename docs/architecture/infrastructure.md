@@ -10,13 +10,14 @@ Redis is used for **caching, distributed locks, and pub/sub** (and it backs Bull
 
 - **Ports (interfaces):** `CachePort`, `LockPort`, `PubSubPort` live in `platform`. They are generic and technology-agnostic — nothing in their signatures mentions Redis.
 - **Adapters (implementations):** live in `infrastructure/redis`, using a Redis client (e.g. `ioredis`).
+- **`CachePort.set` requires `ttlSeconds`.** Compose Redis uses `maxmemory-policy noeviction`; expiry is correctness, not optional LRU.
 - **Policy is per-context.** The _capability_ is generic; _what_ to cache, _which_ keys to lock, and _when_ is decided in each context's **application** layer. The domain layer never mentions caching or locking.
 
 ```typescript
 // platform/cache.port.ts
 export interface CachePort {
   get<T>(key: string): Promise<T | null>
-  set<T>(key: string, value: T, ttlSeconds?: number): Promise<void>
+  set(key: string, value: unknown, ttlSeconds: number): Promise<void>
   del(key: string): Promise<void>
 }
 

@@ -10,6 +10,7 @@ import {
   CreateUserUseCase,
   MembershipRolesService,
 } from '@b2b-saas-starter-kit/application'
+import {InMemoryCache} from '@b2b-saas-starter-kit/application/testing'
 
 import {TypeOrmRoleRepository} from '../contexts/authorization/typeorm-role.repository'
 import {TypeOrmUserRepository} from '../contexts/identity/typeorm-user.repository'
@@ -48,7 +49,7 @@ describe('AuthorizationService through TypeORM repositories', () => {
 
     createUser = new CreateUserUseCase(uow, clock, ids, users)
     createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships)
-    authz = new AuthorizationService(roles, new MembershipRolesService(memberships))
+    authz = new AuthorizationService(roles, new MembershipRolesService(memberships), new InMemoryCache())
   })
 
   afterAll(async () => {

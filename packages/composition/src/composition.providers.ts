@@ -1,6 +1,6 @@
 import type {Provider} from '@nestjs/common'
 
-import type {Clock, IdGenerator, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {CachePort, Clock, IdGenerator, UnitOfWork} from '@b2b-saas-starter-kit/platform'
 
 import {
   AuthorizationService,
@@ -19,6 +19,7 @@ import {
   TypeOrmUserRepository,
   UNIT_OF_WORK,
 } from '@b2b-saas-starter-kit/postgres'
+import {CACHE} from '@b2b-saas-starter-kit/redis'
 
 import {AssertActiveMembership} from './principal/assert-active-membership'
 
@@ -26,9 +27,9 @@ export const compositionProviders: Provider[] = [
   AssertActiveMembership,
   {
     provide: AuthorizationService,
-    useFactory: (roles: TypeOrmRoleRepository, membershipRoles: MembershipRolesService) =>
-      new AuthorizationService(roles, membershipRoles),
-    inject: [TypeOrmRoleRepository, MembershipRolesService],
+    useFactory: (roles: TypeOrmRoleRepository, membershipRoles: MembershipRolesService, cache: CachePort) =>
+      new AuthorizationService(roles, membershipRoles, cache),
+    inject: [TypeOrmRoleRepository, MembershipRolesService, CACHE],
   },
   {
     provide: CreateTenantUseCase,
