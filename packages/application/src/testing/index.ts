@@ -1,5 +1,6 @@
 export {FixedClock} from './fixed-clock'
 export {InMemoryCache} from './in-memory-cache'
+export {InMemoryHttpClient} from './in-memory-http-client'
 export {InMemoryMembershipRepository} from './in-memory-membership.repository'
 export {InMemoryRoleRepository} from './in-memory-role.repository'
 export type {InMemorySnapshotable} from './in-memory-snapshotable'

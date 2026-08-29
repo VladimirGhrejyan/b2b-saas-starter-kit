@@ -1,4 +1,4 @@
-# Infrastructure: Redis, Messaging, Jobs, Config, Logging
+# Infrastructure: Redis, HTTP client, Messaging, Jobs, Config, Logging
 
 Technical capabilities that support the contexts without being domain concepts. All are reached through **ports** so the domain and application layers never depend on a concrete technology.
 
@@ -39,6 +39,15 @@ All Redis keys are **tenant-prefixed** (`t:<tenantId>:...`) so cached/locked sta
 ### Is Redis one shared package or per-context?
 
 **One shared adapter package** (`infrastructure/redis`) providing the generic capabilities; **per-context usage/policy** in each context's application code. This avoids five near-identical Redis clients while keeping caching decisions local to each context.
+
+## Outbound HTTP
+
+Backend-only outbound calls. `nest-http` stays inbound.
+
+- **Port:** `HttpClientPort` on `platform` (`request` / `scope`). `timeoutMs` is required after merge (request or `scope`). HTTP 4xx/5xx are returned on `HttpResponse` — do **not** throw on status. Transport errors only: timeout, network, aborted, response too large.
+- **Adapter:** `packages/infrastructure/http-client` (`@b2b-saas-starter-kit/http-client`). Node `fetch` plus a pinned undici `Agent`. Pass `dispatcher` per request; never call `setGlobalDispatcher`.
+- **Composition** imports `HttpClientModule.forRootAsync` so the Agent exists at API boot and `HTTP_CLIENT` is injectable. `apps/api` must not import the package.
+- Config keys are optional with defaults (overall timeout 10s, connect timeout 5s, ~2MB body cap, optional `HTTP_CLIENT_USER_AGENT` / `HTTPS_PROXY` / `NO_PROXY`).
 
 ## Messaging & background jobs
 

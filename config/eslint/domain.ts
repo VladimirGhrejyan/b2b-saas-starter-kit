@@ -14,6 +14,9 @@ export class DomainEslintConfig {
           paths: [
             {name: 'typeorm', message: purityMessage},
             {name: 'ioredis', message: purityMessage},
+            {name: 'undici', message: purityMessage},
+            {name: 'axios', message: purityMessage},
+            {name: 'got', message: purityMessage},
             {name: '@b2b-saas-starter-kit/contracts', message: purityMessage},
             {name: '@b2b-saas-starter-kit/application', message: purityMessage},
             {name: '@b2b-saas-starter-kit/platform', message: purityMessage},
@@ -27,6 +30,7 @@ export class DomainEslintConfig {
                 'typeorm/*',
                 '@b2b-saas-starter-kit/postgres',
                 '@b2b-saas-starter-kit/redis',
+                '@b2b-saas-starter-kit/http-client',
                 '@b2b-saas-starter-kit/messaging',
                 '@b2b-saas-starter-kit/infrastructure*',
                 '@b2b-saas-starter-kit/composition*',

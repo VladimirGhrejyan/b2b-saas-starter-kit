@@ -2,7 +2,7 @@
 
 Architecture-driven, phase-by-phase plan for the B2B multi-tenant SaaS starter kit. It is derived **from the existing architecture docs and Cursor rules** (the source of truth), not from the investigated reference repositories. The frontend runtime-host direction (one product SPA, thin Electron/Capacitor hosts) is taken from [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md); it does not replace [`architecture/frontend.md`](./architecture/frontend.md) or the ADRs.
 
-> Status: **Backend foundation (Phases 1–11) is implemented.** **Phase 18 (Redis ports + permission cache) is implemented.** **Frontend Phases 12–17 are implemented** (`ui-kit`, `frontend-core`, `apps/web` FSD shell, `/me` + members, thin desktop/mobile hosts, `apps/admin` FSD shell). **Frontend foundation is complete.** This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
+> Status: **Backend foundation (Phases 1–11) is implemented.** **Phase 18 (Redis ports + permission cache) is implemented.** **Phase 19 (backend HTTP client) is implemented.** **Frontend Phases 12–17 are implemented** (`ui-kit`, `frontend-core`, `apps/web` FSD shell, `/me` + members, thin desktop/mobile hosts, `apps/admin` FSD shell). **Frontend foundation is complete.** This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
 
 Related source-of-truth docs: [`architecture/workspace-topology.md`](./architecture/workspace-topology.md), [`architecture/backend.md`](./architecture/backend.md), [`architecture/bounded-contexts.md`](./architecture/bounded-contexts.md), [`architecture/persistence.md`](./architecture/persistence.md), [`architecture/multi-tenancy.md`](./architecture/multi-tenancy.md), [`architecture/authorization.md`](./architecture/authorization.md), [`architecture/api-contracts.md`](./architecture/api-contracts.md), [`architecture/frontend.md`](./architecture/frontend.md), [`architecture/design-system.md`](./architecture/design-system.md), [`architecture/shared-packages.md`](./architecture/shared-packages.md), [`architecture/boundaries.md`](./architecture/boundaries.md), [`architecture/decisions.md`](./architecture/decisions.md). Investigation (not source of truth): [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md).
 
@@ -21,6 +21,7 @@ These were confirmed for the **backend** foundation (Part 1, Phases 1–11) and 
 | **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → logger → nest-http → composition → apps/api`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Routes are URI-versioned (`/v1/...`). Frontend is **Part 2 (Phases 12–17)**.                                                                               |
 | **Logging**         | **Pino**, not Nest-injectable. `Logger` port + `LoggerLocator` on `platform`; adapter in `packages/infrastructure/logger`.                                                                                                                                                                                                                                   |
 | **Redis**           | **Implemented (Phase 18).** `CachePort` / `LockPort` / `PubSubPort` on `platform`; adapters in `packages/infrastructure/redis`. Effective permissions are cache-aside (tenant-prefixed key, 60s TTL) behind `AuthorizationPort`. Rate limiting, BullMQ, and outbox remain deferred.                                                                          |
+| **HTTP client**     | **Implemented (Phase 19).** `HttpClientPort` on `platform`; undici adapter in `packages/infrastructure/http-client`. Composition boots the Agent and exports `HTTP_CLIENT`. No product use case yet. Circuit breaker, streaming, SSRF, and billing/OIDC callers remain deferred.                                                                             |
 
 Out of scope for **Part 1 (backend)**: real authentication, Redis (landed as Phase 18), transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime. Frontend is **Part 2**, not deferred as a blob.
 
@@ -34,22 +35,23 @@ The docs already settle the topology: **layer-first Nx projects, bounded context
 
 So the packages you listed map as follows (names/tags are fixed by [`boundaries.md`](./architecture/boundaries.md)):
 
-| Your candidate                    | Realization in this plan                                                                  | Kind                        |
-| --------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------- |
-| `shared/kernel-types`             | `packages/shared/kernel-types` → `@b2b-saas-starter-kit/shared-kernel-types`              | one project (shared leaf)   |
-| `backend/domain`                  | `packages/domain` → `@b2b-saas-starter-kit/domain` (contexts are folders inside `src/`)   | one project                 |
-| `backend/application`             | `packages/application` → `@b2b-saas-starter-kit/application`                              | one project                 |
-| `backend/platform`                | `packages/platform` → `@b2b-saas-starter-kit/platform`                                    | one project                 |
-| `backend/infrastructure/postgres` | `packages/infrastructure/postgres` → `@b2b-saas-starter-kit/postgres`                     | one project (per-concern)   |
-| `backend/infrastructure/logger`   | `packages/infrastructure/logger` → `@b2b-saas-starter-kit/logger`                         | one project (Pino, no Nest) |
-| `backend/infrastructure/redis`    | `packages/infrastructure/redis` → `@b2b-saas-starter-kit/redis`                           | one project (per-concern)   |
-| `backend/nest-http`               | `packages/nest-http` → `@b2b-saas-starter-kit/nest-http`                                  | one project (HTTP kit)      |
-| `shared/contracts`                | `packages/shared/contracts` → `@b2b-saas-starter-kit/contracts`                           | one project (shared leaf)   |
-| `backend/composition`             | `packages/composition` → `@b2b-saas-starter-kit/composition` (context modules as folders) | one project                 |
+| Your candidate                       | Realization in this plan                                                                  | Kind                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------- | --------------------------- |
+| `shared/kernel-types`                | `packages/shared/kernel-types` → `@b2b-saas-starter-kit/shared-kernel-types`              | one project (shared leaf)   |
+| `backend/domain`                     | `packages/domain` → `@b2b-saas-starter-kit/domain` (contexts are folders inside `src/`)   | one project                 |
+| `backend/application`                | `packages/application` → `@b2b-saas-starter-kit/application`                              | one project                 |
+| `backend/platform`                   | `packages/platform` → `@b2b-saas-starter-kit/platform`                                    | one project                 |
+| `backend/infrastructure/postgres`    | `packages/infrastructure/postgres` → `@b2b-saas-starter-kit/postgres`                     | one project (per-concern)   |
+| `backend/infrastructure/logger`      | `packages/infrastructure/logger` → `@b2b-saas-starter-kit/logger`                         | one project (Pino, no Nest) |
+| `backend/infrastructure/redis`       | `packages/infrastructure/redis` → `@b2b-saas-starter-kit/redis`                           | one project (per-concern)   |
+| `backend/infrastructure/http-client` | `packages/infrastructure/http-client` → `@b2b-saas-starter-kit/http-client`               | one project (per-concern)   |
+| `backend/nest-http`                  | `packages/nest-http` → `@b2b-saas-starter-kit/nest-http`                                  | one project (HTTP kit)      |
+| `shared/contracts`                   | `packages/shared/contracts` → `@b2b-saas-starter-kit/contracts`                           | one project (shared leaf)   |
+| `backend/composition`                | `packages/composition` → `@b2b-saas-starter-kit/composition` (context modules as folders) | one project                 |
 
 **Bounded-context-specific packages are explicitly rejected** for the foundation (documented as rejected alternatives in [`decisions.md`](./architecture/decisions.md)): they multiply project count and make `nx affected` finer at the cost of much more wiring, and a context is promoted to its own project only when it needs independent build/versioning or is being extracted toward a service — an explicit later decision, not the starting point.
 
-**Infrastructure split:** `packages/infrastructure/` is a grouping directory (like `packages/shared/`); each concern is its own Nx project. **`postgres`**, **`logger`**, and **`redis`** exist. Messaging stays deferred so a logger or Redis consumer never pulls TypeORM, and a worker never pulls Nest/Swagger.
+**Infrastructure split:** `packages/infrastructure/` is a grouping directory (like `packages/shared/`); each concern is its own Nx project. **`postgres`**, **`logger`**, **`redis`**, and **`http-client`** exist. Messaging stays deferred so a logger or Redis consumer never pulls TypeORM, and a worker never pulls Nest/Swagger.
 
 ### 2.2 Nx projects, tags, and dependency direction
 
@@ -65,11 +67,12 @@ Projects created across the whole plan (only the ones this foundation needs), wi
 | `postgres`            | `scope:backend`, `layer:infrastructure`                  | `domain`, `application`, `platform`, `shared-kernel-types`, `utils`, `config`    |
 | `logger`              | `scope:backend`, `layer:infrastructure` + `layer:logger` | `platform` (Pino only)                                                           |
 | `redis`               | `scope:backend`, `layer:infrastructure`                  | `platform`, `config` (no `domain` / `application`)                               |
+| `http-client`         | `scope:backend`, `layer:infrastructure`                  | `platform`, `config` (no `domain` / `application`)                               |
 | `nest-http`           | `scope:backend`, `layer:nest-http`                       | `contracts`, `platform`, `shared-kernel-types`, `utils`, `config`                |
-| `composition`         | `scope:backend`, `layer:composition`                     | `domain`, `application`, `postgres`, `redis`, `platform`, shared                 |
+| `composition`         | `scope:backend`, `layer:composition`                     | `domain`, `application`, `postgres`, `redis`, `http-client`, `platform`, shared  |
 | `apps/api`            | `scope:backend`, `type:app`                              | `nest-http`, `composition`, `contracts`, `config`, `utils`, `logger` (bootstrap) |
 
-**Forbidden edges that make this design correct** (enforced, not conventional): `domain → anything but shared-types`; `application → contracts`; `application → infrastructure`; `nest-http → domain/application/postgres`; `type:app → postgres/redis/domain/application`; `scope:backend ↔ scope:frontend`; `type:app → type:app`. The extra `layer:logger` tag lets apps bootstrap Pino without opening `postgres` or `redis`. The direction always points **inward** toward the pure domain.
+**Forbidden edges that make this design correct** (enforced, not conventional): `domain → anything but shared-types`; `application → contracts`; `application → infrastructure`; `nest-http → domain/application/postgres`; `type:app → postgres/redis/http-client/domain/application`; `scope:backend ↔ scope:frontend`; `type:app → type:app`. The extra `layer:logger` tag lets apps bootstrap Pino without opening `postgres`, `redis`, or `http-client`. The direction always points **inward** toward the pure domain.
 
 ### 2.3 Contexts as folders (this foundation touches three)
 
@@ -357,6 +360,7 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Real authentication**                | Credentials/sessions/tokens (JWT access+refresh, tenant claim, verification, password reset) live in `identity` + edge; the `DevPrincipal` seam is replaced without touching controllers/use cases. |
 | **Redis**                              | **Done (Phase 18).** Rate limiting, BullMQ / `messaging`, transactional outbox, and permission-cache invalidation remain deferred.                                                                  |
+| **HTTP client**                        | **Done (Phase 19).** Circuit breaker, streaming/multipart, SSRF allowlists, and product (Stripe/OIDC/webhook) callers remain deferred.                                                              |
 | **Transactional outbox + event bus**   | Publish domain events (`UserCreated`, `MembershipCreated`, …) durably; enables `audit`/`notifications`.                                                                                             |
 | **`audit` + `notifications` contexts** | Downstream event subscribers; add as folders across layers, no changes to existing contexts.                                                                                                        |
 | **`apps/worker` wiring**               | Re-establish `TenantContext` from job payloads; consume outbox.                                                                                                                                     |
@@ -651,6 +655,19 @@ Pages compose features. Features do not import `@/app`. `createWebRouter` only w
 - **Verification:** `pnpm nx run-many -t lint,typecheck,test -p platform,application,redis,composition,api` with compose up. Graph: `redis → platform + config` (not `domain`); `composition → redis`; `api` not → `redis`; `application` not → `ioredis`.
 - **Definition of Done:** ports exported; redis adapters green against compose; permission cache wired; `apps/api` still does not import redis.
 - **Deferred:** `RateLimiterPort`, BullMQ / `messaging`, transactional outbox, pub/sub invalidation of permission keys, `apps/worker`, Redis as session store.
+
+### Phase 19 — Backend HTTP client
+
+- **Goal:** platform `HttpClientPort` and a backend-only `packages/infrastructure/http-client` (undici `Agent` + `fetch`), wired through composition so `HTTP_CLIENT` is injectable. No product caller this phase.
+- **Scope:** `request` / `scope` on the port; required `timeoutMs` after merge; 4xx/5xx returned (transport errors only). Adapter: process Agent, overall deadline, max body ~2MB, access log via `LoggerLocator` (no bodies; redact auth/cookie/idempotency-key), `x-request-id` from `RequestContextLocator`. Default retry: GET/HEAD + network/timeout/429/503, max 2; writes do not retry unless `idempotencyKey` or explicit `retry`.
+- **Packages/projects:** create `packages/infrastructure/http-client` (Nx name `http-client`, tags `scope:backend`, `layer:infrastructure` — **no** extra `layer:http-client`). Depends on `platform` + `config` (+ `undici`), not `domain` / `application`. `apps/api` must **not** import `@b2b-saas-starter-kit/http-client`.
+- **Implementation tasks:**
+  - Scaffold with `@nx/js:library`; ESLint carve-out allows `undici` only under `packages/infrastructure/http-client/**`.
+  - In-memory `HttpClientPort` fake in `application/testing`; composition imports `HttpClientModule.forRootAsync` (Agent at API boot). Do not export `HTTP_CLIENT` from `composition/src/index.ts`.
+- **Tests:** platform `scope()` merge + required timeout; application fake records calls and returns 4xx without throwing; http-client MockAgent (no live network): 2xx/4xx returned, timeout throws, GET retries once on 503, POST does not retry, body over cap throws, `x-request-id` set when locator has a context; existing HTTP e2e still green.
+- **Verification:** `pnpm nx run-many -t lint,typecheck,test -p platform,application,http-client,composition,api`. Graph: `http-client → platform + config` (not `domain`); `composition → http-client`; `api` not → `http-client`; `application` not → `undici`.
+- **Definition of Done:** port exported; adapter green against MockAgent; composition boots the module with defaults; `apps/api` still does not import http-client.
+- **Deferred:** circuit breaker, streaming/multipart, SSRF allowlists, Stripe/OIDC/webhook use cases, forced HTTP/2, metrics backend.
 
 ---
 

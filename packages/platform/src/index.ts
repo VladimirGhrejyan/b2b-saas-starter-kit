@@ -1,6 +1,20 @@
 export type {CachePort} from './cache/cache.port'
 export {CacheKey} from './cache/cache-key'
 export type {Clock} from './clock/clock.port'
+export {HttpAbortedError} from './http-client/http-aborted.error'
+export type {HttpClientPort} from './http-client/http-client.port'
+export type {
+  HttpClientScope,
+  HttpMethod,
+  HttpRequest,
+  HttpResponse,
+  HttpRetryPolicy,
+  HttpRetryTrigger,
+} from './http-client/http-client.types'
+export {HttpNetworkError} from './http-client/http-network.error'
+export {HttpResponseTooLargeError} from './http-client/http-response-too-large.error'
+export {HttpTimeoutError} from './http-client/http-timeout.error'
+export {HttpTimeoutRequiredError} from './http-client/http-timeout-required.error'
 export type {IdGenerator} from './id-generator/id-generator.port'
 export type {LockPort} from './lock/lock.port'
 export type {LockLease} from './lock/lock.types'

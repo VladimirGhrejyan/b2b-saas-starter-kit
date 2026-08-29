@@ -32,6 +32,7 @@ export class UiKitEslintConfig {
                 '@radix-ui/*',
                 '@b2b-saas-starter-kit/postgres',
                 '@b2b-saas-starter-kit/redis',
+                '@b2b-saas-starter-kit/http-client',
                 '@b2b-saas-starter-kit/messaging',
                 '@b2b-saas-starter-kit/infrastructure*',
                 '@b2b-saas-starter-kit/composition*',

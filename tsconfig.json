@@ -68,6 +68,9 @@
     },
     {
       "path": "./packages/infrastructure/redis"
+    },
+    {
+      "path": "./packages/infrastructure/http-client"
     }
   ]
 }

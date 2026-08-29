@@ -1,0 +1,8 @@
+export {UndiciHttpClient} from './http-client.adapter'
+export type {HttpClientConfig} from './kernel/config/http-client-config'
+export {httpClientConfigSchema} from './kernel/config/http-client-config'
+export {loadHttpClientConfigFromEnv} from './kernel/config/load-http-client-config'
+export {HttpClientAgentManager} from './kernel/connection/http-client-agent.manager'
+export {HttpClientModule} from './kernel/http-client.module'
+export type {HttpClientModuleAsyncOptions} from './kernel/http-client.module.types'
+export {HTTP_CLIENT, HTTP_CLIENT_CONFIG} from './kernel/tokens'

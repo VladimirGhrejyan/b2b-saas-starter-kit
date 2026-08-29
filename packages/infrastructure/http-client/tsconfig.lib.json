@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
@@ -15,25 +15,10 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
-      "path": "../shared/kernel-types/tsconfig.lib.json"
+      "path": "../../platform/tsconfig.lib.json"
     },
     {
-      "path": "../platform/tsconfig.lib.json"
-    },
-    {
-      "path": "../domain/tsconfig.lib.json"
-    },
-    {
-      "path": "../application/tsconfig.lib.json"
-    },
-    {
-      "path": "../infrastructure/postgres/tsconfig.lib.json"
-    },
-    {
-      "path": "../infrastructure/redis/tsconfig.lib.json"
-    },
-    {
-      "path": "../infrastructure/http-client/tsconfig.lib.json"
+      "path": "../../shared/config/tsconfig.lib.json"
     }
   ],
   "exclude": [

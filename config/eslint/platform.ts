@@ -14,6 +14,9 @@ export class PlatformEslintConfig {
           paths: [
             {name: 'typeorm', message: purityMessage},
             {name: 'ioredis', message: purityMessage},
+            {name: 'undici', message: purityMessage},
+            {name: 'axios', message: purityMessage},
+            {name: 'got', message: purityMessage},
             {name: 'pino', message: purityMessage},
             {name: 'pino-pretty', message: purityMessage},
             {name: '@b2b-saas-starter-kit/contracts', message: purityMessage},
@@ -31,6 +34,7 @@ export class PlatformEslintConfig {
                 'typeorm/*',
                 '@b2b-saas-starter-kit/postgres',
                 '@b2b-saas-starter-kit/redis',
+                '@b2b-saas-starter-kit/http-client',
                 '@b2b-saas-starter-kit/messaging',
                 '@b2b-saas-starter-kit/infrastructure*',
                 '@b2b-saas-starter-kit/composition*',
