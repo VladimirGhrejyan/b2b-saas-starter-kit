@@ -8,6 +8,7 @@ import type {Membership} from '../membership'
 export interface MembershipRepository {
   findById(id: MembershipId): Promise<Membership | null>
   findByTenant(tenantId: TenantId): Promise<Membership[]>
+  findByUser(userId: UserId): Promise<Membership[]>
   findByUserAndTenant(userId: UserId, tenantId: TenantId): Promise<Membership | null>
   save(membership: Membership): Promise<void>
 }

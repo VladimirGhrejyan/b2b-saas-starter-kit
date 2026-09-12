@@ -11,8 +11,6 @@ import {
 } from '@b2b-saas-starter-kit/application'
 
 import {
-  CLOCK,
-  ID_GENERATOR,
   TypeOrmMembershipRepository,
   TypeOrmRoleRepository,
   TypeOrmTenantRepository,
@@ -20,6 +18,7 @@ import {
   UNIT_OF_WORK,
 } from '@b2b-saas-starter-kit/postgres'
 import {CACHE} from '@b2b-saas-starter-kit/redis'
+import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
 
 import {AssertActiveMembership} from './principal/assert-active-membership'
 

@@ -6,6 +6,7 @@ export type {
   ApiSwaggerConfig,
   ApiSwaggerSchemaConfig,
 } from './builder/api-http-config.types'
+export {applyCookieParser} from './builder/apply-cookie-parser'
 export {ApiErrorResponses} from './http/decorators/api-error-responses.decorator'
 export {ApiRoute} from './http/decorators/api-route.decorator'
 export {IS_PUBLIC_KEY} from './http/decorators/is-public-key'

@@ -10,6 +10,8 @@ import {
 import {loadPostgresConfigFromEnv, PostgresInfrastructureModule} from '@b2b-saas-starter-kit/postgres'
 import {loadRedisConfigFromEnv, RedisInfrastructureModule} from '@b2b-saas-starter-kit/redis'
 import {HttpClientModule, loadHttpClientConfigFromEnv} from '@b2b-saas-starter-kit/http-client'
+import {SecurityModule} from '@b2b-saas-starter-kit/security'
+import {NodeInfrastructureModule} from '@b2b-saas-starter-kit/node'
 
 import {AuthorizationModule} from './authorization/authorization.module'
 import {IdentityModule} from './identity/identity.module'
@@ -28,6 +30,8 @@ import {compositionProviders} from './composition.providers'
     HttpClientModule.forRootAsync({
       useFactory: () => loadHttpClientConfigFromEnv(),
     }),
+    NodeInfrastructureModule,
+    SecurityModule,
     IdentityModule,
     TenancyModule,
     AuthorizationModule,

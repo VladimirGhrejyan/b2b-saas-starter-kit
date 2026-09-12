@@ -28,6 +28,12 @@
     },
     {
       "path": "../../application/tsconfig.lib.json"
+    },
+    {
+      "path": "../security/tsconfig.lib.json"
+    },
+    {
+      "path": "../node/tsconfig.lib.json"
     }
   ],
   "exclude": [

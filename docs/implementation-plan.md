@@ -2,7 +2,7 @@
 
 Architecture-driven, phase-by-phase plan for the B2B multi-tenant SaaS starter kit. It is derived **from the existing architecture docs and Cursor rules** (the source of truth), not from the investigated reference repositories. The frontend runtime-host direction (one product SPA, thin Electron/Capacitor hosts) is taken from [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md); it does not replace [`architecture/frontend.md`](./architecture/frontend.md) or the ADRs.
 
-> Status: **Backend foundation (Phases 1–11) is implemented.** **Phase 18 (Redis ports + permission cache) is implemented.** **Phase 19 (backend HTTP client) is implemented.** **Frontend Phases 12–17 are implemented** (`ui-kit`, `frontend-core`, `apps/web` FSD shell, `/me` + members, thin desktop/mobile hosts, `apps/admin` FSD shell). **Frontend foundation is complete.** This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
+> Status: **Backend foundation (Phases 1–11) is implemented.** **Phase 18 (Redis ports + permission cache) is implemented.** **Phase 19 (backend HTTP client) is implemented.** **Phase 20 (backend authentication) is implemented.** **Frontend Phases 12–17 are implemented** (`ui-kit`, `frontend-core`, `apps/web` FSD shell, `/me` + members, thin desktop/mobile hosts, `apps/admin` FSD shell). **Frontend foundation is complete.** This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
 
 Related source-of-truth docs: [`architecture/workspace-topology.md`](./architecture/workspace-topology.md), [`architecture/backend.md`](./architecture/backend.md), [`architecture/bounded-contexts.md`](./architecture/bounded-contexts.md), [`architecture/persistence.md`](./architecture/persistence.md), [`architecture/multi-tenancy.md`](./architecture/multi-tenancy.md), [`architecture/authorization.md`](./architecture/authorization.md), [`architecture/api-contracts.md`](./architecture/api-contracts.md), [`architecture/frontend.md`](./architecture/frontend.md), [`architecture/design-system.md`](./architecture/design-system.md), [`architecture/shared-packages.md`](./architecture/shared-packages.md), [`architecture/boundaries.md`](./architecture/boundaries.md), [`architecture/decisions.md`](./architecture/decisions.md). Investigation (not source of truth): [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md).
 
@@ -17,13 +17,13 @@ These were confirmed for the **backend** foundation (Part 1, Phases 1–11) and 
 | Decision            | Choice for the foundation                                                                                                                                                                                                                                                                                                                                    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **RBAC breadth**    | **Lean-but-generic.** `identity` (User), `tenancy` (Tenant, Membership), `authorization` (Role, Permission) with a **fixed system-permission catalog** + seeded **system roles** (Owner/Admin/Member). One permission enforced end-to-end. Custom tenant-defined roles CRUD + invitations **deferred** (the seams are built so they slot in without rework). |
-| **Authentication**  | **Stubbed principal.** No password/JWT/refresh/sessions yet. The API edge injects an authenticated principal (dev middleware) and establishes `TenantContext`. Real credentials/tokens are a **later plan**, localized to the `identity` context + edge, so nothing else changes when they land.                                                             |
+| **Authentication**  | **Implemented (Phase 20, backend).** Email + password (Argon2id), short JWT access, rotating refresh cookie, tenant claim after selection, stub mailer for reset. Web still uses `x-user-id` / `x-tenant-id` in development/test. Production is JWT-only and refuses the default secret.                                                                     |
 | **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → logger → nest-http → composition → apps/api`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Routes are URI-versioned (`/v1/...`). Frontend is **Part 2 (Phases 12–17)**.                                                                               |
 | **Logging**         | **Pino**, not Nest-injectable. `Logger` port + `LoggerLocator` on `platform`; adapter in `packages/infrastructure/logger`.                                                                                                                                                                                                                                   |
 | **Redis**           | **Implemented (Phase 18).** `CachePort` / `LockPort` / `PubSubPort` on `platform`; adapters in `packages/infrastructure/redis`. Effective permissions are cache-aside (tenant-prefixed key, 60s TTL) behind `AuthorizationPort`. Rate limiting, BullMQ, and outbox remain deferred.                                                                          |
 | **HTTP client**     | **Implemented (Phase 19).** `HttpClientPort` on `platform`; undici adapter in `packages/infrastructure/http-client`. Composition boots the Agent and exports `HTTP_CLIENT`. No product use case yet. Circuit breaker, streaming, SSRF, and billing/OIDC callers remain deferred.                                                                             |
 
-Out of scope for **Part 1 (backend)**: real authentication, Redis (landed as Phase 18), transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime. Frontend is **Part 2**, not deferred as a blob.
+Out of scope for **Part 1 (backend)**: web login UI (Phase 20 is API-only), Redis extras beyond Phase 18, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime. Frontend is **Part 2**, not deferred as a blob.
 
 ---
 
@@ -45,34 +45,38 @@ So the packages you listed map as follows (names/tags are fixed by [`boundaries.
 | `backend/infrastructure/logger`      | `packages/infrastructure/logger` → `@b2b-saas-starter-kit/logger`                         | one project (Pino, no Nest) |
 | `backend/infrastructure/redis`       | `packages/infrastructure/redis` → `@b2b-saas-starter-kit/redis`                           | one project (per-concern)   |
 | `backend/infrastructure/http-client` | `packages/infrastructure/http-client` → `@b2b-saas-starter-kit/http-client`               | one project (per-concern)   |
+| `backend/infrastructure/security`    | `packages/infrastructure/security` → `@b2b-saas-starter-kit/security`                     | one project (per-concern)   |
+| `backend/infrastructure/node`        | `packages/infrastructure/node` → `@b2b-saas-starter-kit/node`                             | one project (per-concern)   |
 | `backend/nest-http`                  | `packages/nest-http` → `@b2b-saas-starter-kit/nest-http`                                  | one project (HTTP kit)      |
 | `shared/contracts`                   | `packages/shared/contracts` → `@b2b-saas-starter-kit/contracts`                           | one project (shared leaf)   |
 | `backend/composition`                | `packages/composition` → `@b2b-saas-starter-kit/composition` (context modules as folders) | one project                 |
 
 **Bounded-context-specific packages are explicitly rejected** for the foundation (documented as rejected alternatives in [`decisions.md`](./architecture/decisions.md)): they multiply project count and make `nx affected` finer at the cost of much more wiring, and a context is promoted to its own project only when it needs independent build/versioning or is being extracted toward a service — an explicit later decision, not the starting point.
 
-**Infrastructure split:** `packages/infrastructure/` is a grouping directory (like `packages/shared/`); each concern is its own Nx project. **`postgres`**, **`logger`**, **`redis`**, and **`http-client`** exist. Messaging stays deferred so a logger or Redis consumer never pulls TypeORM, and a worker never pulls Nest/Swagger.
+**Infrastructure split:** `packages/infrastructure/` is a grouping directory (like `packages/shared/`); each concern is its own Nx project. **`postgres`**, **`logger`**, **`redis`**, **`http-client`**, **`security`**, and **`node`** exist. Messaging stays deferred so a logger or Redis consumer never pulls TypeORM, and a worker never pulls Nest/Swagger.
 
 ### 2.2 Nx projects, tags, and dependency direction
 
 Projects created across the whole plan (only the ones this foundation needs), with their required tags and allowed dependencies (subset of [`boundaries.md`](./architecture/boundaries.md)):
 
-| Project               | Tags                                                     | May depend on                                                                    |
-| --------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `shared-kernel-types` | `scope:shared`, `layer:shared-types`                     | — (+ Zod)                                                                        |
-| `contracts`           | `scope:shared`, `layer:contracts`                        | `shared-kernel-types`                                                            |
-| `domain`              | `scope:backend`, `layer:domain`                          | `shared-kernel-types`                                                            |
-| `platform`            | `scope:backend`, `layer:platform`                        | `shared-kernel-types`                                                            |
-| `application`         | `scope:backend`, `layer:application`                     | `domain`, `platform`, `shared-kernel-types`, `utils`                             |
-| `postgres`            | `scope:backend`, `layer:infrastructure`                  | `domain`, `application`, `platform`, `shared-kernel-types`, `utils`, `config`    |
-| `logger`              | `scope:backend`, `layer:infrastructure` + `layer:logger` | `platform` (Pino only)                                                           |
-| `redis`               | `scope:backend`, `layer:infrastructure`                  | `platform`, `config` (no `domain` / `application`)                               |
-| `http-client`         | `scope:backend`, `layer:infrastructure`                  | `platform`, `config` (no `domain` / `application`)                               |
-| `nest-http`           | `scope:backend`, `layer:nest-http`                       | `contracts`, `platform`, `shared-kernel-types`, `utils`, `config`                |
-| `composition`         | `scope:backend`, `layer:composition`                     | `domain`, `application`, `postgres`, `redis`, `http-client`, `platform`, shared  |
-| `apps/api`            | `scope:backend`, `type:app`                              | `nest-http`, `composition`, `contracts`, `config`, `utils`, `logger` (bootstrap) |
+| Project               | Tags                                                     | May depend on                                                                                       |
+| --------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `shared-kernel-types` | `scope:shared`, `layer:shared-types`                     | — (+ Zod)                                                                                           |
+| `contracts`           | `scope:shared`, `layer:contracts`                        | `shared-kernel-types`                                                                               |
+| `domain`              | `scope:backend`, `layer:domain`                          | `shared-kernel-types`                                                                               |
+| `platform`            | `scope:backend`, `layer:platform`                        | `shared-kernel-types`                                                                               |
+| `application`         | `scope:backend`, `layer:application`                     | `domain`, `platform`, `shared-kernel-types`, `utils`                                                |
+| `postgres`            | `scope:backend`, `layer:infrastructure`                  | `domain`, `application`, `platform`, `shared-kernel-types`, `utils`, `config`                       |
+| `logger`              | `scope:backend`, `layer:infrastructure` + `layer:logger` | `platform` (Pino only)                                                                              |
+| `redis`               | `scope:backend`, `layer:infrastructure`                  | `platform`, `config` (no `domain` / `application`)                                                  |
+| `http-client`         | `scope:backend`, `layer:infrastructure`                  | `platform`, `config` (no `domain` / `application`)                                                  |
+| `security`            | `scope:backend`, `layer:infrastructure`                  | `platform` (Argon2 + SHA-256; no `domain` / `application`)                                          |
+| `node`                | `scope:backend`, `layer:infrastructure`                  | `platform` (`Date` + UUID v7; no `domain` / `application`)                                          |
+| `nest-http`           | `scope:backend`, `layer:nest-http`                       | `contracts`, `platform`, `shared-kernel-types`, `utils`, `config`                                   |
+| `composition`         | `scope:backend`, `layer:composition`                     | `domain`, `application`, `postgres`, `redis`, `http-client`, `security`, `node`, `platform`, shared |
+| `apps/api`            | `scope:backend`, `type:app`                              | `nest-http`, `composition`, `contracts`, `config`, `utils`, `logger` (bootstrap)                    |
 
-**Forbidden edges that make this design correct** (enforced, not conventional): `domain → anything but shared-types`; `application → contracts`; `application → infrastructure`; `nest-http → domain/application/postgres`; `type:app → postgres/redis/http-client/domain/application`; `scope:backend ↔ scope:frontend`; `type:app → type:app`. The extra `layer:logger` tag lets apps bootstrap Pino without opening `postgres`, `redis`, or `http-client`. The direction always points **inward** toward the pure domain.
+**Forbidden edges that make this design correct** (enforced, not conventional): `domain → anything but shared-types`; `application → contracts`; `application → infrastructure`; `nest-http → domain/application/postgres`; `type:app → postgres/redis/http-client/security/node/domain/application`; `scope:backend ↔ scope:frontend`; `type:app → type:app`. The extra `layer:logger` tag lets apps bootstrap Pino without opening `postgres`, `redis`, `http-client`, `security`, or `node`. The direction always points **inward** toward the pure domain.
 
 ### 2.3 Contexts as folders (this foundation touches three)
 
@@ -89,13 +93,13 @@ Context isolation is a **folder-level lint**: within `domain/src/<A>` you may no
 
 ### 2.4 Aggregates, ownership, and boundaries
 
-| Context         | Aggregate / concept      | Identity & key state                                                                                | Tenant-owned?                       |
-| --------------- | ------------------------ | --------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `identity`      | **User**                 | `UserId`, `email`, `displayName`, `status`. **Global** identity, no credentials yet (auth stubbed). | No (global `users`, no `tenant_id`) |
-| `tenancy`       | **Tenant**               | `TenantId`, `name`, `status`.                                                                       | Yes                                 |
-| `tenancy`       | **Membership**           | `MembershipId`, `userId` (→identity), `tenantId`, `roleIds: RoleId[]` (→authorization), `status`.   | Yes                                 |
-| `authorization` | **Role**                 | `RoleId`, `tenantId`, `name`, `permissions: Permission[]`, `isSystem`.                              | Yes                                 |
-| `authorization` | **Permission** (catalog) | Namespaced string constants (code-owned source of truth), e.g. `tenancy.members.read`.              | n/a (code)                          |
+| Context         | Aggregate / concept      | Identity & key state                                                                                                                    | Tenant-owned?                       |
+| --------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `identity`      | **User**                 | `UserId`, `email`, `displayName`, `status`. **Global** identity. Local password, refresh session, and reset token are separate records. | No (global `users`, no `tenant_id`) |
+| `tenancy`       | **Tenant**               | `TenantId`, `name`, `status`.                                                                                                           | Yes                                 |
+| `tenancy`       | **Membership**           | `MembershipId`, `userId` (→identity), `tenantId`, `roleIds: RoleId[]` (→authorization), `status`.                                       | Yes                                 |
+| `authorization` | **Role**                 | `RoleId`, `tenantId`, `name`, `permissions: Permission[]`, `isSystem`.                                                                  | Yes                                 |
+| `authorization` | **Permission** (catalog) | Namespaced string constants (code-owned source of truth), e.g. `tenancy.members.read`.                                                  | n/a (code)                          |
 
 **Key boundary decisions (with rationale):**
 
@@ -115,8 +119,10 @@ Context isolation is a **folder-level lint**: within `domain/src/<A>` you may no
 | `RoleRepository`       | `domain/authorization/ports`            | `infrastructure/postgres/authorization`                                                 | Load/save/seed Roles (tenant-aware).                                                    |
 | `UnitOfWork`           | `platform`                              | `infrastructure/postgres` (over `DataSource.transaction`)                               | Transaction boundary; ambient `TxContext`.                                              |
 | `TenantContext`        | `platform`                              | `infrastructure/postgres` (Node AsyncLocalStorage)                                      | Ambient active-tenant + actor accessor.                                                 |
-| `Clock`                | `platform`                              | `infrastructure/postgres` (system clock)                                                | Deterministic timestamps (`occurredAt`, `createdAt`).                                   |
-| `IdGenerator`          | `platform`                              | `infrastructure/postgres` (UUID v7)                                                     | Deterministic-in-tests ID creation; ids passed into domain factories.                   |
+| `Clock`                | `platform`                              | `infrastructure/node` (`SystemClock`)                                                   | Deterministic timestamps (`occurredAt`, `createdAt`).                                   |
+| `IdGenerator`          | `platform`                              | `infrastructure/node` (UUID v7)                                                         | Deterministic-in-tests ID creation; ids passed into domain factories.                   |
+| `PasswordHasher`       | `platform`                              | `infrastructure/security` (Argon2id)                                                    | Local password hashing / verification.                                                  |
+| `TokenDigest`          | `platform`                              | `infrastructure/security` (SHA-256)                                                     | Opaque refresh / reset token hashing before persistence.                                |
 | `Logger`               | `platform` (locator)                    | `infrastructure/logger` (Pino)                                                          | Structured logs via `LoggerLocator.get()`; **not** Nest-injectable.                     |
 | `AuthorizationPort`    | `application/authorization` (published) | `application/authorization` service, backed by `RoleRepository` + `MembershipRolesPort` | `require(actor, permission, {tenantId})` / `getEffectivePermissions(userId, tenantId)`. |
 | `MembershipRolesPort`  | `application/tenancy` (published)       | `application/tenancy` service (reads `MembershipRepository`)                            | Sanctioned cross-context sync read: "which roleIds does (user,tenant) have?"            |
@@ -356,19 +362,19 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 
 ## 7. Deferred work (explicitly out of the foundation)
 
-| Area                                   | Why deferred / how it slots in later                                                                                                                                                                |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Real authentication**                | Credentials/sessions/tokens (JWT access+refresh, tenant claim, verification, password reset) live in `identity` + edge; the `DevPrincipal` seam is replaced without touching controllers/use cases. |
-| **Redis**                              | **Done (Phase 18).** Rate limiting, BullMQ / `messaging`, transactional outbox, and permission-cache invalidation remain deferred.                                                                  |
-| **HTTP client**                        | **Done (Phase 19).** Circuit breaker, streaming/multipart, SSRF allowlists, and product (Stripe/OIDC/webhook) callers remain deferred.                                                              |
-| **Transactional outbox + event bus**   | Publish domain events (`UserCreated`, `MembershipCreated`, …) durably; enables `audit`/`notifications`.                                                                                             |
-| **`audit` + `notifications` contexts** | Downstream event subscribers; add as folders across layers, no changes to existing contexts.                                                                                                        |
-| **`apps/worker` wiring**               | Re-establish `TenantContext` from job payloads; consume outbox.                                                                                                                                     |
-| **Custom roles + invitations**         | Custom-role CRUD and membership invitation/role-assignment use cases reuse the tenant-scoped `RoleRepository` + `MembershipRepository`.                                                             |
-| **Postgres RLS "secure profile"**      | Opt-in defense-in-depth; session `app.tenant_id` + policies alongside the base-repo filter.                                                                                                         |
-| **Policy seam (ABAC-lite)**            | Resource/ownership checks behind `AuthorizationPort` (e.g. CASL adapter) without controller/use-case changes.                                                                                       |
-| **Frontend (historical)**              | Moved to **Part 2 (Phases 12–17)**. What remains after that foundation is listed in §14.                                                                                                            |
-| **Request/tenant log mixin**           | Bind `tenantId` / `actorId` / request id onto Pino via ALS after the locator exists (ADR-027 deferred increment).                                                                                   |
+| Area                                   | Why deferred / how it slots in later                                                                                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Real authentication**                | **Done (Phase 20, backend).** Web login UI, Bearer `prepareHeaders`, and hiding the dev picker remain a frontend follow-up. SSO, passkeys, email verification, MFA, and SMTP are still deferred. |
+| **Redis**                              | **Done (Phase 18).** Rate limiting, BullMQ / `messaging`, transactional outbox, and permission-cache invalidation remain deferred.                                                               |
+| **HTTP client**                        | **Done (Phase 19).** Circuit breaker, streaming/multipart, SSRF allowlists, and product (Stripe/OIDC/webhook) callers remain deferred.                                                           |
+| **Transactional outbox + event bus**   | Publish domain events (`UserCreated`, `MembershipCreated`, …) durably; enables `audit`/`notifications`.                                                                                          |
+| **`audit` + `notifications` contexts** | Downstream event subscribers; add as folders across layers, no changes to existing contexts.                                                                                                     |
+| **`apps/worker` wiring**               | Re-establish `TenantContext` from job payloads; consume outbox.                                                                                                                                  |
+| **Custom roles + invitations**         | Custom-role CRUD and membership invitation/role-assignment use cases reuse the tenant-scoped `RoleRepository` + `MembershipRepository`.                                                          |
+| **Postgres RLS "secure profile"**      | Opt-in defense-in-depth; session `app.tenant_id` + policies alongside the base-repo filter.                                                                                                      |
+| **Policy seam (ABAC-lite)**            | Resource/ownership checks behind `AuthorizationPort` (e.g. CASL adapter) without controller/use-case changes.                                                                                    |
+| **Frontend (historical)**              | Moved to **Part 2 (Phases 12–17)**. What remains after that foundation is listed in §14.                                                                                                         |
+| **Request/tenant log mixin**           | Bind `tenantId` / `actorId` / request id onto Pino via ALS after the locator exists (ADR-027 deferred increment).                                                                                |
 
 ---
 
@@ -669,20 +675,34 @@ Pages compose features. Features do not import `@/app`. `createWebRouter` only w
 - **Definition of Done:** port exported; adapter green against MockAgent; composition boots the module with defaults; `apps/api` still does not import http-client.
 - **Deferred:** circuit breaker, streaming/multipart, SSRF allowlists, Stripe/OIDC/webhook use cases, forced HTTP/2, metrics backend.
 
+### Phase 20 — Backend authentication
+
+- **Goal:** Real email+password authentication on the API: Argon2id local credentials, short-lived JWT access, rotating refresh cookie, tenant claim after selection, password-reset via a stub mailer. Web stays on `x-user-id` / `x-tenant-id` until a later frontend phase.
+- **Scope:** `User` stays credential-free. JWT sign/verify stays in `apps/api` (`jose`). Mailer is `InMemory` + `Logging` only (no SMTP). Production boots only with a non-default `JWT_ACCESS_SECRET` and does not trust headers.
+- **Packages/projects:** domain identity records + ports; postgres tables/entities; platform `PasswordHasher` / `MailerPort` / `TokenDigest`; application use cases; `apps/api` `/v1/auth/*` + dual interceptor. `application` must not import `jose` or `argon2`.
+- **Implementation tasks:**
+  - Persist `user_local_passwords`, `refresh_sessions`, `password_reset_tokens` (hashes only).
+  - Register / login / rotate / logout / select-tenant / forgot / reset use cases with in-memory tests.
+  - Dual edge: Bearer first; `development`/`test` header fallback; cookie-parser on `ApiBuilder`.
+- **Tests:** application unit tests; postgres hash-at-rest integration; HTTP e2e keeps the header flow and adds register → login → cookie refresh → select-tenant → `/me` with `Authorization` only.
+- **Verification:** `pnpm nx run-many -t lint,typecheck,test -p platform,application,postgres,composition,api,nest-http`.
+- **Definition of Done:** auth routes live; production refuses the default JWT secret; existing header e2e still green; web/MSW unchanged.
+- **Deferred:** web login page, in-memory access token + `prepareHeaders` Bearer, `credentials: 'include'`, 401 → refresh, hide picker in non-dev, permission-cache `del`, SMTP, SSO, passkeys, MFA.
+
 ---
 
 ## 14. Deferred after the frontend foundation
 
-| Area                                             | Why deferred / how it slots in later                                                                                                   |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Real authentication UI**                       | Login, refresh cookie, Bearer `prepareHeaders`, 401 refresh — lands with the identity/JWT plan; replace the dev principal picker only. |
-| **UI component / CSS stack**                     | ADR-030: tech TBD. Add Tailwind/Radix/tokens/`ThemeProvider` only after a new ADR. Forms/toasts wait on that choice.                   |
-| **Native adapters**                              | Electron `safeStorage` / file log; Capacitor Secure Storage, push, back button — implement behind existing ports.                      |
-| **`frontend/feature-*` libs**                    | Only when **admin** needs a web feature. Hosts never justify this.                                                                     |
-| **`packages/frontend/platform` / `vite-config`** | Extract if port types or the Vite plugin are shared widely; not on day one.                                                            |
-| **Playwright e2e / Sentry**                      | Optional after the MSW slice is green.                                                                                                 |
-| **Tenant branding from API**                     | Product goal; needs UI tech + `ThemeProvider` (not in this foundation).                                                                |
-| **Embed SDK / extra FSD layers**                 | Out of scope (`widgets/`, `entities/`, Phaser, iframe SDK).                                                                            |
+| Area                                             | Why deferred / how it slots in later                                                                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Real authentication UI**                       | API auth is Phase 20. Remaining: login page, in-memory access token, Bearer `prepareHeaders`, 401 refresh, hide the dev principal picker. |
+| **UI component / CSS stack**                     | ADR-030: tech TBD. Add Tailwind/Radix/tokens/`ThemeProvider` only after a new ADR. Forms/toasts wait on that choice.                      |
+| **Native adapters**                              | Electron `safeStorage` / file log; Capacitor Secure Storage, push, back button — implement behind existing ports.                         |
+| **`frontend/feature-*` libs**                    | Only when **admin** needs a web feature. Hosts never justify this.                                                                        |
+| **`packages/frontend/platform` / `vite-config`** | Extract if port types or the Vite plugin are shared widely; not on day one.                                                               |
+| **Playwright e2e / Sentry**                      | Optional after the MSW slice is green.                                                                                                    |
+| **Tenant branding from API**                     | Product goal; needs UI tech + `ThemeProvider` (not in this foundation).                                                                   |
+| **Embed SDK / extra FSD layers**                 | Out of scope (`widgets/`, `entities/`, Phaser, iframe SDK).                                                                               |
 
 ---
 
@@ -692,4 +712,4 @@ Pages compose features. Features do not import `@/app`. `createWebRouter` only w
 - **`import.meta.env.VITE_API_URL` in `frontend.md` is insufficient for packaged clients.** This plan uses ConfigLoader-at-build; update `frontend.md` when Phase 14 lands.
 - **i18n is a new ADR** at Phase 14 (i18next, lazy packs, typed keys, content in the app).
 - **Integration against compose `apps/api`** is the intended manual path for Phase 15; MSW is the automated path. Testcontainers/Playwright remain optional.
-- **Dev principal picker is local-only** and must not appear when the API is in production (the API already refuses DevPrincipal there).
+- **Dev principal picker is local-only** and must not appear when the API is in production (production is JWT-only; header-trust is `development`/`test` only).

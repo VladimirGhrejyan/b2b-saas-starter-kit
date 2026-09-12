@@ -6,7 +6,8 @@ import {Membership} from '@b2b-saas-starter-kit/domain'
 
 import type {Clock, IdGenerator, TenantContext} from '@b2b-saas-starter-kit/platform'
 
-import {CLOCK, ID_GENERATOR, TENANT_CONTEXT, TypeOrmMembershipRepository} from '@b2b-saas-starter-kit/postgres'
+import {TENANT_CONTEXT, TypeOrmMembershipRepository} from '@b2b-saas-starter-kit/postgres'
+import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
 
 import type {SeedActiveMembershipInput, SeedActiveMembershipResult} from './seed-active-membership.types'
 

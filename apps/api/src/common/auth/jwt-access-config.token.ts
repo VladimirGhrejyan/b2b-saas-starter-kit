@@ -1,0 +1,1 @@
+export const JWT_ACCESS_CONFIG = Symbol('JWT_ACCESS_CONFIG')

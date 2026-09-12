@@ -1,6 +1,8 @@
 import {describe, expect, expectTypeOf, it} from 'vitest'
 
 import {MembershipId} from './membership-id'
+import {RefreshFamilyId} from './refresh-family-id'
+import {RefreshSessionId} from './refresh-session-id'
 import {RoleId} from './role-id'
 import {TenantId} from './tenant-id'
 import {UserId} from './user-id'
@@ -13,6 +15,8 @@ describe('branded IDs', () => {
     expect(TenantId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(MembershipId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(RoleId.parse(VALID_UUID)).toBe(VALID_UUID)
+    expect(RefreshSessionId.parse(VALID_UUID)).toBe(VALID_UUID)
+    expect(RefreshFamilyId.parse(VALID_UUID)).toBe(VALID_UUID)
   })
 
   it('rejects invalid values', () => {

@@ -27,6 +27,12 @@
   "references": [
     {
       "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "../node/tsconfig.lib.json"
+    },
+    {
+      "path": "../security/tsconfig.lib.json"
     }
   ]
 }

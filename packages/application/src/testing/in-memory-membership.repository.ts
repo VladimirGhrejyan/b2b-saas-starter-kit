@@ -18,6 +18,10 @@ export class InMemoryMembershipRepository implements MembershipRepository, InMem
     return Promise.resolve([...this.#memberships.values()].filter((membership) => membership.tenantId === tenantId))
   }
 
+  findByUser(userId: UserId): Promise<Membership[]> {
+    return Promise.resolve([...this.#memberships.values()].filter((membership) => membership.userId === userId))
+  }
+
   findByUserAndTenant(userId: UserId, tenantId: TenantId): Promise<Membership | null> {
     for (const membership of this.#memberships.values()) {
       if (membership.userId === userId && membership.tenantId === tenantId) {

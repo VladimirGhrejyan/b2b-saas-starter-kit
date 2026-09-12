@@ -1,14 +1,14 @@
 # `@b2b-saas-starter-kit/postgres`
 
-Postgres persistence adapters: a custom TypeORM `DataSource` lifecycle (no `@nestjs/typeorm`), Node `AsyncLocalStorage` for `TenantContext` and the ambient transaction (no `nestjs-cls`), `TenantAwareRepository`, `Clock`, `IdGenerator`, and the migration runner.
+Postgres persistence adapters: a custom TypeORM `DataSource` lifecycle (no `@nestjs/typeorm`), Node `AsyncLocalStorage` for `TenantContext` and the ambient transaction (no `nestjs-cls`), `TenantAwareRepository`, and the migration runner.
 
 **Path:** `packages/infrastructure/postgres`  
 **Nx project:** `postgres`  
 **Tags:** `scope:backend`, `layer:infrastructure`
 
-`packages/infrastructure/` is a grouping directory (like `packages/shared/`). Each concern is its own Nx project: `postgres`, `logger`, `redis`; `messaging` later.
+`packages/infrastructure/` is a grouping directory (like `packages/shared/`). Each concern is its own Nx project: `postgres`, `logger`, `redis`, `http-client`, `security`, `node`; `messaging` later.
 
-Core adapters live under `src/kernel/` (config, DataSource, persistence plumbing, migrations). Bounded-context entities, mappers, and repos live only under `src/contexts/<context>/`. TypeORM relations stay inside one context folder; cross-context links are uuid columns. The public API exports repository classes only — never entities or mappers.
+Core adapters live under `src/kernel/` (config, DataSource, persistence plumbing, migrations). Bounded-context files live under `src/contexts/<context>/{entities,mappers,repositories}`. TypeORM relations stay inside one context folder; cross-context links are uuid columns. The public API exports repository classes only — never entities or mappers.
 
 Architecture: [`docs/architecture/persistence.md`](../../../docs/architecture/persistence.md), [`docs/architecture/multi-tenancy.md`](../../../docs/architecture/multi-tenancy.md), [`docs/infrastructure/postgresql.md`](../../../docs/infrastructure/postgresql.md).
 
@@ -21,7 +21,7 @@ Application use cases stay constructor-injected by TypeScript type. Phase 9 comp
 
 ## Allowed imports
 
-- `typeorm`, `pg`, `uuid`, `zod`, `reflect-metadata`
+- `typeorm`, `pg`, `zod`, `reflect-metadata`
 - `@nestjs/common` (not `@nestjs/typeorm` or other Nest packages)
 - `@b2b-saas-starter-kit/platform`, `shared-kernel-types`, `config`, `domain`, `application`
 
@@ -34,8 +34,6 @@ Never import `contracts`, `composition*`, or `nestjs-cls`.
 | `DATA_SOURCE`     | TypeORM `DataSource`                   |
 | `UNIT_OF_WORK`    | `TypeormUnitOfWork`                    |
 | `TENANT_CONTEXT`  | `AlsTenantContext`                     |
-| `CLOCK`           | `SystemClock`                          |
-| `ID_GENERATOR`    | `UuidV7IdGenerator`                    |
 | `POSTGRES_CONFIG` | `{DATABASE_URL, POSTGRES_POOL_MAX, …}` |
 
 Pool, connect/statement/lock/idle-in-transaction timeouts, `application_name`, and slow-query threshold (`POSTGRES_SLOW_QUERY_MS` → TypeORM `maxQueryExecutionTime`) are optional env vars with defaults. `DATABASE_URL` remains required. Query logging stays off.
@@ -65,7 +63,7 @@ pnpm nx run postgres:migration:revert
 - [x] Custom `DataSourceManager` + `PostgresInfrastructureModule.forRootAsync` (no `TypeOrmModule`)
 - [x] ALS `TenantContext` and nested-joining `TypeormUnitOfWork`
 - [x] `TenantAwareRepository` filter/stamp/`assertTenant`/`withoutTenantScope`
-- [x] `SystemClock` + UUID v7 `IdGenerator`
+- [x] Persistence-only module (clock, ids, and crypto live in `node` / `security`)
 - [x] Empty migration runner + Nx `migration:run` / `migration:revert`
 - [x] Unit tests + compose Postgres integration tests
 

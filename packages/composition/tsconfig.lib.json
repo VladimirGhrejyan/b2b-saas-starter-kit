@@ -34,6 +34,12 @@
     },
     {
       "path": "../infrastructure/http-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../infrastructure/node/tsconfig.lib.json"
+    },
+    {
+      "path": "../infrastructure/security/tsconfig.lib.json"
     }
   ],
   "exclude": [

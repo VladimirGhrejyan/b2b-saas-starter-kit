@@ -34,6 +34,8 @@ Every Nx project carries a **scope** tag and a **layer** tag.
 | `postgres`                   | `scope:backend`, `layer:infrastructure`                 |
 | `redis`                      | `scope:backend`, `layer:infrastructure`                 |
 | `http-client`                | `scope:backend`, `layer:infrastructure`                 |
+| `security`                   | `scope:backend`, `layer:infrastructure`                 |
+| `node`                       | `scope:backend`, `layer:infrastructure`                 |
 | `messaging` (later)          | `scope:backend`, `layer:infrastructure`                 |
 | `logger`                     | `scope:backend`, `layer:infrastructure`, `layer:logger` |
 | `nest-http`                  | `scope:backend`, `layer:nest-http`                      |
@@ -143,7 +145,7 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
 - `scope:shared → scope:backend|frontend` — a shared package can never pull framework/infra code.
 - `scope:backend ↔ scope:frontend` — the two never import each other.
 - `type:app → type:app` — apps don't **import** other apps. Runtime hosts (`apps/desktop`, `apps/mobile`) load the `apps/web` **dist** and may declare Nx `implicitDependencies: ["web"]` for graph/build order only.
-- `type:app → postgres/redis/http-client/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Bootstrap may import `logger` (`layer:logger`) without opening `postgres`, `redis`, or `http-client`.
+- `type:app → postgres/redis/http-client/security/node/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Bootstrap may import `logger` (`layer:logger`) without opening `postgres`, `redis`, `http-client`, `security`, or `node`.
 - `nest-http → domain/application/postgres` — the HTTP kit is delivery, not composition.
 
 ## Context isolation (the gap layer-first leaves)

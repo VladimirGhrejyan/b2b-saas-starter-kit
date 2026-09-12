@@ -7,14 +7,13 @@ import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {TenantContextNotEstablishedError} from '@b2b-saas-starter-kit/platform'
 
-import type {SystemClock} from '../kernel/clock/clock'
 import {DataSourceManager} from '../kernel/data-source/data-source.manager'
 import {PostgresInfrastructureModule} from '../kernel/data-source/postgres-infrastructure.module'
 import {TenantAwareRepository} from '../kernel/persistence/tenant-aware.repository'
 import {TypeormUnitOfWork} from '../kernel/persistence/unit-of-work'
 import {AlsTenantContext} from '../kernel/tenant-context/tenant-context'
 import {TenantContextMismatchError} from '../kernel/tenant-context/tenant-context-mismatch.error'
-import {CLOCK, DATA_SOURCE} from '../kernel/tokens'
+import {DATA_SOURCE} from '../kernel/tokens'
 
 import {InfraProbeRowEntity} from './infra-probe-row.entity'
 import {PostgresTestContext} from './postgres-test-context'
@@ -178,10 +177,8 @@ describe('postgres (compose)', () => {
 
     try {
       const dataSource = moduleRef.get<DataSource>(DATA_SOURCE)
-      const clock = moduleRef.get<SystemClock>(CLOCK)
 
       expect(dataSource.isInitialized).toBe(true)
-      expect(clock.now()).toBeInstanceOf(Date)
     } finally {
       await moduleRef.close()
     }

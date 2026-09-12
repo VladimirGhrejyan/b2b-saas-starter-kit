@@ -12,12 +12,12 @@ import {
 } from '@b2b-saas-starter-kit/application'
 import {InMemoryCache} from '@b2b-saas-starter-kit/application/testing'
 
-import {TypeOrmRoleRepository} from '../contexts/authorization/typeorm-role.repository'
-import {TypeOrmUserRepository} from '../contexts/identity/typeorm-user.repository'
-import {TypeOrmMembershipRepository} from '../contexts/tenancy/typeorm-membership.repository'
-import {TypeOrmTenantRepository} from '../contexts/tenancy/typeorm-tenant.repository'
-import {SystemClock} from '../kernel/clock/clock'
-import {UuidV7IdGenerator} from '../kernel/id-generator/id-generator'
+import {SystemClock, UuidV7IdGenerator} from '@b2b-saas-starter-kit/node'
+
+import {TypeOrmRoleRepository} from '../contexts/authorization/repositories/typeorm-role.repository'
+import {TypeOrmUserRepository} from '../contexts/identity/repositories/typeorm-user.repository'
+import {TypeOrmMembershipRepository} from '../contexts/tenancy/repositories/typeorm-membership.repository'
+import {TypeOrmTenantRepository} from '../contexts/tenancy/repositories/typeorm-tenant.repository'
 import {TypeormUnitOfWork} from '../kernel/persistence/unit-of-work'
 import {AlsTenantContext} from '../kernel/tenant-context/tenant-context'
 

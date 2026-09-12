@@ -29,9 +29,11 @@
     "@b2b-saas-starter-kit/application": "workspace:*",
     "@b2b-saas-starter-kit/domain": "workspace:*",
     "@b2b-saas-starter-kit/http-client": "workspace:*",
+    "@b2b-saas-starter-kit/node": "workspace:*",
     "@b2b-saas-starter-kit/platform": "workspace:*",
     "@b2b-saas-starter-kit/postgres": "workspace:*",
     "@b2b-saas-starter-kit/redis": "workspace:*",
+    "@b2b-saas-starter-kit/security": "workspace:*",
     "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*",
     "@nestjs/common": "^11.2.1",
     "@nestjs/core": "^11.2.1"

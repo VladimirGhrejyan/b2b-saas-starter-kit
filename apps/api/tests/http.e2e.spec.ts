@@ -12,6 +12,8 @@ import {LoggerLocator, PinoLogger} from '@b2b-saas-starter-kit/logger'
 import type {PostgresTestDatabase} from '@b2b-saas-starter-kit/composition/testing'
 import {preparePostgresTestDatabase, seedActiveMembership} from '@b2b-saas-starter-kit/composition/testing'
 
+import {applyCookieParser} from '@b2b-saas-starter-kit/nest-http'
+
 import {AppModule} from '../src/app/app.module'
 
 describe('HTTP e2e', () => {
@@ -22,6 +24,7 @@ describe('HTTP e2e', () => {
     database = await preparePostgresTestDatabase()
     LoggerLocator.init(new PinoLogger({level: 'error', isPretty: false}))
     app = await NestFactory.create(AppModule, {logger: false, abortOnError: false})
+    applyCookieParser(app)
     app.enableVersioning({type: VersioningType.URI, defaultVersion: '1'})
     await app.init()
   })
@@ -137,5 +140,56 @@ describe('HTTP e2e', () => {
       .expect(404)
 
     expect(response.body.code).toBe('OWNER_USER_NOT_FOUND')
+  })
+
+  it('registers, logs in, refreshes the cookie, selects a tenant, and calls /me with Bearer only', async () => {
+    const agent = request.agent(app.getHttpServer())
+
+    const registered = await agent
+      .post('/v1/auth/register')
+      .send({email: 'ada@example.com', displayName: 'Ada', password: 'secret-password'})
+      .expect(201)
+
+    const userId = UserId.parse(registered.body.userId)
+    const login = await agent
+      .post('/v1/auth/login')
+      .send({email: 'ada@example.com', password: 'secret-password'})
+      .expect(200)
+
+    expect(login.body.userId).toBe(userId)
+    expect(login.body.tenantId).toBeUndefined()
+    expect(login.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringContaining('refresh_token=')]))
+
+    const createdTenant = await agent
+      .post('/v1/tenants')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({name: 'Acme'})
+      .expect(201)
+
+    const tenantId = TenantId.parse(createdTenant.body.id)
+    const refreshed = await agent.post('/v1/auth/refresh').expect(200)
+
+    expect(refreshed.body.userId).toBe(userId)
+    expect(refreshed.body.accessToken).toBeTruthy()
+
+    const selected = await agent
+      .post('/v1/auth/select-tenant')
+      .set('Authorization', `Bearer ${refreshed.body.accessToken}`)
+      .send({tenantId})
+      .expect(200)
+
+    expect(selected.body.tenantId).toBe(tenantId)
+
+    const me = await agent.get('/v1/me').set('Authorization', `Bearer ${selected.body.accessToken}`).expect(200)
+
+    expect(me.body.user.id).toBe(userId)
+
+    const members = await agent
+      .get(`/v1/tenants/${tenantId}/members`)
+      .set('Authorization', `Bearer ${selected.body.accessToken}`)
+      .expect(200)
+
+    expect(members.body.members).toHaveLength(1)
+    expect(members.body.members[0].userId).toBe(userId)
   })
 })

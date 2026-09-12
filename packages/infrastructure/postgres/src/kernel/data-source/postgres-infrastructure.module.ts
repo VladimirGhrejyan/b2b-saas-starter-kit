@@ -1,11 +1,9 @@
 import type {DynamicModule} from '@nestjs/common'
 import {Module} from '@nestjs/common'
 
-import {SystemClock} from '../clock/clock'
-import {UuidV7IdGenerator} from '../id-generator/id-generator'
 import {TypeormUnitOfWork} from '../persistence/unit-of-work'
 import {AlsTenantContext} from '../tenant-context/tenant-context'
-import {CLOCK, DATA_SOURCE, ID_GENERATOR, POSTGRES_CONFIG, TENANT_CONTEXT, UNIT_OF_WORK} from '../tokens'
+import {DATA_SOURCE, POSTGRES_CONFIG, TENANT_CONTEXT, UNIT_OF_WORK} from '../tokens'
 
 import {DataSourceManager} from './data-source.manager'
 import type {PostgresInfrastructureModuleAsyncOptions} from './postgres-infrastructure.module.types'
@@ -41,16 +39,6 @@ export class PostgresInfrastructureModule {
           provide: UNIT_OF_WORK,
           useExisting: TypeormUnitOfWork,
         },
-        SystemClock,
-        {
-          provide: CLOCK,
-          useExisting: SystemClock,
-        },
-        UuidV7IdGenerator,
-        {
-          provide: ID_GENERATOR,
-          useExisting: UuidV7IdGenerator,
-        },
       ],
       exports: [
         POSTGRES_CONFIG,
@@ -60,10 +48,6 @@ export class PostgresInfrastructureModule {
         TENANT_CONTEXT,
         TypeormUnitOfWork,
         UNIT_OF_WORK,
-        SystemClock,
-        CLOCK,
-        UuidV7IdGenerator,
-        ID_GENERATOR,
       ],
     }
   }

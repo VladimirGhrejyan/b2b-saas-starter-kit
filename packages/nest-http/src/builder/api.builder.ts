@@ -7,6 +7,7 @@ import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
 import {OpenApi} from '../openapi/open-api'
 
 import type {ApiHttpConfig} from './api-http-config.types'
+import {applyCookieParser} from './apply-cookie-parser'
 
 export class ApiBuilder {
   readonly #app: INestApplication
@@ -26,6 +27,12 @@ export class ApiBuilder {
     }
 
     this.#app.use(helmet())
+
+    return this
+  }
+
+  useCookies(): this {
+    applyCookieParser(this.#app)
 
     return this
   }

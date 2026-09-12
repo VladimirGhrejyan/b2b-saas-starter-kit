@@ -81,6 +81,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@b2b-saas-starter-kit/node": "workspace:*",
+    "@b2b-saas-starter-kit/security": "workspace:*",
     "@nestjs/testing": "^11.2.1",
     "@swc-node/register": "^1.12.1",
     "@types/pg": "^8.23.1"

@@ -10,9 +10,9 @@ Related: [`backend.md`](./backend.md) (layers), [`multi-tenancy.md`](./multi-ten
 | ------------------------------------ | -------------------------------------------------------------- | -------------- |
 | Repository **ports** (interfaces)    | `domain/<context>/ports`                                       | domain         |
 | Domain models (aggregates/VOs)       | `domain/<context>`                                             | domain         |
-| TypeORM **entities** (`*.entity.ts`) | `infrastructure/postgres/src/contexts/<context>`               | infrastructure |
-| **Mappers** (entity ↔ domain)       | `infrastructure/postgres/src/contexts/<context>`               | infrastructure |
-| Repository **implementations**       | `infrastructure/postgres/src/contexts/<context>`               | infrastructure |
+| TypeORM **entities** (`*.entity.ts`) | `infrastructure/postgres/src/contexts/<context>/entities`      | infrastructure |
+| **Mappers** (entity ↔ domain)       | `infrastructure/postgres/src/contexts/<context>/mappers`       | infrastructure |
+| Repository **implementations**       | `infrastructure/postgres/src/contexts/<context>/repositories`  | infrastructure |
 | `DataSource` / TypeORM config        | `packages/infrastructure/postgres/src/kernel/data-source`      | infrastructure |
 | **Migrations** (single global set)   | `packages/infrastructure/postgres/src/kernel/migrations`       | infrastructure |
 | Tenant-aware **base repository**     | `packages/infrastructure/postgres/src/kernel/persistence`      | infrastructure |
@@ -50,7 +50,7 @@ export interface TenantRepository {
   save(tenant: Tenant): Promise<void>
 }
 
-// infrastructure/postgres/src/contexts/tenancy/tenant.entity.ts  (TypeORM)
+// infrastructure/postgres/src/contexts/tenancy/entities/tenant.entity.ts  (TypeORM)
 @Entity('tenants')
 export class TenantEntity {
   @PrimaryColumn('uuid') id!: string
@@ -59,7 +59,7 @@ export class TenantEntity {
   @Column('uuid') tenantId!: string // see multi-tenancy note below
 }
 
-// infrastructure/postgres/src/contexts/tenancy/tenant.mapper.ts
+// infrastructure/postgres/src/contexts/tenancy/mappers/tenant.mapper.ts
 export const TenantMapper = {
   toDomain(e: TenantEntity): Tenant {
     /* … */
@@ -69,7 +69,7 @@ export const TenantMapper = {
   },
 }
 
-// infrastructure/postgres/src/contexts/tenancy/typeorm-tenant.repository.ts
+// infrastructure/postgres/src/contexts/tenancy/repositories/typeorm-tenant.repository.ts
 @Injectable()
 export class TypeOrmTenantRepository extends TenantAwareRepository implements TenantRepository {
   async findById(id: TenantId) {

@@ -36,6 +36,8 @@ packages/
     logger/                #   Pino adapter for the Logger port (no Nest)
     redis/                 #   Redis adapters for the platform capability ports
     http-client/           #   undici outbound HTTP adapter for HttpClientPort
+    security/              #   Argon2 password hasher + SHA-256 token digest
+    node/                  #   SystemClock + UUID v7 IdGenerator
     messaging/             #   BullMQ + outbox relay
   nest-http/               # layer:nest-http — Nest HTTP kit (ApiBuilder, pipe/filter/interceptor, Swagger)
   composition/             # layer:composition — per-context NestJS modules (DI wiring)
@@ -69,10 +71,10 @@ Rejected alternatives (context-first single project per context; context×layer 
 
 ### Note on `infrastructure/*` realization
 
-`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, `packages/infrastructure/logger`, `packages/infrastructure/redis`, `packages/infrastructure/http-client`, later `messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
+`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, `packages/infrastructure/logger`, `packages/infrastructure/redis`, `packages/infrastructure/http-client`, `packages/infrastructure/security`, `packages/infrastructure/node`, later `messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
 
 - **Disk:** `packages/infrastructure/<concern>/` (mirrors `packages/shared/<leaf>/`).
-- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; `logger` / `@b2b-saas-starter-kit/logger`; `redis` / `@b2b-saas-starter-kit/redis`; `http-client` / `@b2b-saas-starter-kit/http-client`; later `messaging`) so a Redis, logger, or HTTP-client consumer never pulls TypeORM, and a worker never pulls Nest/Swagger. `apps/api` must not import `redis` or `http-client` — composition owns the adapters.
+- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; `logger` / `@b2b-saas-starter-kit/logger`; `redis` / `@b2b-saas-starter-kit/redis`; `http-client` / `@b2b-saas-starter-kit/http-client`; `security` / `@b2b-saas-starter-kit/security`; `node` / `@b2b-saas-starter-kit/node`; later `messaging`) so a Redis, logger, HTTP-client, or crypto consumer never pulls TypeORM, and a worker never pulls Nest/Swagger. `apps/api` must not import `redis`, `http-client`, `security`, or `node` — composition owns the adapters.
 
 A single `infrastructure` project with subfolders is a valid alternative (fewer projects, coarser `affected`) but is not what this kit ships. The same "grouping dir may be one project or several" principle applies to `frontend/`.
 
@@ -112,7 +114,7 @@ flowchart TB
   domain[domain]
   platform[platform]
   application[application]
-  infra["infra postgres/redis/http-client/messaging"]
+  infra["infra postgres/redis/http-client/security/node/messaging"]
   loggerPkg[infrastructure/logger]
   nestHttp[nest-http]
   composition[composition]

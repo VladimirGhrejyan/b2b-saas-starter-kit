@@ -19,7 +19,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-003 — Infrastructure split by concern
 
-**Decision:** `infrastructure/{postgres,logger,redis,messaging}` (grouping directory), each concern its own Nx project. `logger` is Pino only (no Nest) so workers and scripts never pull TypeORM or Swagger.
+**Decision:** `infrastructure/{postgres,logger,redis,security,node,messaging}` (grouping directory), each concern its own Nx project. `logger` is Pino only (no Nest) so workers and scripts never pull TypeORM or Swagger. `security` owns native Argon2 + SHA-256; `node` owns `uuid`/`Date`; `postgres` owns TypeORM persistence.
 **Rationale:** Different dependency footprints and change cadences keep `affected` meaningful.
 
 ## ADR-004 — Repository ports live in the domain layer
@@ -186,6 +186,13 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) engine + copy in each app; (B) engine in core, copy in the app ✓; (C) a shared `locales` package.
 **Rationale:** Same split as the RTK/router kernels: one runtime, many hosts. Apps control wording and lazy packs; hosts inject `StoragePort`. A shared locales package would couple audiences that should diverge (product vs admin).
 
+## ADR-032 — Backend authentication: Argon2id, JWT access, rotating refresh cookie
+
+**Decision:** First factor is email + password (Argon2id). `User` stays credential-free; the hash lives on a separate local-password record. Access is a short HS256 JWT in the JSON body (`sub`, optional `tid`, `exp`, `jti`, `iss`/`aud`). Refresh is an opaque rotating token in an `HttpOnly` `SameSite=Lax` cookie (`Path=/v1/auth`). JWT signing stays in `apps/api` (`jose`). Password-reset uses `MailerPort` with Logging + InMemory adapters only (no SMTP). The tenant claim is omitted at login unless the user has exactly one active membership; `POST /v1/auth/select-tenant` re-issues the access JWT. The API edge prefers `Authorization: Bearer`; `development`/`test` may fall back to `x-user-id` / `x-tenant-id`. Production is JWT-only and refuses the development secret.
+**Options:** (A) server session cookie only; (B) JWT access + rotating refresh cookie ✓; (C) opaque Bearer access + refresh.
+**Rationale:** Matches the planned web follow-up (in-memory access + cookie refresh) without putting `jose` in application/domain. Header-trust remains a non-production seam so `apps/web` keeps working until the frontend phase.
+**Later:** web login UI, Bearer `prepareHeaders`, SSO, passkeys, email verification, MFA, SMTP.
+
 ---
 
 ## Deferred decisions
@@ -195,6 +202,6 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 - **Request/tenant ALS log mixin** — done: `RequestContextLocator` on `platform` + Pino mixin + HTTP access logs in `nest-http`.
 - **Mapper boilerplate reduction** — standard convention now; possible codegen/Cursor skill later.
 - **Extension contexts** (billing, files, webhooks, feature-flags) — follow existing rules when added.
-- **Auth token strategy specifics** (storage, refresh rotation) — pattern set; concrete choice at implementation.
+- **Auth token strategy specifics** (storage, refresh rotation) — **done (ADR-032 / Phase 20).** Web login UI and Bearer `prepareHeaders` remain a frontend follow-up.
 - **UI component / CSS stack** (Tailwind, Radix, shadcn, tokens, `ThemeProvider`) — package boundary is `ui-kit`; technology is TBD (ADR-030).
 - **CI/CD pipeline** — out of scope for this phase.

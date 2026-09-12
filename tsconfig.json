@@ -71,6 +71,12 @@
     },
     {
       "path": "./packages/infrastructure/http-client"
+    },
+    {
+      "path": "./packages/infrastructure/security"
+    },
+    {
+      "path": "./packages/infrastructure/node"
     }
   ]
 }
