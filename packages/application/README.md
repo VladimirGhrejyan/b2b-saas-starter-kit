@@ -27,14 +27,16 @@ Never import `contracts`, `config`, TypeORM, Redis, other `@nestjs/*` packages, 
 
 ```
 src/<context>/
-  <use-case>.use-case.ts
-  <use-case>.types.ts
-  <use-case>.spec.ts
+  <use-case>/
+    <use-case>.use-case.ts   # or .query.ts
+    <use-case>.types.ts
+    <use-case>.spec.ts       # when a dedicated unit spec exists
   errors/*.error.ts
+  <shared-context-files>     # constants, services, mailer
 src/shared/
   *.port.ts
   errors/
-src/testing/          # in-memory fakes; not a bounded context
+src/testing/          # in-memory fakes + multi-use-case flow specs; not a bounded context
 ```
 
 Commands use `actorId` (matches `TenantScope`). Writes run inside `UnitOfWork.run`. IDs come from `IdGenerator` and are branded in this layer; timestamps come from `Clock.now()`.

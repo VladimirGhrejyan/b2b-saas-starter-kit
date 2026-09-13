@@ -16,7 +16,8 @@ Source of truth: `docs/architecture/backend.md`, `packages/application/README.md
 - Commands/queries are plain typed objects. Actor field is **`actorId`** (matches `TenantScope`).
 - Published port **interfaces** live in `packages/application/src/shared/` so contexts can import them without a relative sibling-context path.
 - Implementations stay in the owning context (`authorization/`, `tenancy/`).
-- In-memory fakes live in `packages/application/src/testing` and are exported from `@b2b-saas-starter-kit/application/testing`.
+- Each command/query lives in `src/<context>/<use-case>/` with its types and unit spec (`<use-case>.use-case.ts` or `.query.ts`, `.types.ts`, `.spec.ts`). No per-use-case barrels. Context-root files stay for `errors/`, constants, and services.
+- In-memory fakes and multi-use-case flow specs live in `packages/application/src/testing` and are exported from `@b2b-saas-starter-kit/application/testing`.
 - Writes run inside `UnitOfWork.run`. Brand IDs with `UserId.parse(ids.generate())` and pass `clock.now()` into domain factories.
 - Only `ListTenantMembers` requires `PermissionCatalog.tenancyMembersRead`. `CreateUser` / `CreateTenant` are onboarding; `GetMyProfile` is self-read.
 - Active memberships only contribute role IDs. Isolation lint still keys off `src/<context>/`.
@@ -29,7 +30,7 @@ import type {UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
 import type {UnitOfWork, Logger} from '@b2b-saas-starter-kit/platform'
 import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
-import type {AuthorizationPort} from '../shared/authorization.port'
+import type {AuthorizationPort} from '../../shared/authorization.port'
 ```
 
 ## Forbidden

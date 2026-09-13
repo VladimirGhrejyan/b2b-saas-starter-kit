@@ -5,11 +5,11 @@ import {MembershipId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kerne
 import {Membership, PermissionCatalog, User} from '@b2b-saas-starter-kit/domain'
 
 import {AuthorizationService} from '../authorization/authorization.service'
-import {CreateUserUseCase} from '../identity/create-user.use-case'
-import {GetMyProfileQuery} from '../identity/get-my-profile.query'
+import {CreateUserUseCase} from '../identity/create-user/create-user.use-case'
+import {GetMyProfileQuery} from '../identity/get-my-profile/get-my-profile.query'
 import {InsufficientPermissionError} from '../shared/errors/insufficient-permission.error'
-import {CreateTenantUseCase} from '../tenancy/create-tenant.use-case'
-import {ListTenantMembersQuery} from '../tenancy/list-tenant-members.query'
+import {CreateTenantUseCase} from '../tenancy/create-tenant/create-tenant.use-case'
+import {ListTenantMembersQuery} from '../tenancy/list-tenant-members/list-tenant-members.query'
 import {MembershipRolesService} from '../tenancy/membership-roles.service'
 
 import {FixedClock} from './fixed-clock'
