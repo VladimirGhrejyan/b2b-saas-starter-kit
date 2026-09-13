@@ -1,0 +1,63 @@
+---
+
+description: Enforce the repository Node.js version for all development commands
+
+alwaysApply: true
+
+---
+
+# Node.js Version
+
+This repository uses the Node.js version defined by `.nvmrc`.
+
+## Requirements
+
+- Always use the Node.js version specified in `.nvmrc`.
+
+- Never intentionally use the system or sandbox default Node.js version when it differs from `.nvmrc`.
+
+- This applies to all Node.js-related commands, including:
+
+  - `node`
+
+  - `pnpm`
+
+  - `nx`
+
+  - package installation
+
+  - builds
+
+  - tests
+
+  - linting
+
+  - formatting
+
+  - development servers
+
+  - scripts executed through `package.json`
+
+## Before running commands
+
+When executing Node.js-related commands in the terminal or sandbox:
+
+1. Read `.nvmrc` if the required Node.js version is not already known.
+
+2. Ensure the command runs with that Node.js version.
+
+3. Verify the active version with:
+
+   `node --version`
+
+4. If the active version does not match `.nvmrc`, do not continue using the incorrect Node.js version.
+
+## Version management
+
+Prefer the repository's existing Node.js version manager configuration.
+
+If `nvm` is available, use the version from `.nvmrc` before running Node.js-related commands:
+
+```bash
+
+nvm use
