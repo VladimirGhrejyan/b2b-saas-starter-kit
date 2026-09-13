@@ -24,6 +24,14 @@ overrides:
   qs: '>=6.16.0'
   # nestjs-zod 5.5 + Zod 4.6 emits `.nullable()` as OpenAPI arrays; stay on 4.4 until upstream.
   zod: 4.4.3
+# Cursor’s Node is often darwin-x64 (Rosetta) while the host terminal is arm64.
+# Install both napi prebuilds so password hashing loads without a rebuild.
+supportedArchitectures:
+  os:
+    - current
+  cpu:
+    - arm64
+    - x64
 allowBuilds:
   '@parcel/watcher': true
   less: false
@@ -34,4 +42,4 @@ allowBuilds:
   '@swc/core': true
   '@scarf/scarf': false
   msw: false
-  argon2: true
+  argon2: set this to true or false

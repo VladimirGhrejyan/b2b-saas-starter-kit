@@ -73,4 +73,15 @@ export class TypeOrmRoleRepository extends TenantAwareRepository implements Role
       await this.save(role)
     }
   }
+
+  async delete(id: RoleId): Promise<void> {
+    const role = await this.findById(id)
+
+    if (role === null) {
+      return
+    }
+
+    await this.manager.delete(RolePermissionEntity, {roleId: id})
+    await this.manager.delete(RoleEntity, {id})
+  }
 }

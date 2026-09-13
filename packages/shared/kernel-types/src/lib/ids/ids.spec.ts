@@ -1,5 +1,6 @@
 import {describe, expect, expectTypeOf, it} from 'vitest'
 
+import {InvitationId} from './invitation-id'
 import {MembershipId} from './membership-id'
 import {RefreshFamilyId} from './refresh-family-id'
 import {RefreshSessionId} from './refresh-session-id'
@@ -14,6 +15,7 @@ describe('branded IDs', () => {
     expect(UserId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(TenantId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(MembershipId.parse(VALID_UUID)).toBe(VALID_UUID)
+    expect(InvitationId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(RoleId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(RefreshSessionId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(RefreshFamilyId.parse(VALID_UUID)).toBe(VALID_UUID)
@@ -29,6 +31,7 @@ describe('branded IDs', () => {
   it('does not treat different ID brands as the same type', () => {
     expectTypeOf<UserId>().not.toEqualTypeOf<TenantId>()
     expectTypeOf<UserId>().not.toEqualTypeOf<MembershipId>()
+    expectTypeOf<UserId>().not.toEqualTypeOf<InvitationId>()
     expectTypeOf<UserId>().not.toEqualTypeOf<RoleId>()
     expectTypeOf<TenantId>().not.toEqualTypeOf<RoleId>()
   })

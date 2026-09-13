@@ -1,4 +1,14 @@
 export {AuthorizationService} from './authorization/authorization.service'
+export type {CreateCustomRoleCommand, CreateCustomRoleResult} from './authorization/create-custom-role.types'
+export {CreateCustomRoleUseCase} from './authorization/create-custom-role.use-case'
+export type {DeleteCustomRoleCommand} from './authorization/delete-custom-role.types'
+export {DeleteCustomRoleUseCase} from './authorization/delete-custom-role.use-case'
+export {RoleInUseError} from './authorization/errors/role-in-use.error'
+export {RoleNameTakenError} from './authorization/errors/role-name-taken.error'
+export {ListRolesQuery} from './authorization/list-roles.query'
+export type {ListRolesQueryInput, ListRolesResult, RoleListItem} from './authorization/list-roles.types'
+export type {UpdateCustomRoleCommand, UpdateCustomRoleResult} from './authorization/update-custom-role.types'
+export {UpdateCustomRoleUseCase} from './authorization/update-custom-role.use-case'
 export {MIN_PASSWORD_LENGTH, PASSWORD_RESET_TTL_MS, REFRESH_TTL_MS} from './identity/authentication.constants'
 export type {CreateUserCommand, CreateUserResult} from './identity/create-user.types'
 export {CreateUserUseCase} from './identity/create-user.use-case'
@@ -29,14 +39,37 @@ export type {SelectTenantCommand, SelectTenantResult} from './identity/select-te
 export {SelectTenantUseCase} from './identity/select-tenant.use-case'
 export type {AuthorizationPort} from './shared/authorization.port'
 export {InsufficientPermissionError} from './shared/errors/insufficient-permission.error'
+export {RoleNotFoundError} from './shared/errors/role-not-found.error'
 export type {MembershipRolesPort} from './shared/membership-roles.port'
+export type {AcceptInvitationCommand, AcceptInvitationResult} from './tenancy/accept-invitation.types'
+export {AcceptInvitationUseCase} from './tenancy/accept-invitation.use-case'
+export type {AttachMemberCommand, AttachMemberResult} from './tenancy/attach-member.types'
+export {AttachMemberUseCase} from './tenancy/attach-member.use-case'
 export type {CreateTenantCommand, CreateTenantResult} from './tenancy/create-tenant.types'
 export {CreateTenantUseCase} from './tenancy/create-tenant.use-case'
+export {CannotAssignOwnerRoleError} from './tenancy/errors/cannot-assign-owner-role.error'
+export {InvalidInvitationTokenError} from './tenancy/errors/invalid-invitation-token.error'
+export {InvitationAlreadyPendingError} from './tenancy/errors/invitation-already-pending.error'
+export {InvitationRegistrationRequiredError} from './tenancy/errors/invitation-registration-required.error'
+export {LastOwnerRequiredError} from './tenancy/errors/last-owner-required.error'
+export {MembershipAlreadyExistsError} from './tenancy/errors/membership-already-exists.error'
+export {MembershipNotFoundError} from './tenancy/errors/membership-not-found.error'
 export {OwnerUserNotFoundError} from './tenancy/errors/owner-user-not-found.error'
+export {TenantNotFoundError} from './tenancy/errors/tenant-not-found.error'
+export {GetTenantQuery} from './tenancy/get-tenant.query'
+export type {GetTenantQueryInput, GetTenantResult} from './tenancy/get-tenant.types'
+export type {InviteMemberCommand, InviteMemberResult} from './tenancy/invite-member.types'
+export {InviteMemberUseCase} from './tenancy/invite-member.use-case'
 export {ListTenantMembersQuery} from './tenancy/list-tenant-members.query'
 export type {
   ListTenantMembersQueryInput,
   ListTenantMembersResult,
   TenantMemberListItem,
+  TenantMemberUser,
 } from './tenancy/list-tenant-members.types'
 export {MembershipRolesService} from './tenancy/membership-roles.service'
+export type {
+  ReplaceMembershipRolesCommand,
+  ReplaceMembershipRolesResult,
+} from './tenancy/replace-membership-roles.types'
+export {ReplaceMembershipRolesUseCase} from './tenancy/replace-membership-roles.use-case'

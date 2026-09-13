@@ -8,7 +8,10 @@ import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
  */
 @Injectable()
 export class LoggingMailer implements MailerPort {
+  readonly messages: MailMessage[] = []
+
   send(message: MailMessage): Promise<void> {
+    this.messages.push(message)
     LoggerLocator.get()
       .context('mailer')
       .info({to: message.to, subject: message.subject, text: message.text}, 'outbound mail (stub)')

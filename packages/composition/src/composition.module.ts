@@ -1,10 +1,19 @@
 import {Module} from '@nestjs/common'
 
 import {
+  AcceptInvitationUseCase,
+  AttachMemberUseCase,
   AuthorizationService,
+  CreateCustomRoleUseCase,
   CreateTenantUseCase,
+  DeleteCustomRoleUseCase,
   GetMyProfileQuery,
+  GetTenantQuery,
+  InviteMemberUseCase,
+  ListRolesQuery,
   ListTenantMembersQuery,
+  ReplaceMembershipRolesUseCase,
+  UpdateCustomRoleUseCase,
 } from '@b2b-saas-starter-kit/application'
 
 import {loadPostgresConfigFromEnv, PostgresInfrastructureModule} from '@b2b-saas-starter-kit/postgres'
@@ -43,7 +52,16 @@ import {compositionProviders} from './composition.providers'
     AuthorizationModule,
     CreateTenantUseCase,
     GetMyProfileQuery,
+    GetTenantQuery,
     ListTenantMembersQuery,
+    InviteMemberUseCase,
+    AcceptInvitationUseCase,
+    AttachMemberUseCase,
+    ReplaceMembershipRolesUseCase,
+    ListRolesQuery,
+    CreateCustomRoleUseCase,
+    UpdateCustomRoleUseCase,
+    DeleteCustomRoleUseCase,
     AuthorizationService,
     AssertActiveMembership,
   ],

@@ -23,7 +23,7 @@ Argon2id hashes local passwords. SHA-256 hex-digests opaque refresh and reset to
 ## Allowed imports
 
 - `@b2b-saas-starter-kit/platform`
-- `argon2`, `@nestjs/common`
+- `@node-rs/argon2`, `@nestjs/common`
 - `node:` builtins
 
 Never import domain, application, contracts, TypeORM, pg, ioredis, undici, or other infrastructure packages.

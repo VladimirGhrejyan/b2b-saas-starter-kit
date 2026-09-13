@@ -12,10 +12,10 @@ const httpClientMessage =
   'HTTP client adapters may use undici and @nestjs/common. Do not import TypeORM, ioredis, axios, got, domain, application, or other infrastructure packages.'
 
 const securityMessage =
-  'Security adapters may use argon2 and @nestjs/common. Do not import TypeORM, pg, ioredis, undici, domain, application, or other infrastructure packages.'
+  'Security adapters may use @node-rs/argon2 and @nestjs/common. Do not import TypeORM, pg, ioredis, undici, domain, application, or other infrastructure packages.'
 
 const nodeMessage =
-  'Node process adapters may use uuid and @nestjs/common. Do not import argon2, TypeORM, pg, ioredis, undici, domain, application, or other infrastructure packages.'
+  'Node process adapters may use uuid and @nestjs/common. Do not import @node-rs/argon2, TypeORM, pg, ioredis, undici, domain, application, or other infrastructure packages.'
 
 /** Infrastructure overlay: each concern stays adapter-local. */
 export class InfrastructureEslintConfig {
@@ -49,6 +49,7 @@ export class InfrastructureEslintConfig {
               {name: 'axios', message: postgresLoggerMessage},
               {name: 'got', message: postgresLoggerMessage},
               {name: 'argon2', message: postgresLoggerMessage},
+              {name: '@node-rs/argon2', message: postgresLoggerMessage},
               {name: '@b2b-saas-starter-kit/contracts', message: postgresLoggerMessage},
               {name: '@b2b-saas-starter-kit/http-client', message: postgresLoggerMessage},
               {name: '@b2b-saas-starter-kit/security', message: postgresLoggerMessage},
@@ -224,6 +225,7 @@ export class InfrastructureEslintConfig {
           {
             paths: [
               {name: 'argon2', message: nodeMessage},
+              {name: '@node-rs/argon2', message: nodeMessage},
               {name: 'typeorm', message: nodeMessage},
               {name: 'pg', message: nodeMessage},
               {name: 'ioredis', message: nodeMessage},

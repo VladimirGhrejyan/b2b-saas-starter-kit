@@ -10,4 +10,5 @@ export interface RoleRepository {
   findByTenant(tenantId: TenantId): Promise<Role[]>
   save(role: Role): Promise<void>
   saveMany(roles: Role[]): Promise<void>
+  delete(id: RoleId): Promise<void>
 }

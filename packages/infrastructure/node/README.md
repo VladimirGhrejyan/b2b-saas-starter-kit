@@ -26,7 +26,7 @@ src/
 - `uuid`, `@nestjs/common`
 - `node:` builtins
 
-Never import argon2, domain, application, contracts, TypeORM, pg, ioredis, undici, or other infrastructure packages.
+Never import @node-rs/argon2, domain, application, contracts, TypeORM, pg, ioredis, undici, or other infrastructure packages.
 
 ## Commands
 

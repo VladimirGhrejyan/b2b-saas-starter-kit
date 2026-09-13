@@ -4,6 +4,8 @@ import {Permission, RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-
 
 import {EmptyRolePermissionsError} from './errors/empty-role-permissions.error'
 import {InvalidRoleNameError} from './errors/invalid-role-name.error'
+import {ReservedRoleNameError} from './errors/reserved-role-name.error'
+import {SystemRoleImmutableError} from './errors/system-role-immutable.error'
 import {UnknownPermissionError} from './errors/unknown-permission.error'
 import {PermissionCatalog} from './permission-catalog'
 import {Role} from './role'
@@ -103,5 +105,40 @@ describe('Role', () => {
 
     expect(left.equals(right)).toBe(true)
     expect(left.equals(other)).toBe(false)
+  })
+
+  it('rejects reserved custom role names', () => {
+    expect(() => {
+      Role.create(ROLE_ID, TENANT_ID, 'Owner', [PermissionCatalog.tenancyTenantRead], OCCURRED_AT)
+    }).toThrow(ReservedRoleNameError)
+    expect(() => {
+      Role.create(ROLE_ID, TENANT_ID, 'Admin', [PermissionCatalog.tenancyTenantRead], OCCURRED_AT)
+    }).toThrow(ReservedRoleNameError)
+    expect(() => {
+      Role.create(ROLE_ID, TENANT_ID, 'Member', [PermissionCatalog.tenancyTenantRead], OCCURRED_AT)
+    }).toThrow(ReservedRoleNameError)
+  })
+
+  it('renames and replaces permissions on a custom role', () => {
+    const role = Role.create(ROLE_ID, TENANT_ID, 'Reviewer', [PermissionCatalog.tenancyTenantRead], OCCURRED_AT)
+
+    role.pullEvents()
+    role.rename('Auditor', OCCURRED_AT)
+    role.replacePermissions([PermissionCatalog.tenancyMembersRead, PermissionCatalog.tenancyTenantRead], OCCURRED_AT)
+
+    expect(role.name).toBe('Auditor')
+    expect(role.permissions).toEqual([PermissionCatalog.tenancyMembersRead, PermissionCatalog.tenancyTenantRead])
+    expect(role.pullEvents().map((event) => event.type)).toEqual(['RoleRenamed', 'RolePermissionsReplaced'])
+  })
+
+  it('refuses rename and replacePermissions on a system role', () => {
+    const role = Role.createSystemRole(ROLE_ID, TENANT_ID, 'Admin', OCCURRED_AT)
+
+    expect(() => {
+      role.rename('Staff', OCCURRED_AT)
+    }).toThrow(SystemRoleImmutableError)
+    expect(() => {
+      role.replacePermissions([PermissionCatalog.tenancyTenantRead], OCCURRED_AT)
+    }).toThrow(SystemRoleImmutableError)
   })
 })

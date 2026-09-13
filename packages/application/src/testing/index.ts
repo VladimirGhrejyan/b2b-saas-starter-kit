@@ -1,6 +1,7 @@
 export {FixedClock} from './fixed-clock'
 export {InMemoryCache} from './in-memory-cache'
 export {InMemoryHttpClient} from './in-memory-http-client'
+export {InMemoryInvitationRepository} from './in-memory-invitation.repository'
 export {InMemoryLocalPasswordRepository} from './in-memory-local-password.repository'
 export {InMemoryMailer} from './in-memory-mailer'
 export {InMemoryMembershipRepository} from './in-memory-membership.repository'

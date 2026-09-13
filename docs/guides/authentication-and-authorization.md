@@ -460,7 +460,9 @@ That is why the stub exists: to prove the **authorization and tenancy** path bef
 | Header injection                                            | `FrontendApi.prepareHeaders`                                                                                      |
 | Demo picker                                                 | `apps/web` `features/dev-principal` (must not ship as prod login)                                                 |
 
-**Not built yet (by design):** web login UI / Bearer `prepareHeaders`, MFA, SSO, OIDC/SAML connections, linked identities, extra authn strategies, invitations, custom roles, permission-cache invalidation on write, policy/CASL adapter, RLS, admin impersonation, SMTP.
+**Not built yet (by design):** web login UI / Bearer `prepareHeaders`, MFA, SSO, OIDC/SAML connections, linked identities, extra authn strategies, policy/CASL adapter, RLS, admin impersonation, SMTP.
+
+**Now built:** email invitations + accept, attach-existing members, custom-role CRUD, and permission-cache `del` on those writes.
 
 ---
 
@@ -471,7 +473,7 @@ That is why the stub exists: to prove the **authorization and tenancy** path bef
 - Prefer **OIDC-quality session**: short JWT or opaque access + **rotating refresh cookie**, tenant claim after selection.
 - Keep **RBAC permissions** and `/me` as the UI source.
 - Replace DevPrincipal only at the edge.
-- Add write-path **cache `del`** when roles/memberships change.
+- Write-path **cache `del`** is implemented on invite/accept/attach/replace-roles and custom-role updates.
 
 **If a customer demands “Login with Okta”:**
 

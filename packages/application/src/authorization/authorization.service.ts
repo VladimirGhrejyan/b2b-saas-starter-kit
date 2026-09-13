@@ -1,8 +1,8 @@
 import {Injectable} from '@nestjs/common'
 
-import type {Permission, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {Permission, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import type {RoleRepository} from '@b2b-saas-starter-kit/domain'
+import type {MembershipRepository, RoleRepository} from '@b2b-saas-starter-kit/domain'
 
 import type {CachePort} from '@b2b-saas-starter-kit/platform'
 
@@ -16,7 +16,7 @@ import {effectivePermissionsCacheKey} from './effective-permissions-cache-key'
 /**
  * Resolves effective permissions from tenant roles + membership role ids.
  *
- * Cache-aside via {@link CachePort}. Future role/membership writes must `del`
+ * Cache-aside via {@link CachePort}. Membership and role writes `del`
  * {@link effectivePermissionsCacheKey} for the affected user+tenant.
  */
 @Injectable()
@@ -25,6 +25,7 @@ export class AuthorizationService implements AuthorizationPort {
     private readonly roles: RoleRepository,
     private readonly membershipRoles: MembershipRolesPort,
     private readonly cache: CachePort,
+    private readonly memberships: MembershipRepository,
   ) {}
 
   async require(actorId: UserId, permission: Permission, scope: {tenantId: TenantId}): Promise<void> {
@@ -48,6 +49,20 @@ export class AuthorizationService implements AuthorizationPort {
     await this.cache.set(key, permissions, EFFECTIVE_PERMISSIONS_TTL_SECONDS)
 
     return permissions
+  }
+
+  async invalidate(userId: UserId, tenantId: TenantId): Promise<void> {
+    await this.cache.del(effectivePermissionsCacheKey(tenantId, userId))
+  }
+
+  async invalidateHoldersOf(roleId: RoleId, tenantId: TenantId): Promise<void> {
+    const memberships = await this.memberships.findByTenant(tenantId)
+
+    for (const membership of memberships) {
+      if (membership.roleIds.includes(roleId)) {
+        await this.invalidate(membership.userId, tenantId)
+      }
+    }
   }
 
   private async resolvePermissions(userId: UserId, tenantId: TenantId): Promise<Permission[]> {

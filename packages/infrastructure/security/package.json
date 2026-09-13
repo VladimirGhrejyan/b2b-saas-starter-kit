@@ -23,6 +23,6 @@
   "dependencies": {
     "@b2b-saas-starter-kit/platform": "workspace:*",
     "@nestjs/common": "^12.0.1",
-    "argon2": "^0.45.1"
+    "@node-rs/argon2": "^2.2.1"
   }
 }

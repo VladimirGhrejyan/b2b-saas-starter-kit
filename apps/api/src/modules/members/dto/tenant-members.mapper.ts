@@ -15,6 +15,7 @@ export class TenantMembersMapper {
         userId: member.userId,
         roleIds: [...member.roleIds],
         status: member.status,
+        ...(member.user === undefined ? {} : {user: member.user}),
       })),
     }
   }

@@ -49,7 +49,7 @@ describe('AuthorizationService through TypeORM repositories', () => {
 
     createUser = new CreateUserUseCase(uow, clock, ids, users)
     createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships)
-    authz = new AuthorizationService(roles, new MembershipRolesService(memberships), new InMemoryCache())
+    authz = new AuthorizationService(roles, new MembershipRolesService(memberships), new InMemoryCache(), memberships)
   })
 
   afterAll(async () => {

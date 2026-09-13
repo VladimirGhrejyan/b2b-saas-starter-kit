@@ -10,4 +10,11 @@ export const TenantsRoutes = {
     operationId: 'createTenant',
     tags: ['tenants'],
   } satisfies RouteMetadata,
+  get: {
+    method: HttpMethod.GET,
+    path: 'tenants/:tenantId',
+    summary: 'Get a tenant',
+    operationId: 'getTenant',
+    tags: ['tenants'],
+  } satisfies RouteMetadata,
 }

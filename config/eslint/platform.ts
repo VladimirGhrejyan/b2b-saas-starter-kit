@@ -18,6 +18,7 @@ export class PlatformEslintConfig {
             {name: 'axios', message: purityMessage},
             {name: 'got', message: purityMessage},
             {name: 'argon2', message: purityMessage},
+            {name: '@node-rs/argon2', message: purityMessage},
             {name: 'jose', message: purityMessage},
             {name: 'pino', message: purityMessage},
             {name: 'pino-pretty', message: purityMessage},

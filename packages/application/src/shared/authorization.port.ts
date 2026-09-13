@@ -1,4 +1,4 @@
-import type {Permission, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {Permission, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 /**
  * Published authorization questions. Implementation composes {@link RoleRepository}
@@ -7,4 +7,6 @@ import type {Permission, TenantId, UserId} from '@b2b-saas-starter-kit/shared-ke
 export interface AuthorizationPort {
   require(actorId: UserId, permission: Permission, scope: {tenantId: TenantId}): Promise<void>
   getEffectivePermissions(userId: UserId, tenantId: TenantId): Promise<readonly Permission[]>
+  invalidate(userId: UserId, tenantId: TenantId): Promise<void>
+  invalidateHoldersOf(roleId: RoleId, tenantId: TenantId): Promise<void>
 }

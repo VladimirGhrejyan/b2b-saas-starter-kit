@@ -32,6 +32,12 @@ export class InMemoryRoleRepository implements RoleRepository, InMemorySnapshota
     return Promise.resolve()
   }
 
+  delete(id: RoleId): Promise<void> {
+    this.#roles.delete(id)
+
+    return Promise.resolve()
+  }
+
   snapshot(): unknown {
     return new Map(this.#roles)
   }

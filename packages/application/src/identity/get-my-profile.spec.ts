@@ -24,6 +24,12 @@ function authzWith(permissions: AuthorizationPort['getEffectivePermissions']): A
       return undefined
     },
     getEffectivePermissions: permissions,
+    async invalidate() {
+      return undefined
+    },
+    async invalidateHoldersOf() {
+      return undefined
+    },
   }
 }
 

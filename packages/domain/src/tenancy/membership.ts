@@ -16,7 +16,7 @@ export class Membership extends AggregateRoot<MembershipId> {
 
   readonly userId: UserId
 
-  readonly roleIds: readonly RoleId[]
+  #roleIds: readonly RoleId[]
 
   #status: MembershipStatus
 
@@ -30,8 +30,12 @@ export class Membership extends AggregateRoot<MembershipId> {
     super(id)
     this.tenantId = tenantId
     this.userId = userId
-    this.roleIds = roleIds
+    this.#roleIds = roleIds
     this.#status = status
+  }
+
+  get roleIds(): readonly RoleId[] {
+    return this.#roleIds
   }
 
   get status(): MembershipStatus {
@@ -83,6 +87,22 @@ export class Membership extends AggregateRoot<MembershipId> {
    */
   static reconstitute(props: MembershipReconstituteProps): Membership {
     return new Membership(props.id, props.tenantId, props.userId, [...props.roleIds], props.status)
+  }
+
+  /**
+   * Replaces the membership role ids. Must stay non-empty and unique.
+   */
+  replaceRoleIds(roleIds: readonly RoleId[], occurredAt: Date): void {
+    this.#roleIds = Membership.#normalizeRoleIds(roleIds)
+
+    this.record({
+      type: 'MembershipRolesReplaced',
+      occurredAt,
+      membershipId: this.id,
+      tenantId: this.tenantId,
+      userId: this.userId,
+      roleIds: [...this.#roleIds],
+    })
   }
 
   /**

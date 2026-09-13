@@ -18,6 +18,7 @@ export class DomainEslintConfig {
             {name: 'axios', message: purityMessage},
             {name: 'got', message: purityMessage},
             {name: 'argon2', message: purityMessage},
+            {name: '@node-rs/argon2', message: purityMessage},
             {name: 'jose', message: purityMessage},
             {name: '@b2b-saas-starter-kit/contracts', message: purityMessage},
             {name: '@b2b-saas-starter-kit/application', message: purityMessage},

@@ -34,10 +34,15 @@ function createFlow() {
   const uow = new InMemoryUnitOfWork(users, tenants, roles, memberships)
   const clock = new FixedClock(OCCURRED_AT)
   const ids = new SequentialIdGenerator()
-  const authz = new AuthorizationService(roles, new MembershipRolesService(memberships), new InMemoryCache())
+  const authz = new AuthorizationService(
+    roles,
+    new MembershipRolesService(memberships),
+    new InMemoryCache(),
+    memberships,
+  )
   const createUser = new CreateUserUseCase(uow, clock, ids, users)
   const createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships)
-  const listMembers = new ListTenantMembersQuery(authz, memberships)
+  const listMembers = new ListTenantMembersQuery(authz, memberships, users)
   const getMyProfile = new GetMyProfileQuery(users, memberships, authz)
 
   return {users, memberships, createUser, createTenant, listMembers, getMyProfile}

@@ -2,7 +2,7 @@
 
 Architecture-driven, phase-by-phase plan for the B2B multi-tenant SaaS starter kit. It is derived **from the existing architecture docs and Cursor rules** (the source of truth), not from the investigated reference repositories. The frontend runtime-host direction (one product SPA, thin Electron/Capacitor hosts) is taken from [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md); it does not replace [`architecture/frontend.md`](./architecture/frontend.md) or the ADRs.
 
-> Status: **Backend foundation (Phases 1–11) is implemented.** **Phase 18 (Redis ports + permission cache) is implemented.** **Phase 19 (backend HTTP client) is implemented.** **Phase 20 (backend authentication) is implemented.** **Frontend Phases 12–17 are implemented** (`ui-kit`, `frontend-core`, `apps/web` FSD shell, `/me` + members, thin desktop/mobile hosts, `apps/admin` FSD shell). **Frontend foundation is complete.** This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
+> Status: **Backend foundation (Phases 1–11) is implemented.** **Phase 18 (Redis ports + permission cache) is implemented.** **Phase 19 (backend HTTP client) is implemented.** **Phase 20 (backend authentication) is implemented.** **Invitations, custom roles, and permission-cache `del` are implemented.** **Frontend Phases 12–17 are implemented** (`ui-kit`, `frontend-core`, `apps/web` FSD shell, `/me` + members, thin desktop/mobile hosts, `apps/admin` FSD shell). **Frontend foundation is complete.** This document does not create packages by itself; each phase is implemented later, one at a time, in Cursor.
 
 Related source-of-truth docs: [`architecture/workspace-topology.md`](./architecture/workspace-topology.md), [`architecture/backend.md`](./architecture/backend.md), [`architecture/bounded-contexts.md`](./architecture/bounded-contexts.md), [`architecture/persistence.md`](./architecture/persistence.md), [`architecture/multi-tenancy.md`](./architecture/multi-tenancy.md), [`architecture/authorization.md`](./architecture/authorization.md), [`architecture/api-contracts.md`](./architecture/api-contracts.md), [`architecture/frontend.md`](./architecture/frontend.md), [`architecture/design-system.md`](./architecture/design-system.md), [`architecture/shared-packages.md`](./architecture/shared-packages.md), [`architecture/boundaries.md`](./architecture/boundaries.md), [`architecture/decisions.md`](./architecture/decisions.md). Investigation (not source of truth): [`architecture/frontend-foundation-investigation.md`](./architecture/frontend-foundation-investigation.md).
 
@@ -16,14 +16,14 @@ These were confirmed for the **backend** foundation (Part 1, Phases 1–11) and 
 
 | Decision            | Choice for the foundation                                                                                                                                                                                                                                                                                                                                    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **RBAC breadth**    | **Lean-but-generic.** `identity` (User), `tenancy` (Tenant, Membership), `authorization` (Role, Permission) with a **fixed system-permission catalog** + seeded **system roles** (Owner/Admin/Member). One permission enforced end-to-end. Custom tenant-defined roles CRUD + invitations **deferred** (the seams are built so they slot in without rework). |
+| **RBAC breadth**    | **Lean-but-generic.** `identity` (User), `tenancy` (Tenant, Membership), `authorization` (Role, Permission) with a **fixed system-permission catalog** + seeded **system roles** (Owner/Admin/Member). Catalog permissions are enforced on HTTP. Custom-role CRUD, email invitations, attach-existing, and cache `del` on writes are implemented.            |
 | **Authentication**  | **Implemented (Phase 20, backend).** Email + password (Argon2id), short JWT access, rotating refresh cookie, tenant claim after selection, stub mailer for reset. Web still uses `x-user-id` / `x-tenant-id` in development/test. Production is JWT-only and refuses the default secret.                                                                     |
 | **Depth per slice** | **End-to-end through HTTP.** `domain → application → postgres → logger → nest-http → composition → apps/api`, with Vitest per layer **plus an HTTP e2e against a real (containerized) Postgres**. Routes are URI-versioned (`/v1/...`). Frontend is **Part 2 (Phases 12–17)**.                                                                               |
 | **Logging**         | **Pino**, not Nest-injectable. `Logger` port + `LoggerLocator` on `platform`; adapter in `packages/infrastructure/logger`.                                                                                                                                                                                                                                   |
-| **Redis**           | **Implemented (Phase 18).** `CachePort` / `LockPort` / `PubSubPort` on `platform`; adapters in `packages/infrastructure/redis`. Effective permissions are cache-aside (tenant-prefixed key, 60s TTL) behind `AuthorizationPort`. Rate limiting, BullMQ, and outbox remain deferred.                                                                          |
+| **Redis**           | **Implemented (Phase 18).** `CachePort` / `LockPort` / `PubSubPort` on `platform`; adapters in `packages/infrastructure/redis`. Effective permissions are cache-aside (tenant-prefixed key, 60s TTL) behind `AuthorizationPort`, with `invalidate` / `invalidateHoldersOf` on membership and role writes. Rate limiting, BullMQ, and outbox remain deferred. |
 | **HTTP client**     | **Implemented (Phase 19).** `HttpClientPort` on `platform`; undici adapter in `packages/infrastructure/http-client`. Composition boots the Agent and exports `HTTP_CLIENT`. No product use case yet. Circuit breaker, streaming, SSRF, and billing/OIDC callers remain deferred.                                                                             |
 
-Out of scope for **Part 1 (backend)**: web login UI (Phase 20 is API-only), Redis extras beyond Phase 18, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, custom roles/invitations, Postgres RLS, `gateway`/realtime. Frontend is **Part 2**, not deferred as a blob.
+Out of scope for **Part 1 (backend)**: web login UI (Phase 20 is API-only), Redis extras beyond Phase 18, transactional outbox + domain-event bus, `audit` and `notifications` contexts, `apps/worker` wiring, Postgres RLS, `gateway`/realtime. Frontend is **Part 2**, not deferred as a blob.
 
 ---
 
@@ -278,7 +278,7 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 - **Tests:** unit — `CreateTenant` seeds roles + owner atomically and rejects losing the last owner; `AuthorizationPort` unions permissions correctly and denies cross-tenant; `ListTenantMembers` requires `tenancy.members.read`; `GetMyProfile` returns the right effective set. All with in-memory adapters, no DB.
 - **Verification:** `nx lint/test application`; boundary check proves `application` cannot import `contracts` or `infrastructure`.
 - **Definition of Done:** every foundation use case passes with in-memory adapters; port surfaces frozen for the infra phase.
-- **Deferred:** invitation/role-assignment/tenant-switch use cases; event publication (outbox phase).
+- **Deferred:** tenant-switch was done in Phase 20; event publication (outbox phase).
 
 ### Phase 7 — infrastructure/postgres core
 
@@ -342,10 +342,10 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
   - `apps/api`: `LoggerLocator.init` + `ApiBuilder` + `createHttpProviders()`; `DevPrincipal` + ALS interceptor; `@RequirePermission` (app-specific, not in the kit); controllers; idempotent dev seeder (`dev@localhost`). `POST /v1/tenants` wraps `CreateTenant` in `withoutTenantScope`.
 - **Packages/projects:** create `packages/composition`; wire existing `apps/api`.
 - **Implementation tasks:** thin controllers (validate → map → use case → map result); guard `tenancy.members.read` on members; `GET /v1/me` returns effective permissions; CORS/helmet/versioning from env.
-- **Tests:** HTTP e2e (`supertest`) against booted Nest + real Postgres: create user → set principal → create tenant (Owner, roles seeded) → `GET /v1/me` shows Owner permissions → `GET /v1/tenants/:id/members` **allowed** for Owner and **denied (403)** for a Member principal (seed membership via composition helper; invitations deferred); contract-validation 400s.
+- **Tests:** HTTP e2e (`supertest`) against booted Nest + real Postgres: create user → set principal → create tenant (Owner, roles seeded) → `GET /v1/me` shows Owner permissions → `GET /v1/tenants/:id/members` **allowed** for Owner and **denied (403)** for a Member principal; invite → accept; attach-existing; custom roles.
 - **Verification:** `nx test api` green with compose Postgres up (`CI=true`); Swagger at `/docs`; `nx graph` shows `api → nest-http + composition + contracts + logger`, not `postgres`/`domain`.
 - **Definition of Done:** four versioned endpoints work through real Postgres with coarse guard **and** application-layer authorization; frontend untouched.
-- **Deferred:** real login/JWT/refresh; tenant-switch; invitations; worker wiring.
+- **Deferred:** worker wiring. Real login/JWT/refresh, tenant-switch, and invitations are implemented.
 
 ---
 
@@ -365,12 +365,12 @@ Each phase is small, independently implementable, and lists Goal · Scope · Pac
 | Area                                   | Why deferred / how it slots in later                                                                                                                                                             |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Real authentication**                | **Done (Phase 20, backend).** Web login UI, Bearer `prepareHeaders`, and hiding the dev picker remain a frontend follow-up. SSO, passkeys, email verification, MFA, and SMTP are still deferred. |
-| **Redis**                              | **Done (Phase 18).** Rate limiting, BullMQ / `messaging`, transactional outbox, and permission-cache invalidation remain deferred.                                                               |
+| **Redis**                              | **Done (Phase 18).** Permission-cache `del` on membership/role writes is implemented. Rate limiting, BullMQ / `messaging`, and transactional outbox remain deferred.                             |
 | **HTTP client**                        | **Done (Phase 19).** Circuit breaker, streaming/multipart, SSRF allowlists, and product (Stripe/OIDC/webhook) callers remain deferred.                                                           |
 | **Transactional outbox + event bus**   | Publish domain events (`UserCreated`, `MembershipCreated`, …) durably; enables `audit`/`notifications`.                                                                                          |
 | **`audit` + `notifications` contexts** | Downstream event subscribers; add as folders across layers, no changes to existing contexts.                                                                                                     |
 | **`apps/worker` wiring**               | Re-establish `TenantContext` from job payloads; consume outbox.                                                                                                                                  |
-| **Custom roles + invitations**         | Custom-role CRUD and membership invitation/role-assignment use cases reuse the tenant-scoped `RoleRepository` + `MembershipRepository`.                                                          |
+| **Custom roles + invitations**         | **Done.** Email invite + accept, attach-existing, replace membership roles, and custom-role CRUD are on `/v1`. SMTP, outbox/`MemberInvited`, suspend, and Owner transfer remain deferred.        |
 | **Postgres RLS "secure profile"**      | Opt-in defense-in-depth; session `app.tenant_id` + policies alongside the base-repo filter.                                                                                                      |
 | **Policy seam (ABAC-lite)**            | Resource/ownership checks behind `AuthorizationPort` (e.g. CASL adapter) without controller/use-case changes.                                                                                    |
 | **Frontend (historical)**              | Moved to **Part 2 (Phases 12–17)**. What remains after that foundation is listed in §14.                                                                                                         |
@@ -687,7 +687,7 @@ Pages compose features. Features do not import `@/app`. `createWebRouter` only w
 - **Tests:** application unit tests; postgres hash-at-rest integration; HTTP e2e keeps the header flow and adds register → login → cookie refresh → select-tenant → `/me` with `Authorization` only.
 - **Verification:** `pnpm nx run-many -t lint,typecheck,test -p platform,application,postgres,composition,api,nest-http`.
 - **Definition of Done:** auth routes live; production refuses the default JWT secret; existing header e2e still green; web/MSW unchanged.
-- **Deferred:** web login page, in-memory access token + `prepareHeaders` Bearer, `credentials: 'include'`, 401 → refresh, hide picker in non-dev, permission-cache `del`, SMTP, SSO, passkeys, MFA.
+- **Deferred:** web login page, in-memory access token + `prepareHeaders` Bearer, `credentials: 'include'`, 401 → refresh, hide picker in non-dev, SMTP, SSO, passkeys, MFA.
 
 ---
 

@@ -106,4 +106,31 @@ describe('Membership', () => {
     expect(left.equals(right)).toBe(true)
     expect(left.equals(other)).toBe(false)
   })
+
+  it('replaceRoleIds normalizes unique ids and records MembershipRolesReplaced', () => {
+    const membership = Membership.create(MEMBERSHIP_ID, TENANT_ID, USER_ID, [MEMBER_ROLE_ID], OCCURRED_AT)
+
+    membership.pullEvents()
+    membership.replaceRoleIds([OWNER_ROLE_ID, MEMBER_ROLE_ID, OWNER_ROLE_ID], OCCURRED_AT)
+
+    expect(membership.roleIds).toEqual([OWNER_ROLE_ID, MEMBER_ROLE_ID])
+    expect(membership.pullEvents()).toEqual([
+      {
+        type: 'MembershipRolesReplaced',
+        occurredAt: OCCURRED_AT,
+        membershipId: MEMBERSHIP_ID,
+        tenantId: TENANT_ID,
+        userId: USER_ID,
+        roleIds: [OWNER_ROLE_ID, MEMBER_ROLE_ID],
+      },
+    ])
+  })
+
+  it('replaceRoleIds rejects an empty list', () => {
+    const membership = Membership.create(MEMBERSHIP_ID, TENANT_ID, USER_ID, [MEMBER_ROLE_ID], OCCURRED_AT)
+
+    expect(() => {
+      membership.replaceRoleIds([], OCCURRED_AT)
+    }).toThrow(EmptyMembershipRolesError)
+  })
 })

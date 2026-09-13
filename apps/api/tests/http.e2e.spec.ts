@@ -9,6 +9,7 @@ import {PermissionName} from '@b2b-saas-starter-kit/contracts'
 
 import {LoggerLocator, PinoLogger} from '@b2b-saas-starter-kit/logger'
 
+import {LoggingMailer} from '@b2b-saas-starter-kit/composition'
 import type {PostgresTestDatabase} from '@b2b-saas-starter-kit/composition/testing'
 import {preparePostgresTestDatabase, seedActiveMembership} from '@b2b-saas-starter-kit/composition/testing'
 
@@ -67,12 +68,15 @@ describe('HTTP e2e', () => {
     expect(me.body.effectivePermissions).toEqual(
       expect.arrayContaining([
         PermissionName.tenancyMembersRead,
+        PermissionName.tenancyMembersInvite,
+        PermissionName.tenancyMembersManage,
         PermissionName.tenancyTenantRead,
         PermissionName.authorizationRolesRead,
+        PermissionName.authorizationRolesManage,
         PermissionName.identityUsersRead,
       ]),
     )
-    expect(me.body.effectivePermissions).toHaveLength(4)
+    expect(me.body.effectivePermissions).toHaveLength(7)
 
     const members = await request(app.getHttpServer())
       .get(`/v1/tenants/${tenantId}/members`)
@@ -191,5 +195,193 @@ describe('HTTP e2e', () => {
 
     expect(members.body.members).toHaveLength(1)
     expect(members.body.members[0].userId).toBe(userId)
+  })
+
+  it('lets Owner invite by email, accept as a new user, and call /me in the tenant', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'owner@example.com', displayName: 'Owner'})
+      .expect(201)
+    const ownerId = UserId.parse(owner.body.id)
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', ownerId)
+      .send({name: 'Acme'})
+      .expect(201)
+    const tenantId = TenantId.parse(createdTenant.body.id)
+    const memberRoleId = RoleId.parse(createdTenant.body.roleIds.member)
+    const mailer = app.get(LoggingMailer)
+
+    mailer.messages.length = 0
+
+    await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/invitations`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .send({email: 'invited@example.com', roleIds: [memberRoleId]})
+      .expect(201)
+
+    const token = mailer.messages.at(-1)?.text.replace('invitation token: ', '')
+
+    expect(token).toBeTruthy()
+
+    const accepted = await request(app.getHttpServer())
+      .post('/v1/invitations/accept')
+      .send({token, displayName: 'Invited', password: 'secret-password'})
+      .expect(201)
+
+    const me = await request(app.getHttpServer())
+      .get('/v1/me')
+      .set('x-user-id', accepted.body.userId)
+      .set('x-tenant-id', tenantId)
+      .expect(200)
+
+    expect(me.body.user.email).toBe('invited@example.com')
+    expect(me.body.effectivePermissions).toEqual([PermissionName.tenancyTenantRead])
+  })
+
+  it('attaches an existing user as an active member', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'owner@example.com', displayName: 'Owner'})
+      .expect(201)
+    const existing = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'existing@example.com', displayName: 'Existing'})
+      .expect(201)
+    const ownerId = UserId.parse(owner.body.id)
+    const existingId = UserId.parse(existing.body.id)
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', ownerId)
+      .send({name: 'Acme'})
+      .expect(201)
+    const tenantId = TenantId.parse(createdTenant.body.id)
+    const memberRoleId = RoleId.parse(createdTenant.body.roleIds.member)
+
+    await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/members`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .send({userId: existingId, roleIds: [memberRoleId]})
+      .expect(201)
+
+    const members = await request(app.getHttpServer())
+      .get(`/v1/tenants/${tenantId}/members`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .expect(200)
+
+    expect(members.body.members).toHaveLength(2)
+  })
+
+  it('denies a Member on POST invitations', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'owner@example.com', displayName: 'Owner'})
+      .expect(201)
+    const member = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'member@example.com', displayName: 'Member'})
+      .expect(201)
+    const ownerId = UserId.parse(owner.body.id)
+    const memberId = UserId.parse(member.body.id)
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', ownerId)
+      .send({name: 'Acme'})
+      .expect(201)
+    const tenantId = TenantId.parse(createdTenant.body.id)
+    const memberRoleId = RoleId.parse(createdTenant.body.roleIds.member)
+
+    await seedActiveMembership(app, {userId: memberId, tenantId, roleId: memberRoleId})
+
+    const response = await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/invitations`)
+      .set('x-user-id', memberId)
+      .set('x-tenant-id', tenantId)
+      .send({email: 'new@example.com', roleIds: [memberRoleId]})
+      .expect(403)
+
+    expect(response.body.code).toBe('INSUFFICIENT_PERMISSION')
+  })
+
+  it('lets Owner create a custom role and denies Admin on POST roles', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'owner@example.com', displayName: 'Owner'})
+      .expect(201)
+    const admin = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'admin@example.com', displayName: 'Admin'})
+      .expect(201)
+    const ownerId = UserId.parse(owner.body.id)
+    const adminId = UserId.parse(admin.body.id)
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', ownerId)
+      .send({name: 'Acme'})
+      .expect(201)
+    const tenantId = TenantId.parse(createdTenant.body.id)
+    const adminRoleId = RoleId.parse(createdTenant.body.roleIds.admin)
+
+    await seedActiveMembership(app, {userId: adminId, tenantId, roleId: adminRoleId})
+
+    await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/roles`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .send({name: 'Reviewer', permissions: [PermissionName.tenancyTenantRead]})
+      .expect(201)
+
+    const response = await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/roles`)
+      .set('x-user-id', adminId)
+      .set('x-tenant-id', tenantId)
+      .send({name: 'Auditor', permissions: [PermissionName.tenancyTenantRead]})
+      .expect(403)
+
+    expect(response.body.code).toBe('INSUFFICIENT_PERMISSION')
+  })
+
+  it('denies GET tenant for a custom role without tenant.read', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'owner@example.com', displayName: 'Owner'})
+      .expect(201)
+    const guest = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'guest@example.com', displayName: 'Guest'})
+      .expect(201)
+    const ownerId = UserId.parse(owner.body.id)
+    const guestId = UserId.parse(guest.body.id)
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', ownerId)
+      .send({name: 'Acme'})
+      .expect(201)
+    const tenantId = TenantId.parse(createdTenant.body.id)
+
+    const createdRole = await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/roles`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .send({name: 'Auditor', permissions: [PermissionName.identityUsersRead]})
+      .expect(201)
+
+    await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/members`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .send({userId: guestId, roleIds: [createdRole.body.id]})
+      .expect(201)
+
+    const response = await request(app.getHttpServer())
+      .get(`/v1/tenants/${tenantId}`)
+      .set('x-user-id', guestId)
+      .set('x-tenant-id', tenantId)
+      .expect(403)
+
+    expect(response.body.code).toBe('INSUFFICIENT_PERMISSION')
   })
 })

@@ -32,8 +32,11 @@ export const ownerMe = meOutputSchema.parse({
   },
   effectivePermissions: [
     PermissionName.tenancyMembersRead,
+    PermissionName.tenancyMembersInvite,
+    PermissionName.tenancyMembersManage,
     PermissionName.tenancyTenantRead,
     PermissionName.authorizationRolesRead,
+    PermissionName.authorizationRolesManage,
     PermissionName.identityUsersRead,
   ],
 })

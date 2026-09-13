@@ -60,7 +60,7 @@ The `AuthorizationPort` is defined so the application asks _questions_ ("does th
 ## How permissions are represented
 
 - A permission is a namespaced string constant, grouped by context/resource/action. The canonical list is owned by the **authorization** context; cross-cutting permission _identifiers_ that the frontend also needs are surfaced through `contracts` (as enums/types), so backend and frontend agree on the vocabulary without the frontend importing backend internals.
-- **Effective permissions** for a principal in a tenant = union of permissions across their roles in that membership. Resolution is cached (tenant-prefixed Redis key) and invalidated on role/permission changes.
+- **Effective permissions** for a principal in a tenant = union of permissions across their roles in that membership. Resolution is cached (tenant-prefixed Redis key). `AuthorizationPort.invalidate` / `invalidateHoldersOf` `del` that key after membership and custom-role writes.
 
 ## Tenant-scoped authorization
 
@@ -79,5 +79,6 @@ See [`frontend.md`](./frontend.md) for how permission state is stored (RTK Query
 ## Extensibility
 
 - New permissions are added by their owning context and exposed via `contracts`.
-- Custom roles are tenant-defined data (role → permission bundles).
+- Custom roles are tenant-defined data (role → permission bundles). System roles cannot be renamed, re-permissioned, or deleted. The Owner system role is assigned only at tenant creation.
+- Email invitations store a token hash; accept creates an active membership (and a user + local password when the email is new). Attach-existing adds an active membership immediately. Both refuse the Owner role id.
 - Products needing richer rules extend the **policy seam** (e.g. a CASL adapter behind `AuthorizationPort`) without changing controllers or use cases.

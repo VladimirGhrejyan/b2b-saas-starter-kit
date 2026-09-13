@@ -3,6 +3,7 @@ export {TypeOrmLocalPasswordRepository} from './contexts/identity/repositories/t
 export {TypeOrmPasswordResetTokenRepository} from './contexts/identity/repositories/typeorm-password-reset-token.repository'
 export {TypeOrmRefreshSessionRepository} from './contexts/identity/repositories/typeorm-refresh-session.repository'
 export {TypeOrmUserRepository} from './contexts/identity/repositories/typeorm-user.repository'
+export {TypeOrmInvitationRepository} from './contexts/tenancy/repositories/typeorm-invitation.repository'
 export {TypeOrmMembershipRepository} from './contexts/tenancy/repositories/typeorm-membership.repository'
 export {TypeOrmTenantRepository} from './contexts/tenancy/repositories/typeorm-tenant.repository'
 export {loadPostgresConfigFromEnv} from './kernel/config/load-postgres-config'

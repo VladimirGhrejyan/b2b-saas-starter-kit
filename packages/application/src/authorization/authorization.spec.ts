@@ -11,6 +11,7 @@ import {InMemoryMembershipRepository} from '../testing/in-memory-membership.repo
 import {InMemoryRoleRepository} from '../testing/in-memory-role.repository'
 
 import {AuthorizationService} from './authorization.service'
+import {effectivePermissionsCacheKey} from './effective-permissions-cache-key'
 
 const OCCURRED_AT = new Date('2026-01-01T00:00:00.000Z')
 const USER_ID = UserId.parse('11111111-1111-4111-8111-111111111111')
@@ -39,7 +40,7 @@ function createAuthz() {
   const roles = new InMemoryRoleRepository()
   const memberships = new InMemoryMembershipRepository()
   const cache = new InMemoryCache()
-  const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache)
+  const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache, memberships)
 
   return {roles, memberships, cache, authz}
 }
@@ -124,7 +125,7 @@ describe('AuthorizationService', () => {
         return membershipRolesFrom(memberships).roleIdsFor(userId, tenantId)
       },
     }
-    const authz = new AuthorizationService(roles, membershipRoles, cache)
+    const authz = new AuthorizationService(roles, membershipRoles, cache, memberships)
     const ownerRole = Role.createSystemRole(OWNER_ROLE_A, TENANT_A, 'Owner', OCCURRED_AT)
 
     await roles.save(ownerRole)
@@ -148,5 +149,37 @@ describe('AuthorizationService', () => {
     await authz.getEffectivePermissions(USER_ID, TENANT_A)
 
     await expect(authz.getEffectivePermissions(USER_ID, TENANT_B)).resolves.toEqual([])
+  })
+
+  it('invalidate drops the cached effective permissions for that user and tenant', async () => {
+    const {roles, memberships, cache, authz} = createAuthz()
+    const ownerRole = Role.createSystemRole(OWNER_ROLE_A, TENANT_A, 'Owner', OCCURRED_AT)
+
+    await roles.save(ownerRole)
+    await memberships.save(Membership.createOwner(MEMBERSHIP_A, TENANT_A, USER_ID, ownerRole.id, OCCURRED_AT))
+    await authz.getEffectivePermissions(USER_ID, TENANT_A)
+
+    await authz.invalidate(USER_ID, TENANT_A)
+
+    await expect(cache.get(effectivePermissionsCacheKey(TENANT_A, USER_ID))).resolves.toBeNull()
+  })
+
+  it('invalidateHoldersOf drops cache entries for memberships that hold the role', async () => {
+    const {roles, memberships, cache, authz} = createAuthz()
+    const ownerRole = Role.createSystemRole(OWNER_ROLE_A, TENANT_A, 'Owner', OCCURRED_AT)
+    const memberRole = Role.createSystemRole(MEMBER_ROLE_A, TENANT_A, 'Member', OCCURRED_AT)
+    const otherUser = UserId.parse('22222222-2222-4222-8222-222222222222')
+
+    await roles.save(ownerRole)
+    await roles.save(memberRole)
+    await memberships.save(Membership.createOwner(MEMBERSHIP_A, TENANT_A, USER_ID, ownerRole.id, OCCURRED_AT))
+    await memberships.save(Membership.create(MEMBERSHIP_SUSPENDED, TENANT_A, otherUser, [memberRole.id], OCCURRED_AT))
+    await authz.getEffectivePermissions(USER_ID, TENANT_A)
+    await authz.getEffectivePermissions(otherUser, TENANT_A)
+
+    await authz.invalidateHoldersOf(memberRole.id, TENANT_A)
+
+    await expect(cache.get(effectivePermissionsCacheKey(TENANT_A, USER_ID))).resolves.not.toBeNull()
+    await expect(cache.get(effectivePermissionsCacheKey(TENANT_A, otherUser))).resolves.toBeNull()
   })
 })

@@ -15,7 +15,7 @@ import type {CreateDataSourceOptions} from '../kernel/data-source/create-data-so
 import {applyComposeHostPort} from './apply-compose-host-port'
 
 /**
- * Connects to compose Postgres on the `*_test` database. Creates that database if needed.
+ * Connects to compose Postgres on a dedicated test database (`app_test` by default). Creates it if needed.
  */
 export class PostgresTestContext {
   static readonly #defaultDatabaseUrl = 'postgres://app:change-me-local-only@127.0.0.1:5432/app'
@@ -25,10 +25,13 @@ export class PostgresTestContext {
     readonly config: PostgresConfig,
   ) {}
 
-  static async connect(entities: NonNullable<CreateDataSourceOptions['entities']> = []): Promise<PostgresTestContext> {
-    const config = PostgresTestContext.#loadTestConfig()
+  static async connect(
+    entities: NonNullable<CreateDataSourceOptions['entities']> = [],
+    databaseSuffix = 'test',
+  ): Promise<PostgresTestContext> {
+    const config = PostgresTestContext.#loadTestConfig(databaseSuffix)
 
-    await PostgresTestContext.#ensureDatabase(config)
+    await PostgresTestContext.#ensureDatabase(config, databaseSuffix)
 
     const dataSource = createDataSource(config, {entities})
 
@@ -51,11 +54,11 @@ export class PostgresTestContext {
 
   async truncateFoundationTables(): Promise<void> {
     await this.dataSource.query(
-      'TRUNCATE membership_roles, memberships, role_permissions, roles, tenants, password_reset_tokens, refresh_sessions, user_local_passwords, users RESTART IDENTITY CASCADE',
+      'TRUNCATE invitation_roles, invitations, membership_roles, memberships, role_permissions, roles, tenants, password_reset_tokens, refresh_sessions, user_local_passwords, users RESTART IDENTITY CASCADE',
     )
   }
 
-  static #loadTestConfig(): PostgresConfig {
+  static #loadTestConfig(databaseSuffix: string): PostgresConfig {
     PostgresTestContext.#loadLocalEnv()
 
     const raw = applyComposeHostPort(
@@ -66,12 +69,12 @@ export class PostgresTestContext {
     return ConfigLoader.load(postgresConfigSchema, {
       source: 'env',
       keys: ['DATABASE_URL'],
-      env: {DATABASE_URL: PostgresTestContext.#toTestDatabaseUrl(raw)},
+      env: {DATABASE_URL: PostgresTestContext.#toTestDatabaseUrl(raw, databaseSuffix)},
     })
   }
 
-  static async #ensureDatabase(config: PostgresConfig): Promise<void> {
-    const maintenanceUrl = PostgresTestContext.#toMaintenanceDatabaseUrl(config.DATABASE_URL)
+  static async #ensureDatabase(config: PostgresConfig, databaseSuffix: string): Promise<void> {
+    const maintenanceUrl = PostgresTestContext.#toMaintenanceDatabaseUrl(config.DATABASE_URL, databaseSuffix)
     const databaseName = PostgresTestContext.#databaseName(config.DATABASE_URL)
     const client = new Client({connectionString: maintenanceUrl})
 
@@ -93,23 +96,27 @@ export class PostgresTestContext {
     }
   }
 
-  static #toTestDatabaseUrl(urlString: string): string {
+  static #toTestDatabaseUrl(urlString: string, databaseSuffix = 'test'): string {
     const url = new URL(urlString)
-    const name = PostgresTestContext.#databaseName(urlString)
+    let name = PostgresTestContext.#databaseName(urlString)
 
     if (name.endsWith('_test')) {
-      return urlString
+      name = name.slice(0, -'_test'.length)
     }
 
-    url.pathname = `/${name}_test`
+    const databaseName = `${name}_${databaseSuffix}`
+
+    PostgresTestContext.#assertSafeDatabaseName(databaseName)
+    url.pathname = `/${databaseName}`
 
     return url.toString()
   }
 
-  static #toMaintenanceDatabaseUrl(testUrl: string): string {
+  static #toMaintenanceDatabaseUrl(testUrl: string, databaseSuffix: string): string {
     const url = new URL(testUrl)
     const name = PostgresTestContext.#databaseName(testUrl)
-    const adminName = name.endsWith('_test') ? name.slice(0, -'_test'.length) : name
+    const suffix = `_${databaseSuffix}`
+    const adminName = name.endsWith(suffix) ? name.slice(0, -suffix.length) : name
 
     url.pathname = `/${adminName}`
 

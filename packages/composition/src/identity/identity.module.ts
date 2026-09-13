@@ -173,6 +173,8 @@ import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
     SelectTenantUseCase,
     RequestPasswordResetUseCase,
     ResetPasswordUseCase,
+    MAILER,
+    LoggingMailer,
   ],
 })
 export class IdentityModule {}
