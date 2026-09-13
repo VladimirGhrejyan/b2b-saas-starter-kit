@@ -6,6 +6,24 @@ packages:
   - 'apps/*'
 
 autoInstallPeers: true
+# Remove once nestjs-zod 5.x publishes Nest 12 peers (https://github.com/BenLorantfy/nestjs-zod/issues/471).
+packageExtensions:
+  nestjs-zod:
+    peerDependencies:
+      '@nestjs/common': '^10.0.0 || ^11.0.0 || ^12.0.0'
+      '@nestjs/swagger': '^7.4.2 || ^8.0.0 || ^11.0.0 || ^12.0.0'
+peerDependencyRules:
+  allowedVersions:
+    'nestjs-zod>@nestjs/common': '12'
+    'nestjs-zod>@nestjs/swagger': '12'
+# Leftover advisories need a waived major: image-size@0.5 via less (>=2.0.3), uuid@7/@8 via sockjs/xcode (>=11.1.1).
+overrides:
+  multer: '>=2.3.0'
+  smol-toml: '>=1.7.1'
+  'brace-expansion@5': '>=5.0.9'
+  qs: '>=6.16.0'
+  # nestjs-zod 5.5 + Zod 4.6 emits `.nullable()` as OpenAPI arrays; stay on 4.4 until upstream.
+  zod: 4.4.3
 allowBuilds:
   '@parcel/watcher': true
   less: false

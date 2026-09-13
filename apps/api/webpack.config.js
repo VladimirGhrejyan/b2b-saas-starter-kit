@@ -1,5 +1,6 @@
 const {NxAppWebpackPlugin} = require('@nx/webpack/app-plugin')
 const {join} = require('path')
+const webpack = require('webpack')
 
 module.exports = {
   output: {
@@ -10,6 +11,9 @@ module.exports = {
     }),
   },
   plugins: [
+    new webpack.IgnorePlugin({
+      resourceRegExp: /^(class-validator|class-transformer(?:\/.*)?|@fastify\/static)$/,
+    }),
     new NxAppWebpackPlugin({
       target: 'node',
       compiler: 'swc',

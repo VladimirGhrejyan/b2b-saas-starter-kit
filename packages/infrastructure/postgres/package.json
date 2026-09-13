@@ -73,17 +73,17 @@
     "@b2b-saas-starter-kit/domain": "workspace:*",
     "@b2b-saas-starter-kit/platform": "workspace:*",
     "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*",
-    "@nestjs/common": "^11.2.1",
+    "@nestjs/common": "^12.0.1",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^1.1.0",
+    "typeorm": "^1.1.1",
     "uuid": "^14.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@b2b-saas-starter-kit/node": "workspace:*",
     "@b2b-saas-starter-kit/security": "workspace:*",
-    "@nestjs/testing": "^11.2.1",
+    "@nestjs/testing": "^12.0.1",
     "@swc-node/register": "^1.12.1",
     "@types/pg": "^8.23.1"
   }

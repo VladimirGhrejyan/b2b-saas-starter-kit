@@ -1,4 +1,5 @@
-import {APP_FILTER, APP_INTERCEPTOR, APP_PIPE} from '@nestjs/core'
+import {Module} from '@nestjs/common'
+import {APP_FILTER, APP_INTERCEPTOR, APP_PIPE, NestFactory} from '@nestjs/core'
 import {describe, expect, it} from 'vitest'
 
 import {ApiExceptionFilter} from '../filters/api-exception.filter'
@@ -16,5 +17,18 @@ describe('createHttpProviders', () => {
     expect(filterProvider.provide).toBe(APP_FILTER)
     expect(filterProvider.useFactory()).toBeInstanceOf(ApiExceptionFilter)
     expect(providers[2]).toEqual({provide: APP_INTERCEPTOR, useClass: ApiSerializerInterceptor})
+  })
+
+  it('boots the kit pipe and serializer under Nest 12 DI', async () => {
+    @Module({providers: createHttpProviders()})
+    class ProbeModule {}
+
+    const app = await NestFactory.create(ProbeModule, {logger: false})
+
+    try {
+      await app.init()
+    } finally {
+      await app.close()
+    }
   })
 })
