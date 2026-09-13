@@ -78,11 +78,12 @@ Authentication is a **protocol + storage + edge check**. The rest of the app sho
 
 **Shipped on `apps/api`:**
 
-- Email + password (`POST /v1/auth/register`, `/login`) with Argon2id hashes on a separate local-password record (`User` stays credential-free).
+- Email + password (`POST /v1/auth/register`, `/v1/auth/login`, `/v1/auth/web/login`) with Argon2id hashes on a separate local-password record (`User` stays credential-free).
 - Short HS256 access JWT in the JSON body (`sub`, optional `tid`, `exp`, `jti`). Sign/verify stays in `apps/api`.
-- Rotating opaque refresh token in an `HttpOnly` cookie (`refresh_token`, `Path=/v1/auth`). Reuse of a rotated token revokes the family.
+- Two refresh transports, same use cases: cookie-only on `POST /v1/auth/web/{login,refresh,logout}` (`refresh_token`, `Path=/v1/auth`, no JSON `refreshToken`); JSON `{ refreshToken }` on `POST /v1/auth/{login,refresh,logout}` (no cookie read/write). Reuse of a rotated token revokes the family.
+- Authenticated `POST /v1/auth/password` sets a first local password or changes an existing one (`currentPassword` required when a hash already exists).
 - Tenant claim omitted at login unless the user has exactly one active membership. `POST /v1/auth/select-tenant` re-issues the access JWT.
-- Password reset via `MailerPort` stubs (`LoggingMailer` / `InMemoryMailer`) — tokens are generated and logged, not emailed over SMTP.
+- Password reset and invitations send through `MailerPort`. Composition binds `SmtpMailer` when `SMTP_HOST` is set; otherwise `LoggingMailer` / `InMemoryMailer` so tests can read tokens. Outbox and HTML templates stay deferred.
 
 **Edge:** `AuthPrincipalInterceptor` prefers `Authorization: Bearer`. In `development`/`test` only, it still accepts `x-user-id` / `x-tenant-id` so `apps/web` and existing header e2e keep working. Production is JWT-only and refuses the development `JWT_ACCESS_SECRET`.
 
@@ -460,7 +461,7 @@ That is why the stub exists: to prove the **authorization and tenancy** path bef
 | Header injection                                            | `FrontendApi.prepareHeaders`                                                                                      |
 | Demo picker                                                 | `apps/web` `features/dev-principal` (must not ship as prod login)                                                 |
 
-**Not built yet (by design):** web login UI / Bearer `prepareHeaders`, MFA, SSO, OIDC/SAML connections, linked identities, extra authn strategies, policy/CASL adapter, RLS, admin impersonation, SMTP.
+**Not built yet (by design):** web login UI / Bearer `prepareHeaders`, MFA, SSO, OIDC/SAML connections, linked identities, extra authn strategies, policy/CASL adapter, RLS, admin impersonation, outbox, HTML email templates.
 
 **Now built:** email invitations + accept, attach-existing members, custom-role CRUD, and permission-cache `del` on those writes.
 
@@ -671,7 +672,7 @@ A scope of `openid email` means “the IdP may tell you who this is.” It does 
 
 ### 13.9 How this maps onto the repository
 
-**Today:** password login, JWT access, and refresh cookies are implemented on the API (ADR-032). The web app still uses the header stub until the frontend follow-up.
+**Today:** password login, JWT access, cookie `/auth/web/*` and native `/auth/{login,refresh,logout}` token paths, set/change password, and SMTP when `SMTP_HOST` is set are implemented on the API (ADR-032). The web app still uses the header stub until the frontend follow-up.
 
 **When SSO / social login lands** (all in `identity` + the API edge):
 

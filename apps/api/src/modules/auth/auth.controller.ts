@@ -12,12 +12,16 @@ import {TenantOptional} from '../../common/auth/tenant-optional.decorator'
 
 import {AuthOkOutputDto} from './dto/auth-ok.output'
 import {AuthSessionOutputDto} from './dto/auth-session.output'
+import {AuthTokenSessionOutputDto} from './dto/auth-token-session.output'
 import {ForgotPasswordInputDto} from './dto/forgot-password.input'
 import {LoginInputDto} from './dto/login.input'
+import {LogoutTokenInputDto} from './dto/logout-token.input'
+import {RefreshTokenInputDto} from './dto/refresh-token.input'
 import {RegisterUserInputDto} from './dto/register-user.input'
 import {RegisterUserOutputDto} from './dto/register-user.output'
 import {ResetPasswordInputDto} from './dto/reset-password.input'
 import {SelectTenantInputDto} from './dto/select-tenant.input'
+import {SetOrChangePasswordInputDto} from './dto/set-or-change-password.input'
 import {AuthRoutes} from './auth.routes'
 import {AuthService} from './auth.service'
 
@@ -48,7 +52,54 @@ export class AuthController {
   @ApiRoute(AuthRoutes.login)
   @Response({
     status: HttpStatus.OK,
-    description: 'Signed in',
+    description: 'Signed in with refresh token in the body',
+    type: AuthTokenSessionOutputDto,
+  })
+  @ApiErrorResponses([
+    {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
+    {status: HttpStatus.UNAUTHORIZED, description: 'Email or password is invalid'},
+    {status: HttpStatus.FORBIDDEN, description: 'User is suspended'},
+  ])
+  login(@Body() body: LoginInputDto): Promise<AuthTokenSessionOutputDto> {
+    return this.auth.tokenSignIn(body)
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiRoute(AuthRoutes.refresh)
+  @Response({
+    status: HttpStatus.OK,
+    description: 'Access token refreshed from a body refresh token',
+    type: AuthTokenSessionOutputDto,
+  })
+  @ApiErrorResponses([
+    {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
+    {status: HttpStatus.UNAUTHORIZED, description: 'Refresh token is invalid'},
+  ])
+  refresh(@Body() body: RefreshTokenInputDto): Promise<AuthTokenSessionOutputDto> {
+    return this.auth.tokenRefresh(body)
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiRoute(AuthRoutes.logout)
+  @Response({
+    status: HttpStatus.OK,
+    description: 'Signed out',
+    type: AuthOkOutputDto,
+  })
+  async logout(@Body() body: LogoutTokenInputDto): Promise<AuthOkOutputDto> {
+    await this.auth.tokenSignOut(body)
+
+    return {ok: true}
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiRoute(AuthRoutes.webLogin)
+  @Response({
+    status: HttpStatus.OK,
+    description: 'Signed in and set the refresh cookie',
     type: AuthSessionOutputDto,
   })
   @ApiErrorResponses([
@@ -56,7 +107,7 @@ export class AuthController {
     {status: HttpStatus.UNAUTHORIZED, description: 'Email or password is invalid'},
     {status: HttpStatus.FORBIDDEN, description: 'User is suspended'},
   ])
-  async login(
+  async webLogin(
     @Body() body: LoginInputDto,
     @Res({passthrough: true}) response: RefreshCookieResponse,
   ): Promise<AuthSessionOutputDto> {
@@ -69,14 +120,14 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiRoute(AuthRoutes.refresh)
+  @ApiRoute(AuthRoutes.webRefresh)
   @Response({
     status: HttpStatus.OK,
-    description: 'Access token refreshed',
+    description: 'Access token refreshed from the cookie',
     type: AuthSessionOutputDto,
   })
   @ApiErrorResponses([{status: HttpStatus.UNAUTHORIZED, description: 'Refresh cookie is invalid'}])
-  async refresh(
+  async webRefresh(
     @Req() request: RefreshCookieRequest,
     @Res({passthrough: true}) response: RefreshCookieResponse,
   ): Promise<AuthSessionOutputDto> {
@@ -89,13 +140,13 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiRoute(AuthRoutes.logout)
+  @ApiRoute(AuthRoutes.webLogout)
   @Response({
     status: HttpStatus.OK,
-    description: 'Signed out',
+    description: 'Signed out and cleared the cookie',
     type: AuthOkOutputDto,
   })
-  async logout(
+  async webLogout(
     @Req() request: RefreshCookieRequest,
     @Res({passthrough: true}) response: RefreshCookieResponse,
   ): Promise<AuthOkOutputDto> {
@@ -154,6 +205,29 @@ export class AuthController {
   ])
   async resetPassword(@Body() body: ResetPasswordInputDto): Promise<AuthOkOutputDto> {
     await this.auth.reset(body)
+
+    return {ok: true}
+  }
+
+  @TenantOptional()
+  @HttpCode(HttpStatus.OK)
+  @ApiRoute(AuthRoutes.setOrChangePassword)
+  @Response({
+    status: HttpStatus.OK,
+    description: 'Local password set or changed',
+    type: AuthOkOutputDto,
+  })
+  @ApiErrorResponses([
+    {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
+    {status: HttpStatus.UNAUTHORIZED, description: 'Bearer token is missing or current password is invalid'},
+    {status: HttpStatus.CONFLICT, description: 'A local password is already set'},
+    {status: HttpStatus.NOT_FOUND, description: 'User was not found'},
+  ])
+  async setOrChangePassword(
+    @Body() body: SetOrChangePasswordInputDto,
+    @CurrentPrincipal() principal: DevPrincipal,
+  ): Promise<AuthOkOutputDto> {
+    await this.auth.updatePassword(principal.userId, body)
 
     return {ok: true}
   }

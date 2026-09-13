@@ -77,6 +77,9 @@
     },
     {
       "path": "./packages/infrastructure/node"
+    },
+    {
+      "path": "./packages/infrastructure/mail"
     }
   ]
 }

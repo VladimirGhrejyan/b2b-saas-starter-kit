@@ -146,7 +146,7 @@ describe('HTTP e2e', () => {
     expect(response.body.code).toBe('OWNER_USER_NOT_FOUND')
   })
 
-  it('registers, logs in, refreshes the cookie, selects a tenant, and calls /me with Bearer only', async () => {
+  it('registers, logs in via cookie, refreshes the cookie, selects a tenant, and calls /me with Bearer only', async () => {
     const agent = request.agent(app.getHttpServer())
 
     const registered = await agent
@@ -156,12 +156,13 @@ describe('HTTP e2e', () => {
 
     const userId = UserId.parse(registered.body.userId)
     const login = await agent
-      .post('/v1/auth/login')
+      .post('/v1/auth/web/login')
       .send({email: 'ada@example.com', password: 'secret-password'})
       .expect(200)
 
     expect(login.body.userId).toBe(userId)
     expect(login.body.tenantId).toBeUndefined()
+    expect(login.body.refreshToken).toBeUndefined()
     expect(login.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringContaining('refresh_token=')]))
 
     const createdTenant = await agent
@@ -171,10 +172,11 @@ describe('HTTP e2e', () => {
       .expect(201)
 
     const tenantId = TenantId.parse(createdTenant.body.id)
-    const refreshed = await agent.post('/v1/auth/refresh').expect(200)
+    const refreshed = await agent.post('/v1/auth/web/refresh').expect(200)
 
     expect(refreshed.body.userId).toBe(userId)
     expect(refreshed.body.accessToken).toBeTruthy()
+    expect(refreshed.body.refreshToken).toBeUndefined()
 
     const selected = await agent
       .post('/v1/auth/select-tenant')
@@ -195,6 +197,59 @@ describe('HTTP e2e', () => {
 
     expect(members.body.members).toHaveLength(1)
     expect(members.body.members[0].userId).toBe(userId)
+  })
+
+  it('logs in with a body refresh token, rotates it, and logs out without cookies', async () => {
+    await request(app.getHttpServer())
+      .post('/v1/auth/register')
+      .send({email: 'mel@example.com', displayName: 'Mel', password: 'secret-password'})
+      .expect(201)
+
+    const login = await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send({email: 'mel@example.com', password: 'secret-password'})
+      .expect(200)
+
+    expect(login.body.refreshToken).toBeTruthy()
+    expect(login.headers['set-cookie']).toBeUndefined()
+
+    const refreshed = await request(app.getHttpServer())
+      .post('/v1/auth/refresh')
+      .send({refreshToken: login.body.refreshToken})
+      .expect(200)
+
+    expect(refreshed.body.refreshToken).toBeTruthy()
+    expect(refreshed.body.refreshToken).not.toBe(login.body.refreshToken)
+    expect(refreshed.body.accessToken).toBeTruthy()
+
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({name: 'Mel Co'})
+      .expect(201)
+
+    const selected = await request(app.getHttpServer())
+      .post('/v1/auth/select-tenant')
+      .set('Authorization', `Bearer ${refreshed.body.accessToken}`)
+      .send({tenantId: createdTenant.body.id})
+      .expect(200)
+
+    const me = await request(app.getHttpServer())
+      .get('/v1/me')
+      .set('Authorization', `Bearer ${selected.body.accessToken}`)
+      .expect(200)
+
+    expect(me.body.user.email).toBe('mel@example.com')
+
+    await request(app.getHttpServer())
+      .post('/v1/auth/logout')
+      .send({refreshToken: refreshed.body.refreshToken})
+      .expect(200)
+
+    await request(app.getHttpServer())
+      .post('/v1/auth/refresh')
+      .send({refreshToken: refreshed.body.refreshToken})
+      .expect(401)
   })
 
   it('lets Owner invite by email, accept as a new user, and call /me in the tenant', async () => {
@@ -383,5 +438,37 @@ describe('HTTP e2e', () => {
       .expect(403)
 
     expect(response.body.code).toBe('INSUFFICIENT_PERMISSION')
+  })
+
+  it('sets a password on a password-less user, then changes it', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'nopw@example.com', displayName: 'No Password'})
+      .expect(201)
+    const userId = UserId.parse(created.body.id)
+
+    await request(app.getHttpServer())
+      .post('/v1/auth/password')
+      .set('x-user-id', userId)
+      .send({password: 'secret-password'})
+      .expect(200)
+
+    const login = await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send({email: 'nopw@example.com', password: 'secret-password'})
+      .expect(200)
+
+    expect(login.body.userId).toBe(userId)
+
+    await request(app.getHttpServer())
+      .post('/v1/auth/password')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({password: 'next-password', currentPassword: 'secret-password'})
+      .expect(200)
+
+    await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send({email: 'nopw@example.com', password: 'next-password'})
+      .expect(200)
   })
 })

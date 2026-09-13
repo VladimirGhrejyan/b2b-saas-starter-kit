@@ -31,6 +31,7 @@ export class FrontendCoreEslintConfig {
                 '@b2b-saas-starter-kit/redis',
                 '@b2b-saas-starter-kit/http-client',
                 '@b2b-saas-starter-kit/security',
+                '@b2b-saas-starter-kit/mail',
                 '@b2b-saas-starter-kit/node',
                 '@b2b-saas-starter-kit/messaging',
                 '@b2b-saas-starter-kit/infrastructure*',

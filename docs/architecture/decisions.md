@@ -19,7 +19,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-003 — Infrastructure split by concern
 
-**Decision:** `infrastructure/{postgres,logger,redis,security,node,messaging}` (grouping directory), each concern its own Nx project. `logger` is Pino only (no Nest) so workers and scripts never pull TypeORM or Swagger. `security` owns native Argon2 + SHA-256; `node` owns `uuid`/`Date`; `postgres` owns TypeORM persistence.
+**Decision:** `infrastructure/{postgres,logger,redis,security,mail,node,messaging}` (grouping directory), each concern its own Nx project. `logger` is Pino only (no Nest) so workers and scripts never pull TypeORM or Swagger. `security` owns native Argon2 + SHA-256; `mail` owns nodemailer SMTP; `node` owns `uuid`/`Date`; `postgres` owns TypeORM persistence.
 **Rationale:** Different dependency footprints and change cadences keep `affected` meaningful.
 
 ## ADR-004 — Repository ports live in the domain layer
@@ -188,10 +188,10 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 ## ADR-032 — Backend authentication: Argon2id, JWT access, rotating refresh cookie
 
-**Decision:** First factor is email + password (Argon2id). `User` stays credential-free; the hash lives on a separate local-password record. Access is a short HS256 JWT in the JSON body (`sub`, optional `tid`, `exp`, `jti`, `iss`/`aud`). Refresh is an opaque rotating token in an `HttpOnly` `SameSite=Lax` cookie (`Path=/v1/auth`). JWT signing stays in `apps/api` (`jose`). Password-reset uses `MailerPort` with Logging + InMemory adapters only (no SMTP). The tenant claim is omitted at login unless the user has exactly one active membership; `POST /v1/auth/select-tenant` re-issues the access JWT. The API edge prefers `Authorization: Bearer`; `development`/`test` may fall back to `x-user-id` / `x-tenant-id`. Production is JWT-only and refuses the development secret.
+**Decision:** First factor is email + password (Argon2id). `User` stays credential-free; the hash lives on a separate local-password record. Access is a short HS256 JWT in the JSON body (`sub`, optional `tid`, `exp`, `jti`, `iss`/`aud`). Refresh is an opaque rotating token: cookie-only on `/v1/auth/web/{login,refresh,logout}` (`HttpOnly` `SameSite=Lax`, `Path=/v1/auth`) and JSON `refreshToken` on `/v1/auth/{login,refresh,logout}`. Authenticated `POST /v1/auth/password` sets or changes the optional local password. JWT signing stays in `apps/api` (`jose`). `MailerPort` binds `SmtpMailer` (`@b2b-saas-starter-kit/mail`) when `SMTP_HOST` is set; otherwise Logging / InMemory. The tenant claim is omitted at login unless the user has exactly one active membership; `POST /v1/auth/select-tenant` re-issues the access JWT. The API edge prefers `Authorization: Bearer`; `development`/`test` may fall back to `x-user-id` / `x-tenant-id`. Production is JWT-only and refuses the development secret.
 **Options:** (A) server session cookie only; (B) JWT access + rotating refresh cookie ✓; (C) opaque Bearer access + refresh.
-**Rationale:** Matches the planned web follow-up (in-memory access + cookie refresh) without putting `jose` in application/domain. Header-trust remains a non-production seam so `apps/web` keeps working until the frontend phase.
-**Later:** web login UI, Bearer `prepareHeaders`, SSO, passkeys, email verification, MFA, SMTP.
+**Rationale:** Matches the planned web follow-up (in-memory access + cookie refresh) and native clients (refresh in the JSON body) without putting `jose` in application/domain. Header-trust remains a non-production seam so `apps/web` keeps working until the frontend phase.
+**Later:** web login UI, Bearer `prepareHeaders`, SSO, passkeys, email verification, MFA, outbox, HTML templates.
 
 ---
 

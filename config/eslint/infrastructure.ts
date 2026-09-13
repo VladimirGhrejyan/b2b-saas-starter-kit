@@ -17,6 +17,9 @@ const securityMessage =
 const nodeMessage =
   'Node process adapters may use uuid and @nestjs/common. Do not import @node-rs/argon2, TypeORM, pg, ioredis, undici, domain, application, or other infrastructure packages.'
 
+const mailMessage =
+  'Mail adapters may use nodemailer and @nestjs/common. Do not import TypeORM, pg, ioredis, undici, domain, application, or other infrastructure packages.'
+
 /** Infrastructure overlay: each concern stays adapter-local. */
 export class InfrastructureEslintConfig {
   static readonly config: Linter.Config[] = [
@@ -53,6 +56,7 @@ export class InfrastructureEslintConfig {
               {name: '@b2b-saas-starter-kit/contracts', message: postgresLoggerMessage},
               {name: '@b2b-saas-starter-kit/http-client', message: postgresLoggerMessage},
               {name: '@b2b-saas-starter-kit/security', message: postgresLoggerMessage},
+              {name: '@b2b-saas-starter-kit/mail', message: postgresLoggerMessage},
               {name: '@b2b-saas-starter-kit/node', message: postgresLoggerMessage},
               {name: '@nestjs/typeorm', message: postgresLoggerMessage},
               {name: 'nestjs-cls', message: postgresLoggerMessage},
@@ -99,6 +103,7 @@ export class InfrastructureEslintConfig {
               {name: '@b2b-saas-starter-kit/application', message: redisMessage},
               {name: '@b2b-saas-starter-kit/http-client', message: redisMessage},
               {name: '@b2b-saas-starter-kit/security', message: redisMessage},
+              {name: '@b2b-saas-starter-kit/mail', message: redisMessage},
               {name: '@b2b-saas-starter-kit/node', message: redisMessage},
               {name: '@nestjs/typeorm', message: redisMessage},
               {name: 'nestjs-cls', message: redisMessage},
@@ -118,6 +123,7 @@ export class InfrastructureEslintConfig {
                   '@b2b-saas-starter-kit/postgres',
                   '@b2b-saas-starter-kit/http-client',
                   '@b2b-saas-starter-kit/security',
+                  '@b2b-saas-starter-kit/mail',
                   '@b2b-saas-starter-kit/node',
                 ],
                 message: redisMessage,
@@ -144,6 +150,7 @@ export class InfrastructureEslintConfig {
               {name: '@b2b-saas-starter-kit/domain', message: httpClientMessage},
               {name: '@b2b-saas-starter-kit/application', message: httpClientMessage},
               {name: '@b2b-saas-starter-kit/security', message: httpClientMessage},
+              {name: '@b2b-saas-starter-kit/mail', message: httpClientMessage},
               {name: '@b2b-saas-starter-kit/node', message: httpClientMessage},
               {name: '@nestjs/typeorm', message: httpClientMessage},
               {name: 'nestjs-cls', message: httpClientMessage},
@@ -163,6 +170,7 @@ export class InfrastructureEslintConfig {
                   '@b2b-saas-starter-kit/postgres',
                   '@b2b-saas-starter-kit/redis',
                   '@b2b-saas-starter-kit/security',
+                  '@b2b-saas-starter-kit/mail',
                   '@b2b-saas-starter-kit/node',
                 ],
                 message: httpClientMessage,
@@ -207,6 +215,7 @@ export class InfrastructureEslintConfig {
                   '@b2b-saas-starter-kit/postgres',
                   '@b2b-saas-starter-kit/redis',
                   '@b2b-saas-starter-kit/http-client',
+                  '@b2b-saas-starter-kit/mail',
                   '@b2b-saas-starter-kit/node',
                 ],
                 message: securityMessage,
@@ -254,8 +263,54 @@ export class InfrastructureEslintConfig {
                   '@b2b-saas-starter-kit/redis',
                   '@b2b-saas-starter-kit/http-client',
                   '@b2b-saas-starter-kit/security',
+                  '@b2b-saas-starter-kit/mail',
                 ],
                 message: nodeMessage,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      files: ['packages/infrastructure/mail/**/*.{ts,tsx}'],
+      ignores: ['**/*.{spec,test}.ts', '**/*.integration.spec.ts'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              {name: 'typeorm', message: mailMessage},
+              {name: 'pg', message: mailMessage},
+              {name: 'ioredis', message: mailMessage},
+              {name: 'undici', message: mailMessage},
+              {name: 'axios', message: mailMessage},
+              {name: 'got', message: mailMessage},
+              {name: '@b2b-saas-starter-kit/contracts', message: mailMessage},
+              {name: '@b2b-saas-starter-kit/domain', message: mailMessage},
+              {name: '@b2b-saas-starter-kit/application', message: mailMessage},
+              {name: '@nestjs/typeorm', message: mailMessage},
+              {name: 'nestjs-cls', message: mailMessage},
+            ],
+            patterns: [
+              {
+                group: [
+                  '@nestjs/core',
+                  '@nestjs/platform-*',
+                  '@nestjs/testing',
+                  '@nestjs/swagger',
+                  '@nestjs/config',
+                  '@nestjs/cqrs',
+                  '@nestjs/microservices',
+                  '@nestjs/websockets',
+                  '@b2b-saas-starter-kit/composition*',
+                  '@b2b-saas-starter-kit/postgres',
+                  '@b2b-saas-starter-kit/redis',
+                  '@b2b-saas-starter-kit/http-client',
+                  '@b2b-saas-starter-kit/security',
+                  '@b2b-saas-starter-kit/node',
+                ],
+                message: mailMessage,
               },
             ],
           },

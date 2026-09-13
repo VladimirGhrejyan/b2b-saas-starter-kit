@@ -24,6 +24,7 @@ export {
   ResetPasswordUseCase,
   RotateRefreshUseCase,
   SelectTenantUseCase,
+  SetOrChangePasswordUseCase,
   UpdateCustomRoleUseCase,
 } from '@b2b-saas-starter-kit/application'
 export type {TenantContext} from '@b2b-saas-starter-kit/platform'

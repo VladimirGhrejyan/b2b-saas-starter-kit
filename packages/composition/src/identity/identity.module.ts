@@ -19,6 +19,7 @@ import {
   ResetPasswordUseCase,
   RotateRefreshUseCase,
   SelectTenantUseCase,
+  SetOrChangePasswordUseCase,
 } from '@b2b-saas-starter-kit/application'
 
 import {
@@ -31,6 +32,7 @@ import {
   UNIT_OF_WORK,
 } from '@b2b-saas-starter-kit/postgres'
 import {PASSWORD_HASHER, TOKEN_DIGEST} from '@b2b-saas-starter-kit/security'
+import {SmtpMailer, tryLoadSmtpConfigFromEnv} from '@b2b-saas-starter-kit/mail'
 import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
 
 @Module({
@@ -43,7 +45,12 @@ import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
     LoggingMailer,
     {
       provide: MAILER,
-      useExisting: LoggingMailer,
+      useFactory: (logging: LoggingMailer): MailerPort => {
+        const config = tryLoadSmtpConfigFromEnv()
+
+        return config === null ? logging : new SmtpMailer(config)
+      },
+      inject: [LoggingMailer],
     },
     {
       provide: CreateUserUseCase,
@@ -159,6 +166,25 @@ import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
         TypeOrmRefreshSessionRepository,
       ],
     },
+    {
+      provide: SetOrChangePasswordUseCase,
+      useFactory: (
+        uow: UnitOfWork,
+        clock: Clock,
+        hasher: PasswordHasher,
+        users: TypeOrmUserRepository,
+        passwords: TypeOrmLocalPasswordRepository,
+        sessions: TypeOrmRefreshSessionRepository,
+      ) => new SetOrChangePasswordUseCase(uow, clock, hasher, users, passwords, sessions),
+      inject: [
+        UNIT_OF_WORK,
+        CLOCK,
+        PASSWORD_HASHER,
+        TypeOrmUserRepository,
+        TypeOrmLocalPasswordRepository,
+        TypeOrmRefreshSessionRepository,
+      ],
+    },
   ],
   exports: [
     TypeOrmUserRepository,
@@ -173,6 +199,7 @@ import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
     SelectTenantUseCase,
     RequestPasswordResetUseCase,
     ResetPasswordUseCase,
+    SetOrChangePasswordUseCase,
     MAILER,
     LoggingMailer,
   ],
