@@ -32,7 +32,7 @@ pnpm nx run contracts:test
 ## Phase 10 Definition of Done
 
 - [x] Package at `packages/shared/contracts` with tags `scope:shared`, `layer:contracts`
-- [x] `HttpMethod` (GET/POST/PUT/PATCH/DELETE) and `HttpStatus` including 403 and 409
+- [x] `HttpMethod` (GET/POST/PUT/PATCH/DELETE) and `HttpStatus` including 403, 409, and 429
 - [x] Error envelope `{code, message, details?}`
 - [x] Pagination envelope factory
 - [x] No endpoint DTOs yet

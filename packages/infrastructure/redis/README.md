@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/redis`
 
-ioredis adapters for the platform `CachePort`, `LockPort`, and `PubSubPort`. Composition wires this package; `apps/api` must not import it.
+ioredis adapters for the platform `CachePort`, `LockPort`, `PubSubPort`, and `RateLimiterPort`. Composition wires this package; `apps/api` must not import it.
 
 **Path:** `packages/infrastructure/redis`  
 **Nx project:** `redis`  
@@ -18,6 +18,7 @@ src/
   cache/      # RedisCache adapter
   lock/       # RedisLock adapter
   pubsub/     # RedisPubSub adapter (publisher + duplicate subscriber)
+  rate-limit/ # RedisRateLimiter adapter (fixed-window INCR)
 ```
 
 ## Allowed imports

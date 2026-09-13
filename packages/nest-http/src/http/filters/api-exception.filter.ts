@@ -96,6 +96,19 @@ export class ApiExceptionFilter implements ExceptionFilter {
       this.#logger().error(exception, 'Coded error')
     }
 
+    const retryAfterSeconds = this.#readRetryAfterSeconds(exception)
+
+    if (retryAfterSeconds !== undefined) {
+      response.setHeader('Retry-After', String(retryAfterSeconds))
+      response.status(mapped).json({
+        code: exception.code,
+        message: exception.message,
+        details: {retryAfterSeconds},
+      })
+
+      return
+    }
+
     response.status(mapped).json({
       code: exception.code,
       message: exception.message,
@@ -134,6 +147,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
 
       case HttpStatus.CONFLICT: {
         return 'CONFLICT'
+      }
+
+      case HttpStatus.TOO_MANY_REQUESTS: {
+        return 'RATE_LIMIT_EXCEEDED'
       }
 
       case HttpStatus.INTERNAL_SERVER_ERROR: {
@@ -184,5 +201,19 @@ export class ApiExceptionFilter implements ExceptionFilter {
     }
 
     return typeof exception.code === 'string' && typeof exception.message === 'string'
+  }
+
+  #readRetryAfterSeconds(exception: object): number | undefined {
+    if (!('retryAfterSeconds' in exception)) {
+      return undefined
+    }
+
+    const value: unknown = exception.retryAfterSeconds
+
+    if (!TypeScriptUtils.isNumber(value) || !Number.isFinite(value) || value <= 0) {
+      return undefined
+    }
+
+    return value
   }
 }

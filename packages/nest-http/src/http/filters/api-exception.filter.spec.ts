@@ -15,13 +15,15 @@ import {ApiExceptionFilter} from './api-exception.filter'
 function createHost() {
   const json = vi.fn()
   const status = vi.fn().mockReturnValue({json})
+  const setHeader = vi.fn()
 
   return {
     host: {
       switchToHttp: () => ({
-        getResponse: () => ({status, json}),
+        getResponse: () => ({setHeader, status, json}),
       }),
     } as ArgumentsHost,
+    setHeader,
     status,
     json,
   }
@@ -64,6 +66,21 @@ describe('ApiExceptionFilter', () => {
     expect(json).toHaveBeenCalledWith({
       code: 'INSUFFICIENT_PERMISSION',
       message: "missing permission 'tenancy.members.read'",
+    })
+  })
+
+  it('maps RATE_LIMIT_EXCEEDED to 429 with Retry-After', () => {
+    const filter = new ApiExceptionFilter({RATE_LIMIT_EXCEEDED: HttpStatus.TOO_MANY_REQUESTS})
+    const {host, setHeader, status, json} = createHost()
+
+    filter.catch({code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests', retryAfterSeconds: 42}, host)
+
+    expect(setHeader).toHaveBeenCalledWith('Retry-After', '42')
+    expect(status).toHaveBeenCalledWith(HttpStatus.TOO_MANY_REQUESTS)
+    expect(json).toHaveBeenCalledWith({
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests',
+      details: {retryAfterSeconds: 42},
     })
   })
 

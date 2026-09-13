@@ -4,13 +4,14 @@ import {Module} from '@nestjs/common'
 import {RedisCache} from '../cache/redis-cache.adapter'
 import {RedisLock} from '../lock/redis-lock.adapter'
 import {RedisPubSub} from '../pubsub/redis-pubsub.adapter'
+import {RedisRateLimiter} from '../rate-limit/redis-rate-limiter.adapter'
 
 import {RedisClientManager} from './connection/redis-client.manager'
 import type {RedisInfrastructureModuleAsyncOptions} from './redis-infrastructure.module.types'
-import {CACHE, LOCK, PUBSUB, REDIS_CLIENT, REDIS_CONFIG} from './tokens'
+import {CACHE, LOCK, PUBSUB, RATE_LIMITER, REDIS_CLIENT, REDIS_CONFIG} from './tokens'
 
 /**
- * Nest wrapper around one ioredis client shared by cache, lock, and pub/sub adapters.
+ * Nest wrapper around one ioredis client shared by cache, lock, pub/sub, and rate-limit adapters.
  */
 @Module({})
 export class RedisInfrastructureModule {
@@ -45,8 +46,24 @@ export class RedisInfrastructureModule {
           provide: PUBSUB,
           useExisting: RedisPubSub,
         },
+        RedisRateLimiter,
+        {
+          provide: RATE_LIMITER,
+          useExisting: RedisRateLimiter,
+        },
       ],
-      exports: [REDIS_CONFIG, REDIS_CLIENT, RedisCache, CACHE, RedisLock, LOCK, RedisPubSub, PUBSUB],
+      exports: [
+        REDIS_CONFIG,
+        REDIS_CLIENT,
+        RedisCache,
+        CACHE,
+        RedisLock,
+        LOCK,
+        RedisPubSub,
+        PUBSUB,
+        RedisRateLimiter,
+        RATE_LIMITER,
+      ],
     }
   }
 }

@@ -7,6 +7,7 @@ import {AuthPrincipalInterceptor} from './auth/auth-principal.interceptor'
 import {JwtAccessService} from './auth/jwt-access.service'
 import {JWT_ACCESS_CONFIG} from './auth/jwt-access-config.token'
 import {loadJwtAccessConfigFromEnv} from './auth/load-jwt-access-config'
+import {RateLimitInterceptor} from './auth/rate-limit.interceptor'
 import {RefreshCookie} from './auth/refresh-cookie'
 import {RequirePermissionInterceptor} from './auth/require-permission.interceptor'
 import {DevSeeder} from './seeding/dev-seeder'
@@ -21,6 +22,10 @@ import {DevSeeder} from './seeding/dev-seeder'
     },
     JwtAccessService,
     RefreshCookie,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RateLimitInterceptor,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: AuthPrincipalInterceptor,

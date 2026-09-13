@@ -411,19 +411,19 @@ That is why the stub exists: to prove the **authorization and tenancy** path bef
 
 ## 8. Related controls people mix up with “auth”
 
-| Topic                 | Relation                                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **CORS**              | Browser rule for _which frontend_ may call you. Not authentication.                                                                   |
-| **CSRF**              | Forged cookie-authenticated request. Relevant when you use cookies.                                                                   |
-| **XSS**               | Script in your origin steals tokens or acts as the user. CSP, sanitization.                                                           |
-| **IDOR**              | Authn succeeded; you loaded Tenant B’s row because you trusted a path id. Tenant filter + `require` + never trust client ids blindly. |
-| **Rate limiting**     | Authn endpoints are brute-force targets. Deferred Redis `RateLimiterPort`.                                                            |
-| **Lockout / backoff** | After N failed logins. Careful: user enumeration vs account lock DoS.                                                                 |
-| **Audit log**         | Who did what, when, in which tenant. Deferred `audit` context; do not log passwords or tokens.                                        |
-| **PII in JWT**        | Prefer `sub` only; load profile from `/me`.                                                                                           |
-| **Secrets**           | Signing keys, OAuth client secrets — env/secret manager, not git.                                                                     |
-| **Clock skew**        | JWT `exp`/`nbf`; this kit’s `Clock` port exists so tests are deterministic.                                                           |
-| **Idempotency**       | Not auth, but dangerous writes (invite, pay) should be idempotent; outbound HTTP client already supports `idempotencyKey`.            |
+| Topic                 | Relation                                                                                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CORS**              | Browser rule for _which frontend_ may call you. Not authentication.                                                                                                             |
+| **CSRF**              | Forged cookie-authenticated request. Relevant when you use cookies.                                                                                                             |
+| **XSS**               | Script in your origin steals tokens or acts as the user. CSP, sanitization.                                                                                                     |
+| **IDOR**              | Authn succeeded; you loaded Tenant B’s row because you trusted a path id. Tenant filter + `require` + never trust client ids blindly.                                           |
+| **Rate limiting**     | Authn endpoints are brute-force targets. Public `/v1/auth/*` is limited via Redis `RateLimiterPort` (IP + route bucket). Invite limits and global API throttling stay deferred. |
+| **Lockout / backoff** | After N failed logins. Careful: user enumeration vs account lock DoS. Still deferred.                                                                                           |
+| **Audit log**         | Who did what, when, in which tenant. Deferred `audit` context; do not log passwords or tokens.                                                                                  |
+| **PII in JWT**        | Prefer `sub` only; load profile from `/me`.                                                                                                                                     |
+| **Secrets**           | Signing keys, OAuth client secrets — env/secret manager, not git.                                                                                                               |
+| **Clock skew**        | JWT `exp`/`nbf`; this kit’s `Clock` port exists so tests are deterministic.                                                                                                     |
+| **Idempotency**       | Not auth, but dangerous writes (invite, pay) should be idempotent; outbound HTTP client already supports `idempotencyKey`.                                                      |
 
 ---
 

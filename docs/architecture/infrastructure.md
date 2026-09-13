@@ -8,7 +8,7 @@ Related: [`backend.md`](./backend.md), [`persistence.md`](./persistence.md), [`m
 
 Redis is used for **caching, distributed locks, and pub/sub** (and it backs BullMQ). It is exposed through generic **capability ports**, not as a Redis client sprinkled through the code.
 
-- **Ports (interfaces):** `CachePort`, `LockPort`, `PubSubPort` live in `platform`. They are generic and technology-agnostic — nothing in their signatures mentions Redis.
+- **Ports (interfaces):** `CachePort`, `LockPort`, `PubSubPort`, `RateLimiterPort` live in `platform`. They are generic and technology-agnostic — nothing in their signatures mentions Redis.
 - **Adapters (implementations):** live in `infrastructure/redis`, using a Redis client (e.g. `ioredis`).
 - **`CachePort.set` requires `ttlSeconds`.** Compose Redis uses `maxmemory-policy noeviction`; expiry is correctness, not optional LRU.
 - **Policy is per-context.** The _capability_ is generic; _what_ to cache, _which_ keys to lock, and _when_ is decided in each context's **application** layer. The domain layer never mentions caching or locking.

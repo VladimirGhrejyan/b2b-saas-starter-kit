@@ -27,5 +27,7 @@ export {
   SetOrChangePasswordUseCase,
   UpdateCustomRoleUseCase,
 } from '@b2b-saas-starter-kit/application'
-export type {TenantContext} from '@b2b-saas-starter-kit/platform'
+export type {RateLimiterPort, TenantContext} from '@b2b-saas-starter-kit/platform'
+export {CacheKey, RateLimitExceededError} from '@b2b-saas-starter-kit/platform'
 export {TENANT_CONTEXT} from '@b2b-saas-starter-kit/postgres'
+export {RATE_LIMITER} from '@b2b-saas-starter-kit/redis'

@@ -4,8 +4,10 @@ import {HttpStatus} from '@b2b-saas-starter-kit/contracts'
 
 import {ApiErrorResponses, ApiRoute, Public, Response} from '@b2b-saas-starter-kit/nest-http'
 
+import {AuthRateLimits} from '../../common/auth/auth-rate-limits'
 import {CurrentPrincipal} from '../../common/auth/current-principal.decorator'
 import type {DevPrincipal} from '../../common/auth/dev-principal.types'
+import {RateLimit} from '../../common/auth/rate-limit.decorator'
 import {RefreshCookie} from '../../common/auth/refresh-cookie'
 import type {RefreshCookieRequest, RefreshCookieResponse} from '../../common/auth/refresh-cookie.types'
 import {TenantOptional} from '../../common/auth/tenant-optional.decorator'
@@ -33,6 +35,7 @@ export class AuthController {
   ) {}
 
   @Public()
+  @RateLimit(AuthRateLimits.register)
   @ApiRoute(AuthRoutes.register)
   @Response({
     status: HttpStatus.CREATED,
@@ -42,12 +45,14 @@ export class AuthController {
   @ApiErrorResponses([
     {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
     {status: HttpStatus.CONFLICT, description: 'Email is already taken'},
+    {status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many registration attempts'},
   ])
   register(@Body() body: RegisterUserInputDto): Promise<RegisterUserOutputDto> {
     return this.auth.register(body)
   }
 
   @Public()
+  @RateLimit(AuthRateLimits.login)
   @HttpCode(HttpStatus.OK)
   @ApiRoute(AuthRoutes.login)
   @Response({
@@ -59,12 +64,14 @@ export class AuthController {
     {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
     {status: HttpStatus.UNAUTHORIZED, description: 'Email or password is invalid'},
     {status: HttpStatus.FORBIDDEN, description: 'User is suspended'},
+    {status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many login attempts'},
   ])
   login(@Body() body: LoginInputDto): Promise<AuthTokenSessionOutputDto> {
     return this.auth.tokenSignIn(body)
   }
 
   @Public()
+  @RateLimit(AuthRateLimits.refresh)
   @HttpCode(HttpStatus.OK)
   @ApiRoute(AuthRoutes.refresh)
   @Response({
@@ -75,12 +82,14 @@ export class AuthController {
   @ApiErrorResponses([
     {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
     {status: HttpStatus.UNAUTHORIZED, description: 'Refresh token is invalid'},
+    {status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many refresh attempts'},
   ])
   refresh(@Body() body: RefreshTokenInputDto): Promise<AuthTokenSessionOutputDto> {
     return this.auth.tokenRefresh(body)
   }
 
   @Public()
+  @RateLimit(AuthRateLimits.logout)
   @HttpCode(HttpStatus.OK)
   @ApiRoute(AuthRoutes.logout)
   @Response({
@@ -88,6 +97,7 @@ export class AuthController {
     description: 'Signed out',
     type: AuthOkOutputDto,
   })
+  @ApiErrorResponses([{status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many logout attempts'}])
   async logout(@Body() body: LogoutTokenInputDto): Promise<AuthOkOutputDto> {
     await this.auth.tokenSignOut(body)
 
@@ -95,6 +105,7 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit(AuthRateLimits.login)
   @HttpCode(HttpStatus.OK)
   @ApiRoute(AuthRoutes.webLogin)
   @Response({
@@ -106,6 +117,7 @@ export class AuthController {
     {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
     {status: HttpStatus.UNAUTHORIZED, description: 'Email or password is invalid'},
     {status: HttpStatus.FORBIDDEN, description: 'User is suspended'},
+    {status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many login attempts'},
   ])
   async webLogin(
     @Body() body: LoginInputDto,
@@ -119,6 +131,7 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit(AuthRateLimits.refresh)
   @HttpCode(HttpStatus.OK)
   @ApiRoute(AuthRoutes.webRefresh)
   @Response({
@@ -126,7 +139,10 @@ export class AuthController {
     description: 'Access token refreshed from the cookie',
     type: AuthSessionOutputDto,
   })
-  @ApiErrorResponses([{status: HttpStatus.UNAUTHORIZED, description: 'Refresh cookie is invalid'}])
+  @ApiErrorResponses([
+    {status: HttpStatus.UNAUTHORIZED, description: 'Refresh cookie is invalid'},
+    {status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many refresh attempts'},
+  ])
   async webRefresh(
     @Req() request: RefreshCookieRequest,
     @Res({passthrough: true}) response: RefreshCookieResponse,
@@ -139,6 +155,7 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit(AuthRateLimits.logout)
   @HttpCode(HttpStatus.OK)
   @ApiRoute(AuthRoutes.webLogout)
   @Response({
@@ -146,6 +163,7 @@ export class AuthController {
     description: 'Signed out and cleared the cookie',
     type: AuthOkOutputDto,
   })
+  @ApiErrorResponses([{status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many logout attempts'}])
   async webLogout(
     @Req() request: RefreshCookieRequest,
     @Res({passthrough: true}) response: RefreshCookieResponse,
@@ -177,6 +195,7 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit(AuthRateLimits.forgotPassword)
   @HttpCode(HttpStatus.OK)
   @ApiRoute(AuthRoutes.forgotPassword)
   @Response({
@@ -184,7 +203,10 @@ export class AuthController {
     description: 'Password reset requested',
     type: AuthOkOutputDto,
   })
-  @ApiErrorResponses([{status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'}])
+  @ApiErrorResponses([
+    {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
+    {status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many password-reset requests'},
+  ])
   async forgotPassword(@Body() body: ForgotPasswordInputDto): Promise<AuthOkOutputDto> {
     await this.auth.forgotPassword(body)
 
@@ -192,6 +214,7 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit(AuthRateLimits.resetPassword)
   @HttpCode(HttpStatus.OK)
   @ApiRoute(AuthRoutes.resetPassword)
   @Response({
@@ -202,6 +225,7 @@ export class AuthController {
   @ApiErrorResponses([
     {status: HttpStatus.BAD_REQUEST, description: 'Token or password is invalid'},
     {status: HttpStatus.UNAUTHORIZED, description: 'Reset token is invalid'},
+    {status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many password-reset attempts'},
   ])
   async resetPassword(@Body() body: ResetPasswordInputDto): Promise<AuthOkOutputDto> {
     await this.auth.reset(body)

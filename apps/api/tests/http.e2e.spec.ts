@@ -11,11 +11,12 @@ import {LoggerLocator, PinoLogger} from '@b2b-saas-starter-kit/logger'
 
 import {LoggingMailer} from '@b2b-saas-starter-kit/composition'
 import type {PostgresTestDatabase} from '@b2b-saas-starter-kit/composition/testing'
-import {preparePostgresTestDatabase, seedActiveMembership} from '@b2b-saas-starter-kit/composition/testing'
+import {flushRedis, preparePostgresTestDatabase, seedActiveMembership} from '@b2b-saas-starter-kit/composition/testing'
 
 import {applyCookieParser} from '@b2b-saas-starter-kit/nest-http'
 
 import {AppModule} from '../src/app/app.module'
+import {AuthRateLimits} from '../src/common/auth/auth-rate-limits'
 
 describe('HTTP e2e', () => {
   let app: INestApplication
@@ -38,6 +39,7 @@ describe('HTTP e2e', () => {
 
   beforeEach(async () => {
     await database.truncate()
+    await flushRedis(app)
   })
 
   it('creates a user, tenant, and returns owner permissions on /v1/me', async () => {
@@ -250,6 +252,22 @@ describe('HTTP e2e', () => {
       .post('/v1/auth/refresh')
       .send({refreshToken: refreshed.body.refreshToken})
       .expect(401)
+  })
+
+  it('rate-limits native login after the window is exhausted', async () => {
+    const payload = {email: 'nobody@example.com', password: 'wrong-password'}
+
+    for (let attempt = 0; attempt < AuthRateLimits.login.limit; attempt += 1) {
+      await request(app.getHttpServer()).post('/v1/auth/login').send(payload).expect(401)
+    }
+
+    const limited = await request(app.getHttpServer()).post('/v1/auth/login').send(payload).expect(429)
+
+    expect(limited.body).toMatchObject({
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests',
+    })
+    expect(limited.headers['retry-after']).toEqual(expect.stringMatching(/^\d+$/))
   })
 
   it('lets Owner invite by email, accept as a new user, and call /me in the tenant', async () => {

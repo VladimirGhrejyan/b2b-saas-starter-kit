@@ -7,5 +7,6 @@ describe('HttpStatus', () => {
     expect(HttpStatus.CREATED).toBe(201)
     expect(HttpStatus.FORBIDDEN).toBe(403)
     expect(HttpStatus.CONFLICT).toBe(409)
+    expect(HttpStatus.TOO_MANY_REQUESTS).toBe(429)
   })
 })
