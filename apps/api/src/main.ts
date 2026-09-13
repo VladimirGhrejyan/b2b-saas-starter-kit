@@ -7,7 +7,7 @@ import {LoggerLocator, PinoLogger} from '@b2b-saas-starter-kit/logger'
 import {ApiBuilder, registerProcessErrorHandlers} from '@b2b-saas-starter-kit/nest-http'
 
 import {AppModule} from './app/app.module'
-import {assertAuthBootstrap} from './common/auth/assert-auth-bootstrap'
+import {assertAuthBootstrap} from './common/auth/jwt/assert-auth-bootstrap'
 import {ApiEnvSchema} from './common/config/env.schema'
 import {mapApiHttpConfig} from './common/config/map-api-http-config'
 

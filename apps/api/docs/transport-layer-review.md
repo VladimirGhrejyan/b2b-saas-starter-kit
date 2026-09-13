@@ -123,7 +123,7 @@ Three distinct issues (historical):
 
 ## 6. DevPrincipal header-trust has no environment guard — **done**
 
-**Location:** `apps/api/src/common/auth/assert-dev-principal-allowed.ts`, `main.ts`.
+**Location:** `apps/api/src/common/auth/jwt/assert-auth-bootstrap.ts`, `main.ts`.
 
 **Done.** `assertDevPrincipalAllowed` refuses to boot when `NODE_ENV === 'production'`. When JWT lands, this stub should be removed from the production composition, not merely overridden.
 
@@ -155,7 +155,7 @@ Three distinct issues (historical):
 
 ## 9. `CurrentPrincipal` missing-principal → 500 — **done**
 
-**Location:** `apps/api/src/common/auth/read-dev-principal.ts`, `current-principal.decorator.ts`.
+**Location:** `apps/api/src/common/auth/principal/read-dev-principal.ts`, `current-principal.decorator.ts`.
 
 **Done.** Missing principal throws `UnauthorizedException` (HTTP 401).
 

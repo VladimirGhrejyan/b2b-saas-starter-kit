@@ -13,11 +13,11 @@ import {AssertActiveMembership, TENANT_CONTEXT} from '@b2b-saas-starter-kit/comp
 
 import {IS_PUBLIC_KEY, RequestContextLocator} from '@b2b-saas-starter-kit/nest-http'
 
-import {readHeader} from '../http/read-header'
+import {readHeader} from '../../http/read-header'
+import {JwtAccessService} from '../jwt/jwt-access.service'
 
 import type {DevPrincipal} from './dev-principal.types'
 import {DEV_PRINCIPAL_KEY} from './dev-principal-key'
-import {JwtAccessService} from './jwt-access.service'
 import {TENANT_OPTIONAL_KEY} from './tenant-optional-key'
 
 @Injectable()

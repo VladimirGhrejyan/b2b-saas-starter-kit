@@ -1,6 +1,6 @@
 import {z} from 'zod'
 
-import {DEV_JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS, JWT_AUDIENCE, JWT_ISSUER} from '../auth/jwt-access.constants'
+import {DEV_JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS, JWT_AUDIENCE, JWT_ISSUER} from '../auth/jwt/jwt-access.constants'
 
 /** Env-driven bootstrap contract for the API process. */
 export const ApiEnvSchema = z.object({

@@ -4,9 +4,9 @@ import {HttpStatus, PermissionName} from '@b2b-saas-starter-kit/contracts'
 
 import {ApiErrorResponses, ApiRoute, Response} from '@b2b-saas-starter-kit/nest-http'
 
-import {CurrentPrincipal} from '../../common/auth/current-principal.decorator'
-import type {DevPrincipal} from '../../common/auth/dev-principal.types'
-import {RequirePermission} from '../../common/auth/require-permission.decorator'
+import {RequirePermission} from '../../common/auth/permission/require-permission.decorator'
+import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
+import type {DevPrincipal} from '../../common/auth/principal/dev-principal.types'
 
 import {AttachMemberInputDto} from './dto/attach-member.input'
 import {AttachMemberOutputDto} from './dto/attach-member.output'

@@ -15,7 +15,7 @@ import {
   SetOrChangePasswordUseCase,
 } from '@b2b-saas-starter-kit/composition'
 
-import {JwtAccessService} from '../../common/auth/jwt-access.service'
+import {JwtAccessService} from '../../common/auth/jwt/jwt-access.service'
 
 import type {ForgotPasswordInputDto} from './dto/forgot-password.input'
 import type {LoginInputDto} from './dto/login.input'

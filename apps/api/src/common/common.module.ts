@@ -3,13 +3,13 @@ import {APP_INTERCEPTOR} from '@nestjs/core'
 
 import {CompositionModule} from '@b2b-saas-starter-kit/composition'
 
-import {AuthPrincipalInterceptor} from './auth/auth-principal.interceptor'
-import {JwtAccessService} from './auth/jwt-access.service'
-import {JWT_ACCESS_CONFIG} from './auth/jwt-access-config.token'
-import {loadJwtAccessConfigFromEnv} from './auth/load-jwt-access-config'
-import {RateLimitInterceptor} from './auth/rate-limit.interceptor'
-import {RefreshCookie} from './auth/refresh-cookie'
-import {RequirePermissionInterceptor} from './auth/require-permission.interceptor'
+import {JwtAccessService} from './auth/jwt/jwt-access.service'
+import {JWT_ACCESS_CONFIG} from './auth/jwt/jwt-access-config.token'
+import {loadJwtAccessConfigFromEnv} from './auth/jwt/load-jwt-access-config'
+import {RequirePermissionInterceptor} from './auth/permission/require-permission.interceptor'
+import {AuthPrincipalInterceptor} from './auth/principal/auth-principal.interceptor'
+import {RateLimitInterceptor} from './auth/rate-limit/rate-limit.interceptor'
+import {RefreshCookie} from './auth/refresh-cookie/refresh-cookie'
 import {DevSeeder} from './seeding/dev-seeder'
 
 @Module({

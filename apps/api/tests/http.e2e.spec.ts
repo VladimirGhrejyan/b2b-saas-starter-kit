@@ -16,7 +16,7 @@ import {flushRedis, preparePostgresTestDatabase, seedActiveMembership} from '@b2
 import {applyCookieParser} from '@b2b-saas-starter-kit/nest-http'
 
 import {AppModule} from '../src/app/app.module'
-import {AuthRateLimits} from '../src/common/auth/auth-rate-limits'
+import {AuthRateLimits} from '../src/common/auth/rate-limit/auth-rate-limits'
 
 describe('HTTP e2e', () => {
   let app: INestApplication
