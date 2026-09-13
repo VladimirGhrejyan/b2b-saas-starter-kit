@@ -8,9 +8,10 @@ import {isErrorOutput} from '@/shared/api/is-error-output'
 
 export function MePage() {
   const {t} = useTranslation('tenancy')
+  const accessToken = useAppSelector(SessionSelectors.accessToken)
   const userId = useAppSelector(SessionSelectors.userId)
   const tenantId = useAppSelector(SessionSelectors.activeTenantId)
-  const meQuery = getMeQuery(userId, tenantId)
+  const meQuery = getMeQuery(accessToken, userId, tenantId)
   const {data, error} = useGetMeQuery(meQuery.arg, {skip: meQuery.skip})
 
   return (

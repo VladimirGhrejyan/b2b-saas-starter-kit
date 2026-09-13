@@ -7,5 +7,9 @@ export async function loadWebLocaleNamespace(locale: string, namespace: string):
     return import('../assets/locales/en/tenancy.json').then((module) => module.default)
   }
 
+  if (locale === 'en' && namespace === 'auth') {
+    return import('../assets/locales/en/auth.json').then((module) => module.default)
+  }
+
   throw new Error(`Unknown locale namespace: ${locale}/${namespace}`)
 }

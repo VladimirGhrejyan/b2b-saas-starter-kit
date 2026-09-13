@@ -1,4 +1,5 @@
 import {
+  authSessionOutputSchema,
   errorOutputSchema,
   meOutputSchema,
   PermissionName,
@@ -79,18 +80,39 @@ export const unauthorizedError = errorOutputSchema.parse({
   message: 'Missing authenticated user',
 })
 
+export const invalidCredentialsError = errorOutputSchema.parse({
+  code: 'INVALID_CREDENTIALS',
+  message: 'Invalid email or password',
+})
+
 export const forbiddenError = errorOutputSchema.parse({
   code: 'INSUFFICIENT_PERMISSION',
   message: "missing permission 'tenancy.members.read'",
 })
 
+export const ownerAuthSession = authSessionOutputSchema.parse({
+  accessToken: 'owner-access-token',
+  expiresIn: 900,
+  userId: fixtureIds.ownerUserId,
+  tenantId: fixtureIds.tenantId,
+})
+
+export const memberAuthSession = authSessionOutputSchema.parse({
+  accessToken: 'member-access-token',
+  expiresIn: 900,
+  userId: fixtureIds.memberUserId,
+  tenantId: fixtureIds.tenantId,
+})
+
 export const ownerSession: SessionState = {
+  accessToken: ownerAuthSession.accessToken,
   userId: fixtureIds.ownerUserId,
   activeTenantId: fixtureIds.tenantId,
   effectivePermissions: [],
 }
 
 export const memberSession: SessionState = {
+  accessToken: memberAuthSession.accessToken,
   userId: fixtureIds.memberUserId,
   activeTenantId: fixtureIds.tenantId,
   effectivePermissions: [],

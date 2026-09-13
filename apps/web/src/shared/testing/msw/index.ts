@@ -1,8 +1,11 @@
 export {
   fixtureIds,
   forbiddenError,
+  invalidCredentialsError,
+  memberAuthSession,
   memberMe,
   memberSession,
+  ownerAuthSession,
   ownerMe,
   ownerMembers,
   ownerSession,

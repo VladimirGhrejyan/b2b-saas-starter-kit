@@ -14,6 +14,7 @@ describe('Can', () => {
 
     store.dispatch(
       setSession({
+        accessToken: null,
         userId: null,
         activeTenantId: null,
         effectivePermissions: [PermissionName.tenancyMembersRead],

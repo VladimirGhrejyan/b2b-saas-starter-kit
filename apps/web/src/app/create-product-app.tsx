@@ -17,7 +17,7 @@ export async function createProductApp(options: CreateProductAppOptions) {
   const i18n = await I18n.create({
     defaultLocale: 'en',
     storage: options.ports.storage,
-    namespaces: ['common', 'tenancy'],
+    namespaces: ['common', 'tenancy', 'auth'],
     loadNamespace: loadWebLocaleNamespace,
   })
   const router = createWebRouter(options.history)

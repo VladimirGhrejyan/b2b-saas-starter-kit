@@ -8,6 +8,10 @@ export class SessionSelectors {
     return root.session
   }
 
+  static accessToken(root: {session: SessionState}): string | null {
+    return root.session.accessToken
+  }
+
   static userId(root: {session: SessionState}): UserId | null {
     return root.session.userId
   }

@@ -48,7 +48,7 @@ describe('MePage', () => {
     expect(screen.queryByRole('link', {name: 'Members'})).toBeNull()
   })
 
-  it('shows the dev principal picker on UNAUTHORIZED', async () => {
+  it('redirects to login after a failed refresh on UNAUTHORIZED', async () => {
     WebMsw.useUnauthorized()
 
     await renderWithProviders(null, {
@@ -57,9 +57,10 @@ describe('MePage', () => {
       preloadedState: {session: ownerSession},
     })
 
-    expect((await screen.findAllByText(/UNAUTHORIZED/)).length).toBeGreaterThan(0)
-    expect(screen.getByLabelText('User ID')).toBeTruthy()
-    expect(screen.getByLabelText('Tenant ID')).toBeTruthy()
-    expect(screen.queryByRole('heading', {name: 'Login'})).toBeNull()
+    expect(await screen.findByRole('heading', {name: 'Login'})).toBeTruthy()
+    expect(screen.getByLabelText('Email')).toBeTruthy()
+    expect(screen.getByLabelText('Password')).toBeTruthy()
+    expect(screen.queryByLabelText('User ID')).toBeNull()
+    expect(screen.queryByLabelText('Tenant ID')).toBeNull()
   })
 })

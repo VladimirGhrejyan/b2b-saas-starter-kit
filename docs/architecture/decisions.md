@@ -191,7 +191,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Decision:** First factor is email + password (Argon2id). `User` stays credential-free; the hash lives on a separate local-password record. Access is a short HS256 JWT in the JSON body (`sub`, optional `tid`, `exp`, `jti`, `iss`/`aud`). Refresh is an opaque rotating token: cookie-only on `/v1/auth/web/{login,refresh,logout}` (`HttpOnly` `SameSite=Lax`, `Path=/v1/auth`) and JSON `refreshToken` on `/v1/auth/{login,refresh,logout}`. Authenticated `POST /v1/auth/password` sets or changes the optional local password. JWT signing stays in `apps/api` (`jose`). `MailerPort` binds `SmtpMailer` (`@b2b-saas-starter-kit/mail`) when `SMTP_HOST` is set; otherwise Logging / InMemory. The tenant claim is omitted at login unless the user has exactly one active membership; `POST /v1/auth/select-tenant` re-issues the access JWT. The API edge prefers `Authorization: Bearer`; `development`/`test` may fall back to `x-user-id` / `x-tenant-id`. Production is JWT-only and refuses the development secret.
 **Options:** (A) server session cookie only; (B) JWT access + rotating refresh cookie ✓; (C) opaque Bearer access + refresh.
 **Rationale:** Matches the planned web follow-up (in-memory access + cookie refresh) and native clients (refresh in the JSON body) without putting `jose` in application/domain. Header-trust remains a non-production seam so `apps/web` keeps working until the frontend phase.
-**Later:** web login UI, Bearer `prepareHeaders`, SSO, passkeys, email verification, MFA, outbox, HTML templates.
+**Later:** logout UI, select-tenant UI, SSO, passkeys, email verification, MFA, outbox, HTML templates. Web login + Bearer `prepareHeaders` are shipped.
 
 ---
 
@@ -202,6 +202,6 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 - **Request/tenant ALS log mixin** — done: `RequestContextLocator` on `platform` + Pino mixin + HTTP access logs in `nest-http`.
 - **Mapper boilerplate reduction** — standard convention now; possible codegen/Cursor skill later.
 - **Extension contexts** (billing, files, webhooks, feature-flags) — follow existing rules when added.
-- **Auth token strategy specifics** (storage, refresh rotation) — **done (ADR-032 / Phase 20).** Web login UI and Bearer `prepareHeaders` remain a frontend follow-up.
+- **Auth token strategy specifics** (storage, refresh rotation) — **done (ADR-032 / Phase 20).** Web login + Bearer `prepareHeaders` are shipped. Logout UI, select-tenant UI, SSO, passkeys, email verification, and MFA remain deferred.
 - **UI component / CSS stack** (Tailwind, Radix, shadcn, tokens, `ThemeProvider`) — package boundary is `ui-kit`; technology is TBD (ADR-030).
 - **CI/CD pipeline** — out of scope for this phase.

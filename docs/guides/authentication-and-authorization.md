@@ -1,6 +1,6 @@
 # Authentication, authorization, and related security
 
-An educational guide. Kit decisions that are **normative** live in [`architecture/authorization.md`](../architecture/authorization.md), [`architecture/multi-tenancy.md`](../architecture/multi-tenancy.md), [`architecture/frontend.md`](../architecture/frontend.md), and [ADR-032](../architecture/decisions.md). This document explains the concepts, the common industry approaches, and how they map onto this repository **today** (Phase 20 backend auth) versus the **web follow-up**.
+An educational guide. Kit decisions that are **normative** live in [`architecture/authorization.md`](../architecture/authorization.md), [`architecture/multi-tenancy.md`](../architecture/multi-tenancy.md), [`architecture/frontend.md`](../architecture/frontend.md), and [ADR-032](../architecture/decisions.md). This document explains the concepts, the common industry approaches, and how they map onto this repository **today** (Phase 20 auth, including the web login slice).
 
 ---
 
@@ -85,9 +85,9 @@ Authentication is a **protocol + storage + edge check**. The rest of the app sho
 - Tenant claim omitted at login unless the user has exactly one active membership. `POST /v1/auth/select-tenant` re-issues the access JWT.
 - Password reset and invitations send through `MailerPort`. Composition binds `SmtpMailer` when `SMTP_HOST` is set; otherwise `LoggingMailer` / `InMemoryMailer` so tests can read tokens. Outbox and HTML templates stay deferred.
 
-**Edge:** `AuthPrincipalInterceptor` prefers `Authorization: Bearer`. In `development`/`test` only, it still accepts `x-user-id` / `x-tenant-id` so `apps/web` and existing header e2e keep working. Production is JWT-only and refuses the development `JWT_ACCESS_SECRET`.
+**Edge:** `AuthPrincipalInterceptor` prefers `Authorization: Bearer`. In `development`/`test` only, it still accepts `x-user-id` / `x-tenant-id` so existing header e2e keep working. Production is JWT-only and refuses the development `JWT_ACCESS_SECRET`.
 
-**Not shipped (web follow-up):** login page, in-memory access token, `prepareHeaders` Bearer, `credentials: 'include'`, 401 → refresh → `clearSession`, hiding the dev principal picker. Controllers, `AuthorizationPort.require`, and `/me` did not change.
+**Shipped on `apps/web`:** `/login` against `POST /v1/auth/web/login`, in-memory `accessToken`, `prepareHeaders` `Authorization: Bearer`, `credentials: 'include'`, 401 → `POST /v1/auth/web/refresh` → retry or `clearSession`. The dev principal picker is removed. Logout UI, select-tenant UI, and register/forgot/reset pages are still deferred. Controllers, `AuthorizationPort.require`, and `/me` did not change.
 
 ### 3.2 Classic approaches (backend)
 
@@ -202,7 +202,7 @@ The browser or native host must (1) obtain a credential, (2) send it on every AP
 
 ### 4.1 What this kit does today
 
-`FrontendApi.prepareHeaders` sets `x-user-id` and `x-tenant-id` from the session slice. `/me` is server-authoritative for profile + **effective permissions**. `401` means “no valid principal,” not “refresh JWT.” Session is in-memory (no `redux-persist` by default). Desktop/mobile hosts load the same web bundle; they must not invent a second auth stack.
+`FrontendApi.prepareHeaders` sets `Authorization: Bearer` from the in-memory session `accessToken`. `/me` is server-authoritative for profile + **effective permissions**. A product-route `401` triggers a single-flight cookie refresh; failure clears the session and the app shows `/login`. Session is in-memory (no `redux-persist` by default). Desktop/mobile hosts load the same web bundle; they must not invent a second auth stack.
 
 ### 4.2 Where to put tokens (web)
 
@@ -227,19 +227,14 @@ Practical SPA recommendation used by many B2B products:
 ### 4.3 `prepareHeaders` vs cookies
 
 ```
-Today (stub)
-  session.userId + session.activeTenantId
-       → x-user-id / x-tenant-id
-
-Tomorrow (planned)
+Today
   accessToken (memory) → Authorization: Bearer
   active tenant        → token claim (authoritative)
-                       → optional x-tenant-id as hint
   401                  → refresh cookie → new access → retry
                        → or clear session and show login
 ```
 
-Do not send both a spoofable `x-user-id` and a JWT in production. The **token** is the identity.
+Do not send a spoofable `x-user-id` with a JWT. The **token** is the identity. API `development`/`test` may still accept header-trust for e2e.
 
 ### 4.4 CORS, cookies, and first-party
 
@@ -383,10 +378,11 @@ Admin/support impersonation (deferred) is a _new principal or a privileged escap
 **Today**
 
 ```
-Web picker → Redux session {userId, tenantId}
-  → RTK Query prepareHeaders
+Login → identity verifies credential
+  → access JWT (sub + tenant when the user has one membership) + refresh cookie
+  → prepareHeaders: Bearer
   → GET /v1/tenants/:id/members
-  → AuthPrincipalInterceptor (Bearer, or headers in development/test)
+  → AuthPrincipalInterceptor (Bearer, or headers in development/test e2e)
   → TenantContext.run
   → RequirePermissionInterceptor (tenancy.members.read)
   → ListTenantMembersQuery.authz.require (same permission)
@@ -395,17 +391,7 @@ Web picker → Redux session {userId, tenantId}
   → useCan hides the page if /me lacked the permission
 ```
 
-**Target (real auth, same middle)**
-
-```
-Login → identity verifies credential
-  → access JWT (sub + tenant after selection) + refresh cookie
-  → prepareHeaders: Bearer
-  → same interceptors, but JWT instead of x-user-id
-  → same AuthorizationPort and UI can()
-```
-
-That is why the stub exists: to prove the **authorization and tenancy** path before investing in credential cryptography.
+Select-tenant UI (multi-membership) and logout UI are still deferred.
 
 ---
 
@@ -458,10 +444,10 @@ That is why the stub exists: to prove the **authorization and tenancy** path bef
 | API identity                                                | `AuthPrincipalInterceptor` (Bearer + non-prod header fallback), `@Public()` from `nest-http`                      |
 | Authn strategies / providers                                | Local password + JWT/refresh (ADR-032). Header-trust remains a non-prod fallback. SSO/passkeys not built. See §14 |
 | Session + `useCan` / `<Can>`                                | `packages/frontend/core`                                                                                          |
-| Header injection                                            | `FrontendApi.prepareHeaders`                                                                                      |
-| Demo picker                                                 | `apps/web` `features/dev-principal` (must not ship as prod login)                                                 |
+| Header injection                                            | `FrontendApi.prepareHeaders` (`Authorization: Bearer`)                                                            |
+| Web login                                                   | `apps/web` `features/auth` + `/login`                                                                             |
 
-**Not built yet (by design):** web login UI / Bearer `prepareHeaders`, MFA, SSO, OIDC/SAML connections, linked identities, extra authn strategies, policy/CASL adapter, RLS, admin impersonation, outbox, HTML email templates.
+**Not built yet (by design):** logout UI, select-tenant UI, register/forgot/reset pages, MFA, SSO, OIDC/SAML connections, linked identities, extra authn strategies, policy/CASL adapter, RLS, admin impersonation, outbox, HTML email templates.
 
 **Now built:** email invitations + accept, attach-existing members, custom-role CRUD, and permission-cache `del` on those writes.
 
@@ -736,7 +722,7 @@ If each of those leaked a different “current user” type into use cases, you 
 | `identity` application + domain         | **Yes** — credentials, linked identities, token issuance | This is the context’s job                                 |
 | `tenancy` / `authorization` / use cases | **No**                                                   | They need `userId` + `tenantId`, not “Google vs password” |
 | `packages/frontend/core`                | Only “session exists” + `/me`                            | Same `prepareHeaders` and `useCan` after any login        |
-| `features/dev-principal`                | Dev-only strategy UI                                     | Must not ship as production login                         |
+| `features/auth`                         | Password login + session restore                         | Must not grow a second auth model per host                |
 
 A useful port shape (not built yet; illustrative):
 

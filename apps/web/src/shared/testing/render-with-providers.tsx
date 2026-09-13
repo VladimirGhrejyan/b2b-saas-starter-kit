@@ -5,6 +5,7 @@ import {Provider} from 'react-redux'
 import {createMemoryRouter, RouterProvider} from 'react-router'
 
 import {configureFrontendCore, createStore, createWebPorts, I18n} from '@b2b-saas-starter-kit/frontend-core'
+import {resetWebAccessTokenRefresh} from '@b2b-saas-starter-kit/frontend-core/testing'
 
 import {loadWebLocaleNamespace} from '../i18n/load-web-locale-namespace'
 
@@ -15,6 +16,7 @@ export async function renderWithProviders(
   options: RenderWithProvidersOptions = {},
 ): Promise<void> {
   cleanup()
+  resetWebAccessTokenRefresh()
 
   const ports = createWebPorts()
 
@@ -27,7 +29,7 @@ export async function renderWithProviders(
   const i18n = await I18n.create({
     defaultLocale: 'en',
     storage: ports.storage,
-    namespaces: ['common', 'tenancy'],
+    namespaces: ['common', 'tenancy', 'auth'],
     loadNamespace: loadWebLocaleNamespace,
   })
   const routes = options.routes ?? [{path: '*', element: ui}]

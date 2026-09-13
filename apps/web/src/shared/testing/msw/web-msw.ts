@@ -3,7 +3,16 @@ import {setupServer} from 'msw/node'
 
 import {HttpStatus} from '@b2b-saas-starter-kit/contracts'
 
-import {forbiddenError, memberMe, ownerMe, ownerMembers, unauthorizedError} from './fixtures'
+import {
+  forbiddenError,
+  invalidCredentialsError,
+  memberAuthSession,
+  memberMe,
+  ownerAuthSession,
+  ownerMe,
+  ownerMembers,
+  unauthorizedError,
+} from './fixtures'
 
 export class WebMsw {
   static readonly server = setupServer()
@@ -32,6 +41,8 @@ export class WebMsw {
     WebMsw.server.use(
       http.get('http://web.test/v1/me', () => HttpResponse.json(ownerMe)),
       http.get('http://web.test/v1/tenants/:tenantId/members', () => HttpResponse.json(ownerMembers)),
+      http.post('http://web.test/v1/auth/web/login', () => HttpResponse.json(ownerAuthSession)),
+      http.post('http://web.test/v1/auth/web/refresh', () => HttpResponse.json(ownerAuthSession)),
     )
   }
 
@@ -41,6 +52,8 @@ export class WebMsw {
       http.get('http://web.test/v1/tenants/:tenantId/members', () =>
         HttpResponse.json(forbiddenError, {status: HttpStatus.FORBIDDEN}),
       ),
+      http.post('http://web.test/v1/auth/web/login', () => HttpResponse.json(memberAuthSession)),
+      http.post('http://web.test/v1/auth/web/refresh', () => HttpResponse.json(memberAuthSession)),
     )
   }
 
@@ -49,6 +62,17 @@ export class WebMsw {
       http.get('http://web.test/v1/me', () => HttpResponse.json(unauthorizedError, {status: HttpStatus.UNAUTHORIZED})),
       http.get('http://web.test/v1/tenants/:tenantId/members', () =>
         HttpResponse.json(unauthorizedError, {status: HttpStatus.UNAUTHORIZED}),
+      ),
+      http.post('http://web.test/v1/auth/web/refresh', () =>
+        HttpResponse.json(unauthorizedError, {status: HttpStatus.UNAUTHORIZED}),
+      ),
+    )
+  }
+
+  static useInvalidLogin(): void {
+    WebMsw.server.use(
+      http.post('http://web.test/v1/auth/web/login', () =>
+        HttpResponse.json(invalidCredentialsError, {status: HttpStatus.UNAUTHORIZED}),
       ),
     )
   }
@@ -59,6 +83,7 @@ export class WebMsw {
       http.get('http://web.test/v1/tenants/:tenantId/members', () =>
         HttpResponse.json(forbiddenError, {status: HttpStatus.FORBIDDEN}),
       ),
+      http.post('http://web.test/v1/auth/web/refresh', () => HttpResponse.json(ownerAuthSession)),
     )
   }
 }

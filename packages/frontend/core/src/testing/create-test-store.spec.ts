@@ -7,6 +7,7 @@ describe('createTestStore', () => {
     const store = createTestStore()
 
     expect(SessionSelectors.state(store.getState())).toEqual({
+      accessToken: null,
       userId: null,
       activeTenantId: null,
       effectivePermissions: [],

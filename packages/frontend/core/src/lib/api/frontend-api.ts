@@ -8,6 +8,10 @@ import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 import {FrontendCoreConfigLocator} from '../../config/frontend-core-config.locator'
 import {SessionSelectors} from '../../session/session.selectors'
 import type {SessionState} from '../../session/session.state'
+import type {AppDispatch} from '../redux/create-store.types'
+
+import {isAuthSessionUrl} from './is-auth-session-url'
+import {restoreWebSession} from './restore-web-session'
 
 export class FrontendApi {
   static readonly baseQuery: BaseQueryFn<string | FetchArgs, unknown, ErrorOutput> = async (
@@ -15,16 +19,34 @@ export class FrontendApi {
     api,
     extraOptions,
   ) => {
-    const result = await fetchBaseQuery({
-      baseUrl: FrontendCoreConfigLocator.get().baseUrl,
-      prepareHeaders: FrontendApi.prepareHeaders,
-    })(args, api, extraOptions)
+    const result = await FrontendApi.fetch(args, api, extraOptions)
 
     if (result.error) {
-      return {
+      const mapped = {
         error: FrontendApi.mapError(result.error),
         meta: result.meta,
       }
+
+      if (mapped.error.code !== 'UNAUTHORIZED' || isAuthSessionUrl(args)) {
+        return mapped
+      }
+
+      const restored = await restoreWebSession(api.dispatch as AppDispatch)
+
+      if (!restored) {
+        return mapped
+      }
+
+      const retry = await FrontendApi.fetch(args, api, extraOptions)
+
+      if (retry.error) {
+        return {
+          error: FrontendApi.mapError(retry.error),
+          meta: retry.meta,
+        }
+      }
+
+      return retry
     }
 
     return result
@@ -39,15 +61,10 @@ export class FrontendApi {
 
   static prepareHeaders(headers: Headers, api: {getState: () => unknown}): Headers {
     const state = api.getState() as {session: SessionState}
-    const userId = SessionSelectors.userId(state)
-    const tenantId = SessionSelectors.activeTenantId(state)
+    const accessToken = SessionSelectors.accessToken(state)
 
-    if (!TypeScriptUtils.isNil(userId)) {
-      headers.set('x-user-id', userId)
-    }
-
-    if (!TypeScriptUtils.isNil(tenantId)) {
-      headers.set('x-tenant-id', tenantId)
+    if (!TypeScriptUtils.isNil(accessToken)) {
+      headers.set('authorization', `Bearer ${accessToken}`)
     }
 
     return headers
@@ -64,6 +81,18 @@ export class FrontendApi {
       code: FrontendApi.errorCode(error.status),
       message: FrontendApi.errorMessage(error),
     }
+  }
+
+  private static fetch(
+    args: string | FetchArgs,
+    api: Parameters<BaseQueryFn<string | FetchArgs, unknown, ErrorOutput>>[1],
+    extraOptions: Parameters<BaseQueryFn<string | FetchArgs, unknown, ErrorOutput>>[2],
+  ) {
+    return fetchBaseQuery({
+      baseUrl: FrontendCoreConfigLocator.get().baseUrl,
+      credentials: 'include',
+      prepareHeaders: FrontendApi.prepareHeaders,
+    })(args, api, extraOptions)
   }
 
   private static errorData(error: FetchBaseQueryError): unknown {

@@ -1,8 +1,8 @@
 import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 
-export function getMeQuery(userId: UserId | null, tenantId: TenantId | null) {
-  if (TypeScriptUtils.isNil(userId) || TypeScriptUtils.isNil(tenantId)) {
+export function getMeQuery(accessToken: string | null, userId: UserId | null, tenantId: TenantId | null) {
+  if (TypeScriptUtils.isNil(accessToken) || TypeScriptUtils.isNil(userId) || TypeScriptUtils.isNil(tenantId)) {
     return {
       skip: true,
       arg: {

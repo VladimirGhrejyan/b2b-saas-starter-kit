@@ -49,7 +49,7 @@ export const membersApi = api.injectEndpoints({
 const canReadMembers = useCan('tenancy.members.read')
 ```
 
-`prepareHeaders` sets `x-user-id` / `x-tenant-id` from session when present. No `Authorization: Bearer`.
+`prepareHeaders` sets `Authorization: Bearer` from the in-memory session `accessToken`. `fetchBaseQuery` uses `credentials: 'include'` so the `Path=/v1/auth` refresh cookie is sent on `/auth/web/*`. A 401 on a product route runs a single-flight `POST /auth/web/refresh` and retries once; failure clears the session.
 
 ## Allowed imports
 
@@ -80,5 +80,5 @@ pnpm nx run frontend-core:test
 - [x] Package at `packages/frontend/core` with tags `scope:frontend`, `layer:frontend-core`
 - [x] `configureFrontendCore` + `createStore` + empty RTK `api`
 - [x] Session slice, `can()` / `useCan` / `<Can>`, web ports
-- [x] Contracts error-envelope mapping; stub principal headers
+- [x] Contracts error-envelope mapping; Bearer `prepareHeaders` + cookie refresh
 - [x] `./testing` (`createTestStore`)

@@ -4,7 +4,7 @@ import {useTranslation} from 'react-i18next'
 
 import {TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import {Button} from '@b2b-saas-starter-kit/ui-kit'
-import {SessionSelectors, setSession, useAppDispatch, useAppSelector} from '@b2b-saas-starter-kit/frontend-core'
+import {patchSession, SessionSelectors, useAppDispatch, useAppSelector} from '@b2b-saas-starter-kit/frontend-core'
 
 import {meApi} from '../api/me-api'
 
@@ -22,8 +22,7 @@ export function TenantSwitcher() {
     }
 
     dispatch(
-      setSession({
-        userId: session.userId,
+      patchSession({
         activeTenantId: parsed.data,
         effectivePermissions: [],
       }),

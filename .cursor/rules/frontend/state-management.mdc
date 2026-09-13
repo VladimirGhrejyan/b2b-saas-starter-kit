@@ -16,7 +16,7 @@ Source of truth: `docs/architecture/frontend.md`, `docs/architecture/authorizati
 | Kind | Tool |
 |------|------|
 | Server state | RTK Query in `frontend-core` + feature endpoint injection |
-| Session (active tenant, stub principal) | Thin RTK slice (`userId`, `activeTenantId`, `effectivePermissions`) |
+| Session (access token, active tenant, permissions) | Thin RTK slice (`accessToken`, `userId`, `activeTenantId`, `effectivePermissions`) |
 | UI-only | Minimal slices via `createStore({extraSlices})` |
 | Wire types | `@b2b-saas-starter-kit/contracts` (not OpenAPI codegen) |
 
@@ -42,10 +42,8 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: getConfig().baseUrl,
     prepareHeaders: (headers, {getState}) => {
-      const userId = selectUserId(getState())
-      const tenantId = selectActiveTenantId(getState())
-      if (userId) headers.set('x-user-id', userId)
-      if (tenantId) headers.set('x-tenant-id', tenantId)
+      const accessToken = selectAccessToken(getState())
+      if (accessToken) headers.set('authorization', `Bearer ${accessToken}`)
       return headers
     },
   }),
@@ -54,7 +52,7 @@ export const api = createApi({
 })
 ```
 
-Stubbed auth uses `x-user-id` / `x-tenant-id` only. Do **not** set `Authorization: Bearer`.
+Access token is in-memory on the session slice. `prepareHeaders` sets `Authorization: Bearer`. Refresh uses the HttpOnly cookie on `POST /auth/web/refresh` (`credentials: 'include'`). Do **not** persist the access token (`redux-persist` / `localStorage`).
 
 ## Feature Endpoints Use Contracts
 
@@ -91,7 +89,7 @@ const canReadMembers = useCan('tenancy.members.read')
 
 On tenant switch: refetch `/me` and invalidate tenant-scoped tags.
 
-HTTP failures map through the contracts `errorOutputSchema` (`code`, `message`, optional `details`). Reuse wire codes (`UNAUTHORIZED`, `INSUFFICIENT_PERMISSION`, `VALIDATION_ERROR`). 401 is a typed error; login redirect is later.
+HTTP failures map through the contracts `errorOutputSchema` (`code`, `message`, optional `details`). Reuse wire codes (`UNAUTHORIZED`, `INSUFFICIENT_PERMISSION`, `VALIDATION_ERROR`). 401 on product routes triggers a single-flight cookie refresh; failure `clearSession`s and the app shows `/login`.
 
 ## Do Not
 
