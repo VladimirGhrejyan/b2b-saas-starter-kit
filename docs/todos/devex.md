@@ -2,19 +2,25 @@
 
 Local quality gates are already in place (ESLint/Prettier, Husky, Commitlint, branch conventions, layered TypeScript, Cursor/Nx skills). This list covers what is still missing for a smooth monorepo DevEx once apps and packages land.
 
+## Done
+
+### CI with `nx affected`
+
+- GitHub Actions: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
+- Always: `format:check`, `lint` (`eslint .`), `nx sync:check`, ESLint plugin tests, `check:node-version`
+- Graph: `pnpm nx affected -t typecheck,test,build` (full `run-many` when there is no previous successful CI run)
+- Compose Postgres/Redis via `pnpm infra:up` so integration specs can run
+- `pnpm nx sync:check` fails the job when TypeScript project references drift
+- Nx Cloud is **not** used (`monitor-ci` stays unused)
+
 ## Do next (highest leverage)
 
-### 1. CI with `nx affected`
-
-- Add GitHub Actions (or equivalent) for PR checks: `lint`, `typecheck`, `test`, `build`
-- Prefer `pnpm nx affected` over full `run-many` so unchanged projects are skipped
-- Align with the CI outline in `docs/nx_guide.md` and the README “Next Steps”
-
-### 2. Nx Cloud
+### 2. Nx Cloud (deferred)
 
 - Enable remote caching so local and CI share task outputs
 - Consider distributed task execution later as the graph grows
 - Pair with the existing `monitor-ci` Cursor skill once Cloud is connected
+- Do **not** share `.nx/cache` via GitHub Actions cache as a substitute (Nx rejects artifacts from other machines)
 
 ### 3. Editor defaults
 
@@ -26,11 +32,6 @@ Local quality gates are already in place (ESLint/Prettier, Husky, Commitlint, br
 
 - Renovate or Dependabot for automated updates (branch exemptions already include `dependabot/**`)
 - pnpm catalogs and/or syncpack so Nest/React/shared packages share Zod, Vitest, TypeScript versions
-
-### 5. `nx sync` / project-reference check in CI
-
-- Fail PRs when TypeScript project references drift
-- Cheap guardrail for the composite / layered `tsconfig` setup
 
 ## Soon after first apps exist
 
@@ -76,8 +77,8 @@ Local quality gates are already in place (ESLint/Prettier, Husky, Commitlint, br
 
 ## Suggested order
 
-1. CI with `nx affected`
-2. Nx Cloud
+1. CI with `nx affected` — done
+2. Nx Cloud (deferred; not required)
 3. VS Code settings / extensions
 4. Renovate (or Dependabot) + syncpack / catalogs
 5. Docker Compose when the first Nest app is generated

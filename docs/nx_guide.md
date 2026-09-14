@@ -1463,35 +1463,48 @@ Nx is designed to make CI fast and efficient.
 
 ### Basic CI Setup
 
-In CI (e.g., GitHub Actions), you want to:
+The live workflow is [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). It runs on pull requests and on pushes to `main`. Nx Cloud is **not** connected.
 
-1. Install dependencies
-2. Run affected tasks (build, test, lint)
-3. Only deploy if affected
+What it does:
 
-**Example GitHub Actions workflow**:
+1. Installs pnpm from `package.json` `packageManager` (Corepack via `pnpm/action-setup`) and Node from `.nvmrc`
+2. `pnpm install --frozen-lockfile`
+3. Starts Postgres and Redis with `pnpm infra:up` (needed for integration specs)
+4. Always runs workspace gates: `format:check`, `lint` (`eslint .`), `nx sync:check`, ESLint plugin tests, `check:node-version`
+5. Runs `pnpm nx affected -t typecheck,test,build` (or `run-many` when `nrwl/nx-set-shas` reports no previous successful run)
+
+`nrwl/nx-set-shas` sets `NX_BASE` / `NX_HEAD`. Lint is workspace-wide (`pnpm lint`) so `scripts/` and `config/` are not skipped; graph tasks are affected-only.
+
+**Shape of the workflow** (see the file for the full YAML):
 
 ```yaml
 name: CI
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches: [main]
 
 jobs:
-  affected:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Needed for Nx affected
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 12.4.1
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4 # version from package.json packageManager
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm nx affected -t build,test,lint --base=origin/main
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm infra:up
+      - uses: nrwl/nx-set-shas@v5
+      - run: pnpm format:check && pnpm lint && pnpm nx sync:check
+      - run: pnpm nx affected -t typecheck,test,build --base="$NX_BASE" --head="$NX_HEAD"
 ```
+
+Do not restore `.nx/cache` with `actions/cache`. Nx 20+ rejects cache artifacts from another machine unless you use Nx Cloud or `@nx/shared-fs-cache`.
 
 ### Why `fetch-depth: 0`?
 
@@ -1499,20 +1512,17 @@ Nx needs git history to compute affected projects. `fetch-depth: 0` fetches all 
 
 ### Caching in CI
 
-Without remote caching:
+This workspace does **not** use Nx Cloud. CI still skips unchanged **projects** via `nx affected`. It does **not** share task outputs between developers and GitHub runners.
 
-- Every CI run rebuilds everything (slow)
+pnpm install is cached with `actions/setup-node` `cache: pnpm`.
 
-With **Nx Cloud** (remote caching):
-
-- If a developer already built a project locally, CI skips it (cache hit)
-- Shared cache across all CI jobs and developers
-
-Setup:
+Nx Cloud (remote task cache, DTE, `monitor-ci`) is optional later:
 
 ```bash
 pnpm exec nx connect
 ```
+
+Do not run that until the team chooses to adopt Cloud.
 
 ### Affected Deployment
 
@@ -1538,7 +1548,7 @@ Nx Cloud can distribute tasks across multiple machines:
 - Each machine runs a subset of tasks
 - Huge speedup for large monorepos
 
-**We haven't set up CI yet**, but Nx makes it straightforward.
+CI is [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). DTE is not enabled (it requires Nx Cloud).
 
 ---
 
