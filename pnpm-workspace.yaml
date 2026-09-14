@@ -42,4 +42,4 @@ allowBuilds:
   '@swc/core': true
   '@scarf/scarf': false
   msw: false
-  argon2: set this to true or false
+  argon2: false

@@ -235,7 +235,7 @@ The root package file.
   "name": "@b2b-saas-starter-kit/source",
   "version": "0.0.0",
   "license": "MIT",
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@12.4.1",
   "engines": {
     "node": ">=24.0.0 <25.0.0"
   },
@@ -254,7 +254,7 @@ The root package file.
 **Key points**:
 
 - `private: true` - This is a monorepo root, not meant to be published
-- `packageManager: "pnpm@11.8.0"` - Explicitly declares PNPM version
+- `packageManager: "pnpm@12.4.1"` - Explicitly declares PNPM version
 - `engines.node` - Requires Node.js 24.x (matches `.nvmrc`)
 - Official Nx plugins installed: `@nx/js`, `@nx/nest`, `@nx/react`, `@nx/vite`
 
@@ -1484,7 +1484,7 @@ jobs:
           fetch-depth: 0 # Needed for Nx affected
       - uses: pnpm/action-setup@v2
         with:
-          version: 11.8.0
+          version: 12.4.1
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
@@ -2039,7 +2039,7 @@ The `.nx/cache` folder is gitignored. Don't commit it.
 Ensure consistent versions across team and CI:
 
 - Node.js 24.19.0 (from `.nvmrc`)
-- PNPM 11.8.0 (from `package.json` `packageManager`)
+- PNPM 12.4.1 (from `package.json` `packageManager`)
 
 **Solution**: Use `nvm use` and respect the `packageManager` field.
 
@@ -2061,7 +2061,7 @@ pnpm exec nx --version
 node --version  # Should be 24.19.0
 
 # Check PNPM version
-pnpm --version  # Should be 11.8.0
+pnpm --version  # Should be 12.4.1
 
 # List all projects (currently empty)
 pnpm nx show projects
@@ -2231,7 +2231,7 @@ This Nx workspace is now ready for building a B2B SaaS starter kit.
 **Key takeaways**:
 
 1. **Nx orchestrates** the monorepo, providing caching, affected analysis, and task graphs
-2. **PNPM manages** packages and workspace linking (version 11.8.0)
+2. **PNPM manages** packages and workspace linking (version 12.4.1)
 3. **Node.js 24 LTS** is the active LTS version for production use
 4. **TypeScript** provides type safety with project references
 5. **Official plugins** (`@nx/nest`, `@nx/react`, `@nx/vite`) enable future app generation
@@ -2261,4 +2261,4 @@ This Nx workspace is now ready for building a B2B SaaS starter kit.
 
 ---
 
-_This guide was created on August 16, 2026 for Nx v23.1.1, Node.js 24.19.0, and PNPM 11.8.0._
+_This guide was created on August 16, 2026 for Nx v23.1.1, Node.js 24.19.0, and PNPM 12.4.1._

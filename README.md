@@ -20,7 +20,7 @@ The workspace is currently **empty by design**. No applications or libraries hav
 **Environment:**
 
 - Node.js 24.x LTS (Active LTS)
-- PNPM 11.8.0 (package manager)
+- PNPM 12.4.1 (package manager)
 - Nx 23.1.1 (monorepo orchestration)
 
 **Future Stack:**
@@ -41,10 +41,11 @@ The workspace is currently **empty by design**. No applications or libraries hav
 
    This reads the version from `.nvmrc` and activates Node.js 24.19.0.
 
-2. **Install PNPM 11.8.0:**
+2. **Enable PNPM via Corepack** (reads `packageManager` from `package.json`):
 
    ```bash
-   npm install -g pnpm@11.8.0
+   corepack enable
+   corepack prepare pnpm@12.4.1 --activate
    ```
 
 3. **Install dependencies:**
