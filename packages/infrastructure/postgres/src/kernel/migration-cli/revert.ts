@@ -1,9 +1,9 @@
 import 'reflect-metadata'
 
-import {TypeormMigrationRunner} from './migration-runner'
+import {TypeormMigrationRunner} from '../data-source/migration-runner'
 
 try {
-  await TypeormMigrationRunner.run()
+  await TypeormMigrationRunner.revert()
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`)
   process.exitCode = 1

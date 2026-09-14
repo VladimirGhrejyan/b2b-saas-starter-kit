@@ -2,7 +2,8 @@ import type {DataSource} from 'typeorm'
 
 import {loadPostgresConfigFromEnv} from '../config/load-postgres-config'
 import type {PostgresConfig} from '../config/postgres-config'
-import {createDataSource} from '../data-source/create-data-source'
+
+import {createDataSource} from './create-data-source'
 
 /**
  * Runs or reverts the TypeORM migration set registered on {@link createDataSource}.

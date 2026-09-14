@@ -6,19 +6,20 @@ Related: [`backend.md`](./backend.md) (layers), [`multi-tenancy.md`](./multi-ten
 
 ## Where everything lives
 
-| Artifact                             | Location                                                       | Layer          |
-| ------------------------------------ | -------------------------------------------------------------- | -------------- |
-| Repository **ports** (interfaces)    | `domain/<context>/ports`                                       | domain         |
-| Domain models (aggregates/VOs)       | `domain/<context>`                                             | domain         |
-| TypeORM **entities** (`*.entity.ts`) | `infrastructure/postgres/src/contexts/<context>/entities`      | infrastructure |
-| **Mappers** (entity ↔ domain)       | `infrastructure/postgres/src/contexts/<context>/mappers`       | infrastructure |
-| Repository **implementations**       | `infrastructure/postgres/src/contexts/<context>/repositories`  | infrastructure |
-| `DataSource` / TypeORM config        | `packages/infrastructure/postgres/src/kernel/data-source`      | infrastructure |
-| **Migrations** (single global set)   | `packages/infrastructure/postgres/src/kernel/migrations`       | infrastructure |
-| Tenant-aware **base repository**     | `packages/infrastructure/postgres/src/kernel/persistence`      | infrastructure |
-| DI **tokens** (`DATA_SOURCE`, …)     | `packages/infrastructure/postgres/src/kernel/tokens.ts`        | infrastructure |
-| `UnitOfWork` **port**                | `platform`                                                     | platform       |
-| `UnitOfWork` **implementation**      | `packages/infrastructure/postgres` (`TypeormUnitOfWork` + ALS) | infrastructure |
+| Artifact                                      | Location                                                       | Layer          |
+| --------------------------------------------- | -------------------------------------------------------------- | -------------- |
+| Repository **ports** (interfaces)             | `domain/<context>/ports`                                       | domain         |
+| Domain models (aggregates/VOs)                | `domain/<context>`                                             | domain         |
+| TypeORM **entities** (`*.entity.ts`)          | `infrastructure/postgres/src/contexts/<context>/entities`      | infrastructure |
+| **Mappers** (entity ↔ domain)                | `infrastructure/postgres/src/contexts/<context>/mappers`       | infrastructure |
+| Repository **implementations**                | `infrastructure/postgres/src/contexts/<context>/repositories`  | infrastructure |
+| `DataSource` / TypeORM config                 | `packages/infrastructure/postgres/src/kernel/data-source`      | infrastructure |
+| **Migrations** (single global set)            | `packages/infrastructure/postgres/src/kernel/migrations`       | infrastructure |
+| Migration CLI (Nx create/generate/run/revert) | `packages/infrastructure/postgres/src/kernel/migration-cli`    | infrastructure |
+| Tenant-aware **base repository**              | `packages/infrastructure/postgres/src/kernel/persistence`      | infrastructure |
+| DI **tokens** (`DATA_SOURCE`, …)              | `packages/infrastructure/postgres/src/kernel/tokens.ts`        | infrastructure |
+| `UnitOfWork` **port**                         | `platform`                                                     | platform       |
+| `UnitOfWork` **implementation**               | `packages/infrastructure/postgres` (`TypeormUnitOfWork` + ALS) | infrastructure |
 
 **Dependency direction:** `infrastructure/postgres` → `domain` (implements its ports) + `application` + `platform`. The domain never sees TypeORM.
 

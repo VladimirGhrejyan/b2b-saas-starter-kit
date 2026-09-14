@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url'
  * `generate` loads the DataSource lazily so `create` does not import entities.
  */
 export class TypeormMigrationCli {
-  static readonly #migrationsDir = fileURLToPath(new URL('.', import.meta.url))
+  static readonly #migrationsDir = fileURLToPath(new URL('../migrations/', import.meta.url))
 
   static readonly #namePattern = /^(identity|tenancy|authorization|audit|notifications)-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 

@@ -21,7 +21,8 @@ Source of truth: `docs/architecture/persistence.md`.
 | Domain models | `packages/domain/<context>` |
 | TypeORM entities + mappers + repo impls | `packages/infrastructure/postgres/src/contexts/<context>` |
 | Migrations (global) | `packages/infrastructure/postgres/src/kernel/migrations` |
-| `DataSource` manager + factory | `packages/infrastructure/postgres/src/kernel/data-source` |
+| Migration CLI | `packages/infrastructure/postgres/src/kernel/migration-cli` |
+| `DataSource` manager + factory + runner | `packages/infrastructure/postgres/src/kernel/data-source` |
 | DI tokens (`DATA_SOURCE`, `UNIT_OF_WORK`, `TENANT_CONTEXT`, `CLOCK`, `ID_GENERATOR`) | `packages/infrastructure/postgres/src/kernel/tokens.ts` |
 | `UnitOfWork` port | `packages/platform` |
 | `UnitOfWork` impl (`TypeormUnitOfWork` + ALS) | `packages/infrastructure/postgres/src/kernel/persistence` |

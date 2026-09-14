@@ -28,7 +28,7 @@
       "migration:create": {
         "executor": "nx:run-commands",
         "options": {
-          "command": "pnpm exec node --import @swc-node/register/esm-register src/kernel/migrations/create.ts",
+          "command": "pnpm exec node --import @swc-node/register/esm-register src/kernel/migration-cli/create.ts",
           "cwd": "{projectRoot}",
           "env": {
             "SWC_NODE_PROJECT": "tsconfig.lib.json"
@@ -38,7 +38,7 @@
       "migration:generate": {
         "executor": "nx:run-commands",
         "options": {
-          "command": "pnpm exec node --import @swc-node/register/esm-register src/kernel/migrations/generate.ts",
+          "command": "pnpm exec node --import @swc-node/register/esm-register src/kernel/migration-cli/generate.ts",
           "cwd": "{projectRoot}",
           "env": {
             "SWC_NODE_PROJECT": "tsconfig.lib.json"
@@ -48,7 +48,7 @@
       "migration:run": {
         "executor": "nx:run-commands",
         "options": {
-          "command": "pnpm exec node --import @swc-node/register/esm-register src/kernel/migrations/run.ts",
+          "command": "pnpm exec node --import @swc-node/register/esm-register src/kernel/migration-cli/run.ts",
           "cwd": "{projectRoot}",
           "env": {
             "SWC_NODE_PROJECT": "tsconfig.lib.json"
@@ -58,7 +58,7 @@
       "migration:revert": {
         "executor": "nx:run-commands",
         "options": {
-          "command": "pnpm exec node --import @swc-node/register/esm-register src/kernel/migrations/revert.ts",
+          "command": "pnpm exec node --import @swc-node/register/esm-register src/kernel/migration-cli/revert.ts",
           "cwd": "{projectRoot}",
           "env": {
             "SWC_NODE_PROJECT": "tsconfig.lib.json"

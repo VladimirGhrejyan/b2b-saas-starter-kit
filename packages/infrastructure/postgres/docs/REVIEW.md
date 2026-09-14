@@ -70,7 +70,7 @@ But `findByTenant(tenantId)` already binds `:tenantId` to its argument, then `sc
 
 ### 8. Migration "no migrations" detection is string/locale-brittle — Low, Improvement
 
-`src/kernel/migrations/migration-runner.ts` `#isNoMigrationsError` matches `/no (executed )?migrations/i` on the error message. Fine now, but it will break silently on a TypeORM message change. Consider asserting on structure where possible, or centralizing this as a known-fragile spot with a test.
+`src/kernel/data-source/migration-runner.ts` `#isNoMigrationsError` matches `/no (executed )?migrations/i` on the error message. Fine now, but it will break silently on a TypeORM message change. Consider asserting on structure where possible, or centralizing this as a known-fragile spot with a test.
 
 ## Improvements
 
