@@ -5,6 +5,9 @@ packages:
   - 'packages/frontend/*'
   - 'apps/*'
 
+# pnpm 12 defaults to a 24h hold. Frozen CI then fails when the lockfile
+# pins packages published less than a day ago (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION).
+minimumReleaseAge: 0
 autoInstallPeers: true
 # Remove once nestjs-zod 5.x publishes Nest 12 peers (https://github.com/BenLorantfy/nestjs-zod/issues/471).
 packageExtensions:
