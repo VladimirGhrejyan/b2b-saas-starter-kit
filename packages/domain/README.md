@@ -71,7 +71,7 @@ const owner = Membership.createOwner(membershipId, tenantId, userId, ownerRole.i
 | `Role` / `RoleRepository`             | Tenant-scoped permission bundle + port     |
 | `User` / `UserRepository`             | Global identity + port                     |
 | `Tenant` / `TenantRepository`         | Organization + port                        |
-| `Membership` / `MembershipRepository` | User↔tenant link + port                   |
+| `Membership` / `MembershipRepository` | User↔tenant link + port                    |
 
 ## Must not go here yet
 

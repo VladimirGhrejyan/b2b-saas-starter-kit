@@ -299,9 +299,7 @@ Both backends use similar TypeScript patterns:
     "strictBindCallApply": false, // ⚠️ Disabled
     "skipLibCheck": true,
     "baseUrl": "./",
-    "paths": {
-      /* layer-specific aliases */
-    }
+    "paths": {/* layer-specific aliases */}
   }
 }
 ```

@@ -11,7 +11,7 @@ Related: [`backend.md`](./backend.md) (layers), [`multi-tenancy.md`](./multi-ten
 | Repository **ports** (interfaces)             | `domain/<context>/ports`                                       | domain         |
 | Domain models (aggregates/VOs)                | `domain/<context>`                                             | domain         |
 | TypeORM **entities** (`*.entity.ts`)          | `infrastructure/postgres/src/contexts/<context>/entities`      | infrastructure |
-| **Mappers** (entity ↔ domain)                | `infrastructure/postgres/src/contexts/<context>/mappers`       | infrastructure |
+| **Mappers** (entity ↔ domain)                 | `infrastructure/postgres/src/contexts/<context>/mappers`       | infrastructure |
 | Repository **implementations**                | `infrastructure/postgres/src/contexts/<context>/repositories`  | infrastructure |
 | `DataSource` / TypeORM config                 | `packages/infrastructure/postgres/src/kernel/data-source`      | infrastructure |
 | **Migrations** (single global set)            | `packages/infrastructure/postgres/src/kernel/migrations`       | infrastructure |

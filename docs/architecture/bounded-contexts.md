@@ -9,7 +9,7 @@ The kit ships **five** generic contexts. Fine-grained granularity was chosen del
 | Context           | Owns                        | Core aggregates / concepts                                                  |
 | ----------------- | --------------------------- | --------------------------------------------------------------------------- |
 | **identity**      | Authentication & the person | `User`, credentials, sessions/tokens, email verification, password reset    |
-| **tenancy**       | Organizations & belonging   | `Tenant` (organization), `Membership` (User↔Tenant link), invitations      |
+| **tenancy**       | Organizations & belonging   | `Tenant` (organization), `Membership` (User↔Tenant link), invitations       |
 | **authorization** | Access rules                | `Role`, `Permission`, role assignments, policies (RBAC + resource policies) |
 | **audit**         | Who did what                | `AuditEvent` (append-only), audit trail queries                             |
 | **notifications** | Reaching users              | `Notification`, channels (email/in-app), templates, delivery status         |
