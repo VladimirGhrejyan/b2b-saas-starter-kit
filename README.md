@@ -53,6 +53,16 @@ The workspace is currently **empty by design**. No applications or libraries hav
    pnpm install
    ```
 
+### Fork into your product
+
+After cloning, rename kit branding and the npm scope in one step:
+
+```bash
+pnpm init:product --scope=@acme --name="Acme Cloud" --prefix=ACME --yes --install
+```
+
+Use `--dry-run` first to preview. Pass `--skip-docs` to keep architecture docs on kit wording. Then review the diff, set secrets in `infra/env/.env`, and run `pnpm nx sync`.
+
 ### Workspace Structure
 
 ```
