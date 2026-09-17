@@ -1,12 +1,13 @@
 import type {InvitationId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {AggregateRoot} from '../shared-kernel/aggregate-root'
-import {Guard} from '../shared-kernel/guard'
+import {normalizeEmail} from '../shared-kernel/email'
 
 import {EmptyMembershipRolesError} from './errors/empty-membership-roles.error'
 import {InvalidInvitationEmailError} from './errors/invalid-invitation-email.error'
 import {InvitationAlreadyConsumedError} from './errors/invitation-already-consumed.error'
 import {InvitationExpiredError} from './errors/invitation-expired.error'
+import type {TenancyDomainEvent} from './events/tenancy.events'
 import type {InvitationReconstituteProps} from './invitation.types'
 
 /**
@@ -14,7 +15,7 @@ import type {InvitationReconstituteProps} from './invitation.types'
  *
  * A membership is created only when the invitation is consumed.
  */
-export class Invitation extends AggregateRoot<InvitationId> {
+export class Invitation extends AggregateRoot<InvitationId, TenancyDomainEvent> {
   readonly tenantId: TenantId
 
   readonly email: string
@@ -69,7 +70,7 @@ export class Invitation extends AggregateRoot<InvitationId> {
     const invitation = new Invitation(
       id,
       tenantId,
-      Invitation.#normalizeEmail(email),
+      normalizeEmail(email, () => new InvalidInvitationEmailError()),
       Invitation.#normalizeRoleIds(roleIds),
       tokenHash,
       expiresAt,
@@ -138,18 +139,6 @@ export class Invitation extends AggregateRoot<InvitationId> {
 
   isActive(now: Date): boolean {
     return this.#consumedAt === undefined && this.expiresAt.getTime() > now.getTime()
-  }
-
-  static #normalizeEmail(email: string): string {
-    Guard.againstEmpty(email, new InvalidInvitationEmailError())
-
-    const normalized = email.trim().toLowerCase()
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-      throw new InvalidInvitationEmailError()
-    }
-
-    return normalized
   }
 
   static #normalizeRoleIds(roleIds: readonly RoleId[]): RoleId[] {

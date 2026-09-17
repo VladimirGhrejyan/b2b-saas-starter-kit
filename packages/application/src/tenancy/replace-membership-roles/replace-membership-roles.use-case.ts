@@ -3,9 +3,10 @@ import {Injectable} from '@nestjs/common'
 import type {MembershipRepository, RoleRepository} from '@b2b-saas-starter-kit/domain'
 import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
 
-import type {Clock, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {Clock, EventPublisher, UnitOfWork} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {LastOwnerRequiredError} from '../errors/last-owner-required.error'
 import {MembershipNotFoundError} from '../errors/membership-not-found.error'
 import {OwnerRole} from '../owner-role'
@@ -23,12 +24,14 @@ export class ReplaceMembershipRolesUseCase {
     private readonly authz: AuthorizationPort,
     private readonly memberships: MembershipRepository,
     private readonly roles: RoleRepository,
+    private readonly events: EventPublisher,
   ) {}
 
   async execute(command: ReplaceMembershipRolesCommand): Promise<ReplaceMembershipRolesResult> {
     await this.authz.require(command.actorId, PermissionCatalog.tenancyMembersManage, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
+      const collector = new DomainEventCollector()
       const membership = await this.memberships.findById(command.membershipId)
 
       if (membership === null || membership.tenantId !== command.tenantId) {
@@ -53,6 +56,8 @@ export class ReplaceMembershipRolesUseCase {
 
       membership.replaceRoleIds(command.roleIds, this.clock.now())
       await this.memberships.save(membership)
+      collector.collect(membership)
+      await collector.publish(this.events)
       await this.authz.invalidate(membership.userId, command.tenantId)
 
       return {membershipId: membership.id, roleIds: membership.roleIds}

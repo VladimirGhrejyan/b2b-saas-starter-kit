@@ -1,5 +1,8 @@
 export {CompositionModule} from './composition.module'
 export {AssertActiveMembership} from './principal/assert-active-membership'
+export {WorkerModule} from './worker/worker.module'
+export type {WorkerOutboxConfig} from './worker/worker-outbox-config.token'
+export {WORKER_OUTBOX_CONFIG} from './worker/worker-outbox-config.token'
 export {
   AcceptInvitationUseCase,
   AttachMemberUseCase,

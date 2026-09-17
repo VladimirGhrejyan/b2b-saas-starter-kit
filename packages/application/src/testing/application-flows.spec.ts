@@ -19,6 +19,7 @@ import {InMemoryRoleRepository} from './in-memory-role.repository'
 import {InMemoryTenantRepository} from './in-memory-tenant.repository'
 import {InMemoryUnitOfWork} from './in-memory-unit-of-work'
 import {InMemoryUserRepository} from './in-memory-user.repository'
+import {RecordingEventPublisher} from './recording-event-publisher'
 import {SequentialIdGenerator} from './sequential-id-generator'
 
 const OCCURRED_AT = new Date('2026-01-01T00:00:00.000Z')
@@ -40,8 +41,9 @@ function createFlow() {
     new InMemoryCache(),
     memberships,
   )
-  const createUser = new CreateUserUseCase(uow, clock, ids, users)
-  const createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships)
+  const events = new RecordingEventPublisher()
+  const createUser = new CreateUserUseCase(uow, clock, ids, users, events)
+  const createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships, events)
   const listMembers = new ListTenantMembersQuery(authz, memberships, users)
   const getMyProfile = new GetMyProfileQuery(users, memberships, authz)
 

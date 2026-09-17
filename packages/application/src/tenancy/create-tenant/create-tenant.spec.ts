@@ -10,6 +10,7 @@ import {InMemoryRoleRepository} from '../../testing/in-memory-role.repository'
 import {InMemoryTenantRepository} from '../../testing/in-memory-tenant.repository'
 import {InMemoryUnitOfWork} from '../../testing/in-memory-unit-of-work'
 import {InMemoryUserRepository} from '../../testing/in-memory-user.repository'
+import {RecordingEventPublisher} from '../../testing/recording-event-publisher'
 import {SequentialIdGenerator} from '../../testing/sequential-id-generator'
 import {OwnerUserNotFoundError} from '../errors/owner-user-not-found.error'
 
@@ -25,6 +26,7 @@ function createUseCase() {
   const tenants = new InMemoryTenantRepository()
   const roles = new InMemoryRoleRepository()
   const memberships = new InMemoryMembershipRepository()
+  const events = new RecordingEventPublisher()
   const createTenant = new CreateTenantUseCase(
     new InMemoryUnitOfWork(users, tenants, roles, memberships),
     new FixedClock(OCCURRED_AT),
@@ -33,9 +35,10 @@ function createUseCase() {
     tenants,
     roles,
     memberships,
+    events,
   )
 
-  return {users, tenants, roles, memberships, createTenant}
+  return {users, tenants, roles, memberships, createTenant, events}
 }
 
 describe('CreateTenantUseCase', () => {
@@ -61,6 +64,22 @@ describe('CreateTenantUseCase', () => {
     expect(ownerMembership?.userId).toBe(OWNER_ID)
     expect(ownerMembership?.roleIds).toEqual([result.roleIds.owner])
     expect(ownerMembership?.status).toBe('active')
+  })
+
+  it('publishes tenant, role, and membership domain events', async () => {
+    const {users, createTenant, events} = createUseCase()
+
+    await users.save(User.create(OWNER_ID, 'ada@example.com', 'Ada', OCCURRED_AT))
+
+    await createTenant.execute({name: 'Acme', ownerUserId: OWNER_ID})
+
+    expect(events.published.map((event) => event.type)).toEqual([
+      'TenantCreated',
+      'RoleCreated',
+      'RoleCreated',
+      'RoleCreated',
+      'MembershipCreated',
+    ])
   })
 
   it('throws and persists nothing when the owner user is missing', async () => {

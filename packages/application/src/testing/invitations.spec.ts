@@ -27,6 +27,7 @@ import {InMemoryRoleRepository} from './in-memory-role.repository'
 import {InMemoryTokenDigest} from './in-memory-token-digest'
 import {InMemoryUnitOfWork} from './in-memory-unit-of-work'
 import {InMemoryUserRepository} from './in-memory-user.repository'
+import {RecordingEventPublisher} from './recording-event-publisher'
 import {SequentialIdGenerator} from './sequential-id-generator'
 
 const OCCURRED_AT = new Date('2026-01-01T00:00:00.000Z')
@@ -55,6 +56,7 @@ async function createHarness() {
   const ids = new SequentialIdGenerator()
   const uow = new InMemoryUnitOfWork(users, passwords, memberships, roles, invitations)
   const authz = new AuthorizationService(roles, new MembershipRolesService(memberships), cache, memberships)
+  const events = new RecordingEventPublisher()
   const invite = new InviteMemberUseCase(
     uow,
     new FixedClock(OCCURRED_AT),
@@ -66,6 +68,7 @@ async function createHarness() {
     memberships,
     roles,
     invitations,
+    events,
   )
   const accept = new AcceptInvitationUseCase(
     uow,
@@ -78,9 +81,26 @@ async function createHarness() {
     passwords,
     memberships,
     invitations,
+    events,
   )
-  const attach = new AttachMemberUseCase(uow, new FixedClock(OCCURRED_AT), ids, authz, users, memberships, roles)
-  const replaceRoles = new ReplaceMembershipRolesUseCase(uow, new FixedClock(OCCURRED_AT), authz, memberships, roles)
+  const attach = new AttachMemberUseCase(
+    uow,
+    new FixedClock(OCCURRED_AT),
+    ids,
+    authz,
+    users,
+    memberships,
+    roles,
+    events,
+  )
+  const replaceRoles = new ReplaceMembershipRolesUseCase(
+    uow,
+    new FixedClock(OCCURRED_AT),
+    authz,
+    memberships,
+    roles,
+    events,
+  )
 
   await users.save(User.create(OWNER_ID, 'owner@example.com', 'Owner', OCCURRED_AT))
   await roles.save(Role.createSystemRole(OWNER_ROLE_ID, TENANT_ID, 'Owner', OCCURRED_AT))

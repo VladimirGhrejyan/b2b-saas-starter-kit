@@ -2,12 +2,14 @@ import {Module} from '@nestjs/common'
 
 import type {
   Clock,
+  EventPublisher,
   IdGenerator,
   MailerPort,
   PasswordHasher,
   TokenDigest,
   UnitOfWork,
 } from '@b2b-saas-starter-kit/platform'
+import {EVENT_PUBLISHER} from '@b2b-saas-starter-kit/platform'
 
 import {
   CreateUserUseCase,
@@ -54,9 +56,14 @@ import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
     },
     {
       provide: CreateUserUseCase,
-      useFactory: (uow: UnitOfWork, clock: Clock, ids: IdGenerator, users: TypeOrmUserRepository) =>
-        new CreateUserUseCase(uow, clock, ids, users),
-      inject: [UNIT_OF_WORK, CLOCK, ID_GENERATOR, TypeOrmUserRepository],
+      useFactory: (
+        uow: UnitOfWork,
+        clock: Clock,
+        ids: IdGenerator,
+        users: TypeOrmUserRepository,
+        events: EventPublisher,
+      ) => new CreateUserUseCase(uow, clock, ids, users, events),
+      inject: [UNIT_OF_WORK, CLOCK, ID_GENERATOR, TypeOrmUserRepository, EVENT_PUBLISHER],
     },
     {
       provide: RegisterUserUseCase,
@@ -67,7 +74,8 @@ import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
         hasher: PasswordHasher,
         users: TypeOrmUserRepository,
         passwords: TypeOrmLocalPasswordRepository,
-      ) => new RegisterUserUseCase(uow, clock, ids, hasher, users, passwords),
+        events: EventPublisher,
+      ) => new RegisterUserUseCase(uow, clock, ids, hasher, users, passwords, events),
       inject: [
         UNIT_OF_WORK,
         CLOCK,
@@ -75,6 +83,7 @@ import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
         PASSWORD_HASHER,
         TypeOrmUserRepository,
         TypeOrmLocalPasswordRepository,
+        EVENT_PUBLISHER,
       ],
     },
     {

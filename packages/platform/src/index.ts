@@ -1,6 +1,11 @@
 export type {CachePort} from './cache/cache.port'
 export {CacheKey} from './cache/cache-key'
 export type {Clock} from './clock/clock.port'
+export {EVENT_BUS, EVENT_PUBLISHER} from './events/event.tokens'
+export type {DomainEventHandler, EventBus} from './events/event-bus.port'
+export type {EventPublisher} from './events/event-publisher.port'
+export {InProcessEventBus} from './events/in-process-event-bus'
+export type {IntegrationEvent} from './events/integration-event'
 export {HttpAbortedError} from './http-client/http-aborted.error'
 export type {HttpClientPort} from './http-client/http-client.port'
 export type {

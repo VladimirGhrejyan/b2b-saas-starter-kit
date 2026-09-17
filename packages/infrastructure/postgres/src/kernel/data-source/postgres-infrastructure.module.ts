@@ -1,6 +1,10 @@
 import type {DynamicModule} from '@nestjs/common'
 import {Module} from '@nestjs/common'
 
+import {EVENT_BUS, EVENT_PUBLISHER, InProcessEventBus} from '@b2b-saas-starter-kit/platform'
+
+import {OutboxRelay} from '../outbox/outbox-relay'
+import {PostgresEventPublisher} from '../outbox/postgres-event-publisher'
 import {TypeormUnitOfWork} from '../persistence/unit-of-work'
 import {AlsTenantContext} from '../tenant-context/tenant-context'
 import {DATA_SOURCE, POSTGRES_CONFIG, TENANT_CONTEXT, UNIT_OF_WORK} from '../tokens'
@@ -39,6 +43,17 @@ export class PostgresInfrastructureModule {
           provide: UNIT_OF_WORK,
           useExisting: TypeormUnitOfWork,
         },
+        InProcessEventBus,
+        {
+          provide: EVENT_BUS,
+          useExisting: InProcessEventBus,
+        },
+        PostgresEventPublisher,
+        {
+          provide: EVENT_PUBLISHER,
+          useExisting: PostgresEventPublisher,
+        },
+        OutboxRelay,
       ],
       exports: [
         POSTGRES_CONFIG,
@@ -48,6 +63,9 @@ export class PostgresInfrastructureModule {
         TENANT_CONTEXT,
         TypeormUnitOfWork,
         UNIT_OF_WORK,
+        EVENT_BUS,
+        EVENT_PUBLISHER,
+        OutboxRelay,
       ],
     }
   }

@@ -1,4 +1,6 @@
-import type {DomainEvent} from './domain-event'
+import type {DomainEvent} from '../domain-events'
+
+import type {DomainEventBase} from './domain-event-base'
 import {Entity} from './entity'
 
 /**
@@ -8,15 +10,15 @@ import {Entity} from './entity'
  * Use cases persist the aggregate, then {@link AggregateRoot.pullEvents} and
  * dispatch — the aggregate never talks to a bus.
  */
-export class AggregateRoot<TId> extends Entity<TId> {
-  #events: DomainEvent[] = []
+export class AggregateRoot<TId, TEvent extends DomainEventBase = DomainEvent> extends Entity<TId> {
+  #events: TEvent[] = []
 
   /**
    * Appends an uncommitted domain event.
    *
    * @param event - Event that already happened (`occurredAt` must be set by the caller).
    */
-  protected record(event: DomainEvent): void {
+  protected record(event: TEvent): void {
     this.#events.push(event)
   }
 
@@ -25,7 +27,7 @@ export class AggregateRoot<TId> extends Entity<TId> {
    *
    * @returns Recorded events in insertion order.
    */
-  pullEvents(): DomainEvent[] {
+  pullEvents(): TEvent[] {
     const events = [...this.#events]
 
     this.#events = []

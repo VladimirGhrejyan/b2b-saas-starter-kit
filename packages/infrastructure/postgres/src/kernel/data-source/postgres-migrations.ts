@@ -4,6 +4,7 @@ import {TenancyCreateTenantsAndMemberships1787745264237} from '../migrations/178
 import {IdentityCreateCredentials1787745264238} from '../migrations/1787745264238-identity-create-credentials'
 import {TenancyCreateInvitations1787745264239} from '../migrations/1787745264239-tenancy-create-invitations'
 import {AuthorizationBackfillAdminPermissions1787745264240} from '../migrations/1787745264240-authorization-backfill-admin-permissions'
+import {KernelCreateOutbox1787745264241} from '../migrations/1787745264241-kernel-create-outbox'
 
 import type {DataSourceClass} from './create-data-source.types'
 
@@ -17,4 +18,5 @@ export const postgresMigrations: DataSourceClass[] = [
   IdentityCreateCredentials1787745264238,
   TenancyCreateInvitations1787745264239,
   AuthorizationBackfillAdminPermissions1787745264240,
+  KernelCreateOutbox1787745264241,
 ]

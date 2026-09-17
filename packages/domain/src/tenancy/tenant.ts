@@ -7,12 +7,13 @@ import {Guard} from '../shared-kernel/guard'
 import {InvalidTenantNameError} from './errors/invalid-tenant-name.error'
 import {TenantAlreadyActiveError} from './errors/tenant-already-active.error'
 import {TenantAlreadySuspendedError} from './errors/tenant-already-suspended.error'
+import type {TenancyDomainEvent} from './events/tenancy.events'
 import type {TenantReconstituteProps} from './tenant.types'
 
 /**
  * Organization / workspace. Memberships are a separate aggregate.
  */
-export class Tenant extends AggregateRoot<TenantId> {
+export class Tenant extends AggregateRoot<TenantId, TenancyDomainEvent> {
   #name: string
 
   #status: TenantStatus

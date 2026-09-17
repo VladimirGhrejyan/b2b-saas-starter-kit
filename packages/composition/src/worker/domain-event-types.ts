@@ -1,0 +1,18 @@
+export const DOMAIN_EVENT_TYPES = [
+  'UserCreated',
+  'UserSuspended',
+  'UserActivated',
+  'TenantCreated',
+  'TenantRenamed',
+  'TenantSuspended',
+  'TenantActivated',
+  'MembershipCreated',
+  'MembershipRolesReplaced',
+  'MembershipActivated',
+  'MembershipSuspended',
+  'InvitationCreated',
+  'InvitationConsumed',
+  'RoleCreated',
+  'RoleRenamed',
+  'RolePermissionsReplaced',
+] as const

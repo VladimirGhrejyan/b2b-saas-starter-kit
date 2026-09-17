@@ -3,9 +3,10 @@ import {Injectable} from '@nestjs/common'
 import type {RoleRepository} from '@b2b-saas-starter-kit/domain'
 import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
 
-import type {Clock, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {Clock, EventPublisher, UnitOfWork} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {RoleNotFoundError} from '../../shared/errors/role-not-found.error'
 import {RoleNameTakenError} from '../errors/role-name-taken.error'
 
@@ -21,12 +22,14 @@ export class UpdateCustomRoleUseCase {
     private readonly clock: Clock,
     private readonly authz: AuthorizationPort,
     private readonly roles: RoleRepository,
+    private readonly events: EventPublisher,
   ) {}
 
   async execute(command: UpdateCustomRoleCommand): Promise<UpdateCustomRoleResult> {
     await this.authz.require(command.actorId, PermissionCatalog.authorizationRolesManage, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
+      const collector = new DomainEventCollector()
       const role = await this.roles.findById(command.roleId)
 
       if (role === null || role.tenantId !== command.tenantId) {
@@ -51,6 +54,8 @@ export class UpdateCustomRoleUseCase {
       }
 
       await this.roles.save(role)
+      collector.collect(role)
+      await collector.publish(this.events)
       await this.authz.invalidateHoldersOf(role.id, command.tenantId)
 
       return {

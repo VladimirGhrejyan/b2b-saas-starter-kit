@@ -2,18 +2,20 @@ import type {UserId, UserStatus} from '@b2b-saas-starter-kit/shared-kernel-types
 import {UserStatus as UserStatusEnum} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {AggregateRoot} from '../shared-kernel/aggregate-root'
+import {normalizeEmail} from '../shared-kernel/email'
 import {Guard} from '../shared-kernel/guard'
 
 import {InvalidUserDisplayNameError} from './errors/invalid-user-display-name.error'
 import {InvalidUserEmailError} from './errors/invalid-user-email.error'
 import {UserAlreadyActiveError} from './errors/user-already-active.error'
 import {UserAlreadySuspendedError} from './errors/user-already-suspended.error'
+import type {IdentityDomainEvent} from './events/identity.events'
 import type {UserReconstituteProps} from './user.types'
 
 /**
  * Global identity. No tenant, no credentials.
  */
-export class User extends AggregateRoot<UserId> {
+export class User extends AggregateRoot<UserId, IdentityDomainEvent> {
   readonly email: string
 
   readonly displayName: string
@@ -37,7 +39,7 @@ export class User extends AggregateRoot<UserId> {
   static create(id: UserId, email: string, displayName: string, occurredAt: Date): User {
     const user = new User(
       id,
-      User.#normalizeEmail(email),
+      normalizeEmail(email, () => new InvalidUserEmailError()),
       User.#normalizeDisplayName(displayName),
       UserStatusEnum.parse('active'),
     )
@@ -91,18 +93,6 @@ export class User extends AggregateRoot<UserId> {
       occurredAt,
       userId: this.id,
     })
-  }
-
-  static #normalizeEmail(email: string): string {
-    Guard.againstEmpty(email, new InvalidUserEmailError())
-
-    const normalized = email.trim().toLowerCase()
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-      throw new InvalidUserEmailError()
-    }
-
-    return normalized
   }
 
   static #normalizeDisplayName(displayName: string): string {

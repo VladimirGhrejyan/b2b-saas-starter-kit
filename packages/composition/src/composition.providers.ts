@@ -3,12 +3,14 @@ import type {Provider} from '@nestjs/common'
 import type {
   CachePort,
   Clock,
+  EventPublisher,
   IdGenerator,
   MailerPort,
   PasswordHasher,
   TokenDigest,
   UnitOfWork,
 } from '@b2b-saas-starter-kit/platform'
+import {EVENT_PUBLISHER} from '@b2b-saas-starter-kit/platform'
 
 import {
   AcceptInvitationUseCase,
@@ -65,7 +67,8 @@ export const compositionProviders: Provider[] = [
       tenants: TypeOrmTenantRepository,
       roles: TypeOrmRoleRepository,
       memberships: TypeOrmMembershipRepository,
-    ) => new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships),
+      events: EventPublisher,
+    ) => new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships, events),
     inject: [
       UNIT_OF_WORK,
       CLOCK,
@@ -74,6 +77,7 @@ export const compositionProviders: Provider[] = [
       TypeOrmTenantRepository,
       TypeOrmRoleRepository,
       TypeOrmMembershipRepository,
+      EVENT_PUBLISHER,
     ],
   },
   {
@@ -106,7 +110,9 @@ export const compositionProviders: Provider[] = [
       memberships: TypeOrmMembershipRepository,
       roles: TypeOrmRoleRepository,
       invitations: TypeOrmInvitationRepository,
-    ) => new InviteMemberUseCase(uow, clock, ids, digest, mailer, authz, users, memberships, roles, invitations),
+      events: EventPublisher,
+    ) =>
+      new InviteMemberUseCase(uow, clock, ids, digest, mailer, authz, users, memberships, roles, invitations, events),
     inject: [
       UNIT_OF_WORK,
       CLOCK,
@@ -118,6 +124,7 @@ export const compositionProviders: Provider[] = [
       TypeOrmMembershipRepository,
       TypeOrmRoleRepository,
       TypeOrmInvitationRepository,
+      EVENT_PUBLISHER,
     ],
   },
   {
@@ -133,8 +140,21 @@ export const compositionProviders: Provider[] = [
       passwords: TypeOrmLocalPasswordRepository,
       memberships: TypeOrmMembershipRepository,
       invitations: TypeOrmInvitationRepository,
+      events: EventPublisher,
     ) =>
-      new AcceptInvitationUseCase(uow, clock, ids, hasher, digest, authz, users, passwords, memberships, invitations),
+      new AcceptInvitationUseCase(
+        uow,
+        clock,
+        ids,
+        hasher,
+        digest,
+        authz,
+        users,
+        passwords,
+        memberships,
+        invitations,
+        events,
+      ),
     inject: [
       UNIT_OF_WORK,
       CLOCK,
@@ -146,6 +166,7 @@ export const compositionProviders: Provider[] = [
       TypeOrmLocalPasswordRepository,
       TypeOrmMembershipRepository,
       TypeOrmInvitationRepository,
+      EVENT_PUBLISHER,
     ],
   },
   {
@@ -158,7 +179,8 @@ export const compositionProviders: Provider[] = [
       users: TypeOrmUserRepository,
       memberships: TypeOrmMembershipRepository,
       roles: TypeOrmRoleRepository,
-    ) => new AttachMemberUseCase(uow, clock, ids, authz, users, memberships, roles),
+      events: EventPublisher,
+    ) => new AttachMemberUseCase(uow, clock, ids, authz, users, memberships, roles, events),
     inject: [
       UNIT_OF_WORK,
       CLOCK,
@@ -167,6 +189,7 @@ export const compositionProviders: Provider[] = [
       TypeOrmUserRepository,
       TypeOrmMembershipRepository,
       TypeOrmRoleRepository,
+      EVENT_PUBLISHER,
     ],
   },
   {
@@ -177,8 +200,16 @@ export const compositionProviders: Provider[] = [
       authz: AuthorizationService,
       memberships: TypeOrmMembershipRepository,
       roles: TypeOrmRoleRepository,
-    ) => new ReplaceMembershipRolesUseCase(uow, clock, authz, memberships, roles),
-    inject: [UNIT_OF_WORK, CLOCK, AuthorizationService, TypeOrmMembershipRepository, TypeOrmRoleRepository],
+      events: EventPublisher,
+    ) => new ReplaceMembershipRolesUseCase(uow, clock, authz, memberships, roles, events),
+    inject: [
+      UNIT_OF_WORK,
+      CLOCK,
+      AuthorizationService,
+      TypeOrmMembershipRepository,
+      TypeOrmRoleRepository,
+      EVENT_PUBLISHER,
+    ],
   },
   {
     provide: ListRolesQuery,
@@ -193,14 +224,20 @@ export const compositionProviders: Provider[] = [
       ids: IdGenerator,
       authz: AuthorizationService,
       roles: TypeOrmRoleRepository,
-    ) => new CreateCustomRoleUseCase(uow, clock, ids, authz, roles),
-    inject: [UNIT_OF_WORK, CLOCK, ID_GENERATOR, AuthorizationService, TypeOrmRoleRepository],
+      events: EventPublisher,
+    ) => new CreateCustomRoleUseCase(uow, clock, ids, authz, roles, events),
+    inject: [UNIT_OF_WORK, CLOCK, ID_GENERATOR, AuthorizationService, TypeOrmRoleRepository, EVENT_PUBLISHER],
   },
   {
     provide: UpdateCustomRoleUseCase,
-    useFactory: (uow: UnitOfWork, clock: Clock, authz: AuthorizationService, roles: TypeOrmRoleRepository) =>
-      new UpdateCustomRoleUseCase(uow, clock, authz, roles),
-    inject: [UNIT_OF_WORK, CLOCK, AuthorizationService, TypeOrmRoleRepository],
+    useFactory: (
+      uow: UnitOfWork,
+      clock: Clock,
+      authz: AuthorizationService,
+      roles: TypeOrmRoleRepository,
+      events: EventPublisher,
+    ) => new UpdateCustomRoleUseCase(uow, clock, authz, roles, events),
+    inject: [UNIT_OF_WORK, CLOCK, AuthorizationService, TypeOrmRoleRepository, EVENT_PUBLISHER],
   },
   {
     provide: DeleteCustomRoleUseCase,

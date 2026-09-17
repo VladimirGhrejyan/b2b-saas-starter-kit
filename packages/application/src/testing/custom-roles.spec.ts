@@ -17,6 +17,7 @@ import {InMemoryMembershipRepository} from './in-memory-membership.repository'
 import {InMemoryRoleRepository} from './in-memory-role.repository'
 import {InMemoryUnitOfWork} from './in-memory-unit-of-work'
 import {InMemoryUserRepository} from './in-memory-user.repository'
+import {RecordingEventPublisher} from './recording-event-publisher'
 import {SequentialIdGenerator} from './sequential-id-generator'
 
 function membershipRolesFrom(memberships: InMemoryMembershipRepository): MembershipRolesPort {
@@ -49,8 +50,9 @@ async function createHarness() {
   const ids = new SequentialIdGenerator()
   const uow = new InMemoryUnitOfWork(users, memberships, roles)
   const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache, memberships)
-  const createRole = new CreateCustomRoleUseCase(uow, new FixedClock(OCCURRED_AT), ids, authz, roles)
-  const updateRole = new UpdateCustomRoleUseCase(uow, new FixedClock(OCCURRED_AT), authz, roles)
+  const events = new RecordingEventPublisher()
+  const createRole = new CreateCustomRoleUseCase(uow, new FixedClock(OCCURRED_AT), ids, authz, roles, events)
+  const updateRole = new UpdateCustomRoleUseCase(uow, new FixedClock(OCCURRED_AT), authz, roles, events)
 
   await users.save(User.create(OWNER_ID, 'owner@example.com', 'Owner', OCCURRED_AT))
   await users.save(User.create(ADMIN_ID, 'admin@example.com', 'Admin', OCCURRED_AT))

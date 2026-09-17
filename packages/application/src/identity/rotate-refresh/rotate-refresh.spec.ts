@@ -8,6 +8,7 @@ import {InMemoryRefreshSessionRepository} from '../../testing/in-memory-refresh-
 import {InMemoryTokenDigest} from '../../testing/in-memory-token-digest'
 import {InMemoryUnitOfWork} from '../../testing/in-memory-unit-of-work'
 import {InMemoryUserRepository} from '../../testing/in-memory-user.repository'
+import {RecordingEventPublisher} from '../../testing/recording-event-publisher'
 import {SequentialIdGenerator} from '../../testing/sequential-id-generator'
 import {InvalidRefreshTokenError} from '../errors/invalid-refresh-token.error'
 import {LoginUseCase} from '../login/login.use-case'
@@ -26,7 +27,15 @@ function createHarness() {
   const digest = new InMemoryTokenDigest()
   const ids = new SequentialIdGenerator()
   const uow = new InMemoryUnitOfWork(users, passwords, sessions, memberships)
-  const register = new RegisterUserUseCase(uow, new FixedClock(OCCURRED_AT), ids, hasher, users, passwords)
+  const register = new RegisterUserUseCase(
+    uow,
+    new FixedClock(OCCURRED_AT),
+    ids,
+    hasher,
+    users,
+    passwords,
+    new RecordingEventPublisher(),
+  )
   const login = new LoginUseCase(
     uow,
     new FixedClock(OCCURRED_AT),

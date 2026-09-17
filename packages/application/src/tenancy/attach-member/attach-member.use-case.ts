@@ -5,9 +5,10 @@ import {MembershipId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {MembershipRepository, RoleRepository, UserRepository} from '@b2b-saas-starter-kit/domain'
 import {Membership, PermissionCatalog} from '@b2b-saas-starter-kit/domain'
 
-import type {Clock, IdGenerator, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {Clock, EventPublisher, IdGenerator, UnitOfWork} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {UserNotFoundError} from '../../shared/errors/user-not-found.error'
 import {MembershipAlreadyExistsError} from '../errors/membership-already-exists.error'
 import {OwnerRole} from '../owner-role'
@@ -27,12 +28,14 @@ export class AttachMemberUseCase {
     private readonly users: UserRepository,
     private readonly memberships: MembershipRepository,
     private readonly roles: RoleRepository,
+    private readonly events: EventPublisher,
   ) {}
 
   async execute(command: AttachMemberCommand): Promise<AttachMemberResult> {
     await this.authz.require(command.actorId, PermissionCatalog.tenancyMembersManage, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
+      const collector = new DomainEventCollector()
       const user = await this.users.findById(command.userId)
 
       if (user === null) {
@@ -56,6 +59,8 @@ export class AttachMemberUseCase {
       )
 
       await this.memberships.save(membership)
+      collector.collect(membership)
+      await collector.publish(this.events)
       await this.authz.invalidate(command.userId, command.tenantId)
 
       return {membershipId: membership.id}

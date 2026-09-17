@@ -10,9 +10,17 @@ import type {
 } from '@b2b-saas-starter-kit/domain'
 import {LocalPassword, Membership, User} from '@b2b-saas-starter-kit/domain'
 
-import type {Clock, IdGenerator, PasswordHasher, TokenDigest, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {
+  Clock,
+  EventPublisher,
+  IdGenerator,
+  PasswordHasher,
+  TokenDigest,
+  UnitOfWork,
+} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {InvalidPasswordError} from '../../shared/errors/invalid-password.error'
 import {MIN_PASSWORD_LENGTH} from '../../shared/password.constants'
 import {InvalidInvitationTokenError} from '../errors/invalid-invitation-token.error'
@@ -37,10 +45,12 @@ export class AcceptInvitationUseCase {
     private readonly passwords: LocalPasswordRepository,
     private readonly memberships: MembershipRepository,
     private readonly invitations: InvitationRepository,
+    private readonly events: EventPublisher,
   ) {}
 
   async execute(command: AcceptInvitationCommand): Promise<AcceptInvitationResult> {
     return this.uow.run(async () => {
+      const collector = new DomainEventCollector()
       const now = this.clock.now()
       const invitation = await this.invitations.findByTokenHash(this.digest.digest(command.token))
 
@@ -61,6 +71,7 @@ export class AcceptInvitationUseCase {
 
         user = User.create(UserId.parse(this.ids.generate()), invitation.email, command.displayName, now)
         await this.users.save(user)
+        collector.collect(user)
         await this.passwords.save(LocalPassword.create(user.id, await this.hasher.hash(command.password)))
       }
 
@@ -81,6 +92,8 @@ export class AcceptInvitationUseCase {
       invitation.consume(now)
       await this.memberships.save(membership)
       await this.invitations.save(invitation)
+      collector.collect(membership, invitation)
+      await collector.publish(this.events)
       await this.authz.invalidate(user.id, invitation.tenantId)
 
       return {userId: user.id, membershipId: membership.id, tenantId: invitation.tenantId}

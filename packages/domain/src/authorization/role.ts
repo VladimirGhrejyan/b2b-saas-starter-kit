@@ -7,6 +7,7 @@ import {EmptyRolePermissionsError} from './errors/empty-role-permissions.error'
 import {InvalidRoleNameError} from './errors/invalid-role-name.error'
 import {ReservedRoleNameError} from './errors/reserved-role-name.error'
 import {SystemRoleImmutableError} from './errors/system-role-immutable.error'
+import type {AuthorizationDomainEvent} from './events/authorization.events'
 import {PermissionCatalog} from './permission-catalog'
 import type {RoleReconstituteProps} from './role.types'
 import {SystemRoles} from './system-roles'
@@ -18,7 +19,7 @@ import {type SystemRoleName, SystemRoleNames} from './system-roles.types'
  * System roles (`Owner` / `Admin` / `Member`) are seeded per tenant. `create` is
  * the seam for custom roles.
  */
-export class Role extends AggregateRoot<RoleId> {
+export class Role extends AggregateRoot<RoleId, AuthorizationDomainEvent> {
   readonly tenantId: TenantId
 
   readonly isSystem: boolean

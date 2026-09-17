@@ -54,7 +54,7 @@ export class PostgresTestContext {
 
   async truncateFoundationTables(): Promise<void> {
     await this.dataSource.query(
-      'TRUNCATE invitation_roles, invitations, membership_roles, memberships, role_permissions, roles, tenants, password_reset_tokens, refresh_sessions, user_local_passwords, users RESTART IDENTITY CASCADE',
+      'TRUNCATE outbox, invitation_roles, invitations, membership_roles, memberships, role_permissions, roles, tenants, password_reset_tokens, refresh_sessions, user_local_passwords, users RESTART IDENTITY CASCADE',
     )
   }
 

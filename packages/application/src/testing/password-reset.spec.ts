@@ -19,6 +19,7 @@ import {InMemoryRefreshSessionRepository} from './in-memory-refresh-session.repo
 import {InMemoryTokenDigest} from './in-memory-token-digest'
 import {InMemoryUnitOfWork} from './in-memory-unit-of-work'
 import {InMemoryUserRepository} from './in-memory-user.repository'
+import {RecordingEventPublisher} from './recording-event-publisher'
 import {SequentialIdGenerator} from './sequential-id-generator'
 
 const OCCURRED_AT = new Date('2026-01-01T00:00:00.000Z')
@@ -34,7 +35,15 @@ function createHarness() {
   const mailer = new InMemoryMailer()
   const ids = new SequentialIdGenerator()
   const uow = new InMemoryUnitOfWork(users, passwords, sessions, resetTokens, memberships)
-  const register = new RegisterUserUseCase(uow, new FixedClock(OCCURRED_AT), ids, hasher, users, passwords)
+  const register = new RegisterUserUseCase(
+    uow,
+    new FixedClock(OCCURRED_AT),
+    ids,
+    hasher,
+    users,
+    passwords,
+    new RecordingEventPublisher(),
+  )
   const login = new LoginUseCase(
     uow,
     new FixedClock(OCCURRED_AT),

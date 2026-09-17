@@ -6,12 +6,13 @@ import {AggregateRoot} from '../shared-kernel/aggregate-root'
 import {EmptyMembershipRolesError} from './errors/empty-membership-roles.error'
 import {MembershipAlreadyActiveError} from './errors/membership-already-active.error'
 import {MembershipAlreadySuspendedError} from './errors/membership-already-suspended.error'
+import type {TenancyDomainEvent} from './events/tenancy.events'
 import type {MembershipReconstituteProps} from './membership.types'
 
 /**
  * User↔tenant link with tenant-scoped role ids. Does not import User or Role.
  */
-export class Membership extends AggregateRoot<MembershipId> {
+export class Membership extends AggregateRoot<MembershipId, TenancyDomainEvent> {
   readonly tenantId: TenantId
 
   readonly userId: UserId

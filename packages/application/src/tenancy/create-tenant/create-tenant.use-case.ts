@@ -5,8 +5,9 @@ import {MembershipId, RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kerne
 import type {MembershipRepository, RoleRepository, TenantRepository, UserRepository} from '@b2b-saas-starter-kit/domain'
 import {Membership, Role, SystemRoleNames, Tenant} from '@b2b-saas-starter-kit/domain'
 
-import type {Clock, IdGenerator, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {Clock, EventPublisher, IdGenerator, UnitOfWork} from '@b2b-saas-starter-kit/platform'
 
+import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {OwnerUserNotFoundError} from '../errors/owner-user-not-found.error'
 
 import type {CreateTenantCommand, CreateTenantResult} from './create-tenant.types'
@@ -24,10 +25,12 @@ export class CreateTenantUseCase {
     private readonly tenants: TenantRepository,
     private readonly roles: RoleRepository,
     private readonly memberships: MembershipRepository,
+    private readonly events: EventPublisher,
   ) {}
 
   async execute(command: CreateTenantCommand): Promise<CreateTenantResult> {
     return this.uow.run(async () => {
+      const collector = new DomainEventCollector()
       const owner = await this.users.findById(command.ownerUserId)
 
       if (owner === null) {
@@ -38,12 +41,14 @@ export class CreateTenantUseCase {
       const tenant = Tenant.create(TenantId.parse(this.ids.generate()), command.name, occurredAt)
 
       await this.tenants.save(tenant)
+      collector.collect(tenant)
 
       const seededRoles = SystemRoleNames.map((name) =>
         Role.createSystemRole(RoleId.parse(this.ids.generate()), tenant.id, name, occurredAt),
       )
 
       await this.roles.saveMany(seededRoles)
+      collector.collect(...seededRoles)
 
       const ownerRole = seededRoles.find((role) => role.name === 'Owner')
       const adminRole = seededRoles.find((role) => role.name === 'Admin')
@@ -62,6 +67,8 @@ export class CreateTenantUseCase {
       )
 
       await this.memberships.save(membership)
+      collector.collect(membership)
+      await collector.publish(this.events)
 
       return {
         tenantId: tenant.id,

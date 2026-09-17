@@ -5,6 +5,7 @@ import {InMemoryLocalPasswordRepository} from '../../testing/in-memory-local-pas
 import {InMemoryPasswordHasher} from '../../testing/in-memory-password-hasher'
 import {InMemoryUnitOfWork} from '../../testing/in-memory-unit-of-work'
 import {InMemoryUserRepository} from '../../testing/in-memory-user.repository'
+import {RecordingEventPublisher} from '../../testing/recording-event-publisher'
 import {SequentialIdGenerator} from '../../testing/sequential-id-generator'
 import {InvalidPasswordError} from '../errors/invalid-password.error'
 import {UserEmailTakenError} from '../errors/user-email-taken.error'
@@ -24,6 +25,7 @@ function createUseCase() {
     hasher,
     users,
     passwords,
+    new RecordingEventPublisher(),
   )
 
   return {users, passwords, hasher, useCase}

@@ -61,11 +61,11 @@ const owner = Membership.createOwner(membershipId, tenantId, userId, ownerRole.i
 | Export                                | Role                                       |
 | ------------------------------------- | ------------------------------------------ |
 | `Entity<TId>`                         | Identity + `equals`                        |
-| `AggregateRoot<TId>`                  | `record` / `pullEvents`                    |
-| `DomainEvent`                         | `{type, occurredAt}` plus payload          |
+| `AggregateRoot<TId, TEvent>`          | `record` / `pullEvents`                    |
+| `DomainEvent`                         | Typed union per bounded context            |
 | `DomainError`                         | Typed invariant failure (`code` + message) |
 | `Guard`                               | `againstEmpty` / `againstNil`              |
-| `Result`                              | `ok` / `fail` / `isOk` / `isFail`          |
+| `normalizeEmail`                      | Shared email trim/lowercase/validate       |
 | `PermissionCatalog`                   | Fixed `context.resource.action` constants  |
 | `SystemRoles`                         | Owner / Admin / Member permission bundles  |
 | `Role` / `RoleRepository`             | Tenant-scoped permission bundle + port     |
@@ -91,10 +91,10 @@ pnpm nx run domain:lint
 ## Phase 2 Definition of Done
 
 - [x] Package at `packages/domain` with tags `scope:backend`, `layer:domain`
-- [x] `Entity`, `AggregateRoot`, `DomainEvent`, `Result`, `Guard`, `DomainError`
+- [x] `Entity`, `AggregateRoot`, `DomainEvent`, `Guard`, `DomainError`
 - [x] Depends only on `@b2b-saas-starter-kit/shared-kernel-types`
 - [x] Domain-purity `no-restricted-imports` enabled
-- [x] Unit tests for Result, event collection, Entity, Guard, DomainError
+- [x] Unit tests for event collection, Entity, Guard, DomainError, email normalization
 
 ## Phase 4 Definition of Done
 

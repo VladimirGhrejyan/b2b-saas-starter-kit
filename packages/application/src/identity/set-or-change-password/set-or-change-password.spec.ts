@@ -11,6 +11,7 @@ import {InMemoryRefreshSessionRepository} from '../../testing/in-memory-refresh-
 import {InMemoryTokenDigest} from '../../testing/in-memory-token-digest'
 import {InMemoryUnitOfWork} from '../../testing/in-memory-unit-of-work'
 import {InMemoryUserRepository} from '../../testing/in-memory-user.repository'
+import {RecordingEventPublisher} from '../../testing/recording-event-publisher'
 import {SequentialIdGenerator} from '../../testing/sequential-id-generator'
 import {CreateUserUseCase} from '../create-user/create-user.use-case'
 import {InvalidCredentialsError} from '../errors/invalid-credentials.error'
@@ -35,8 +36,9 @@ function createHarness() {
   const ids = new SequentialIdGenerator()
   const uow = new InMemoryUnitOfWork(users, passwords, sessions, memberships)
   const clock = new FixedClock(OCCURRED_AT)
-  const createUser = new CreateUserUseCase(uow, clock, ids, users)
-  const register = new RegisterUserUseCase(uow, clock, ids, hasher, users, passwords)
+  const events = new RecordingEventPublisher()
+  const createUser = new CreateUserUseCase(uow, clock, ids, users, events)
+  const register = new RegisterUserUseCase(uow, clock, ids, hasher, users, passwords, events)
   const login = new LoginUseCase(uow, clock, ids, hasher, digest, users, passwords, sessions, memberships)
   const rotate = new RotateRefreshUseCase(uow, clock, ids, digest, sessions)
   const setOrChange = new SetOrChangePasswordUseCase(uow, clock, hasher, users, passwords, sessions)

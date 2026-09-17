@@ -10,9 +10,17 @@ import type {
 } from '@b2b-saas-starter-kit/domain'
 import {Invitation, PermissionCatalog} from '@b2b-saas-starter-kit/domain'
 
-import type {Clock, IdGenerator, MailerPort, TokenDigest, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import type {
+  Clock,
+  EventPublisher,
+  IdGenerator,
+  MailerPort,
+  TokenDigest,
+  UnitOfWork,
+} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {InvitationAlreadyPendingError} from '../errors/invitation-already-pending.error'
 import {MembershipAlreadyExistsError} from '../errors/membership-already-exists.error'
 import {INVITATION_TTL_MS} from '../invitation.constants'
@@ -36,12 +44,14 @@ export class InviteMemberUseCase {
     private readonly memberships: MembershipRepository,
     private readonly roles: RoleRepository,
     private readonly invitations: InvitationRepository,
+    private readonly events: EventPublisher,
   ) {}
 
   async execute(command: InviteMemberCommand): Promise<InviteMemberResult> {
     await this.authz.require(command.actorId, PermissionCatalog.tenancyMembersInvite, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
+      const collector = new DomainEventCollector()
       const email = command.email.trim().toLowerCase()
       const now = this.clock.now()
 
@@ -81,6 +91,8 @@ export class InviteMemberUseCase {
       )
 
       await this.invitations.save(invitation)
+      collector.collect(invitation)
+      await collector.publish(this.events)
       await this.mailer.send({
         to: email,
         subject: 'Tenant invitation',

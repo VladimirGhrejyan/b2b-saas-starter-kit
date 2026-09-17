@@ -3,6 +3,7 @@ import {describe, expect, it} from 'vitest'
 import {FixedClock} from '../../testing/fixed-clock'
 import {InMemoryUnitOfWork} from '../../testing/in-memory-unit-of-work'
 import {InMemoryUserRepository} from '../../testing/in-memory-user.repository'
+import {RecordingEventPublisher} from '../../testing/recording-event-publisher'
 import {SequentialIdGenerator} from '../../testing/sequential-id-generator'
 import {UserEmailTakenError} from '../errors/user-email-taken.error'
 
@@ -17,6 +18,7 @@ function createUseCase() {
     new FixedClock(OCCURRED_AT),
     new SequentialIdGenerator(),
     users,
+    new RecordingEventPublisher(),
   )
 
   return {users, useCase}

@@ -18,6 +18,7 @@ import {TypeOrmRoleRepository} from '../contexts/authorization/repositories/type
 import {TypeOrmUserRepository} from '../contexts/identity/repositories/typeorm-user.repository'
 import {TypeOrmMembershipRepository} from '../contexts/tenancy/repositories/typeorm-membership.repository'
 import {TypeOrmTenantRepository} from '../contexts/tenancy/repositories/typeorm-tenant.repository'
+import {PostgresEventPublisher} from '../kernel/outbox/postgres-event-publisher'
 import {TypeormUnitOfWork} from '../kernel/persistence/unit-of-work'
 import {AlsTenantContext} from '../kernel/tenant-context/tenant-context'
 
@@ -47,8 +48,10 @@ describe('AuthorizationService through TypeORM repositories', () => {
     const clock = new SystemClock()
     const ids = new UuidV7IdGenerator()
 
-    createUser = new CreateUserUseCase(uow, clock, ids, users)
-    createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships)
+    const events = new PostgresEventPublisher()
+
+    createUser = new CreateUserUseCase(uow, clock, ids, users, events)
+    createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships, events)
     authz = new AuthorizationService(roles, new MembershipRolesService(memberships), new InMemoryCache(), memberships)
   })
 
