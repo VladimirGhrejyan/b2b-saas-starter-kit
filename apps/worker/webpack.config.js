@@ -1,6 +1,8 @@
 const {NxAppWebpackPlugin} = require('@nx/webpack/app-plugin')
 const {join} = require('path')
 
+const {createNodeNativeIgnorePlugins, nodeNativeExternals} = require('../../config/webpack/node-native-externals')
+
 module.exports = {
   output: {
     path: join(__dirname, 'dist'),
@@ -9,13 +11,16 @@ module.exports = {
       devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     }),
   },
+  externals: [nodeNativeExternals],
   plugins: [
+    ...createNodeNativeIgnorePlugins(),
     new NxAppWebpackPlugin({
       target: 'node',
       compiler: 'swc',
       main: './src/main.ts',
       tsConfig: './tsconfig.app.json',
       assets: ['./src/assets'],
+      mergeExternals: true,
       optimization: false,
       outputHashing: 'none',
       generatePackageJson: false,

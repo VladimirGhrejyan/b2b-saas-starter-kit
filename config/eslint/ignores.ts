@@ -20,6 +20,7 @@ export class EslintIgnores {
       '**/*.gen.ts',
       'eslint.config.mts',
       '**/webpack.config.js',
+      'config/webpack/**',
     ],
   }
 }
