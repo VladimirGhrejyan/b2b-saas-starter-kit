@@ -1,4 +1,4 @@
-name: CI
+name: Main CI
 
 on:
   pull_request:
@@ -21,17 +21,17 @@ jobs:
       NX_DAEMON: 'false'
       HUSKY: '0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           filter: tree:0
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           run_install: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: '.nvmrc'
           cache: pnpm
@@ -58,7 +58,9 @@ jobs:
         uses: nrwl/nx-set-shas@v5
         with:
           main-branch-name: main
+          workflow-id: main-ci.yml
 
+      - run: pnpm nx show projects > /dev/null
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm nx sync:check

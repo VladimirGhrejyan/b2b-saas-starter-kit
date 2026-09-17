@@ -1,8 +1,6 @@
 import path from 'node:path'
 
-const FSD_LAYERS = ['shared', 'features', 'pages', 'app'] as const
-
-export type FsdLayer = (typeof FSD_LAYERS)[number]
+export type FsdLayer = 'shared' | 'features' | 'pages' | 'app'
 
 const LAYER_RANK: Record<FsdLayer, number> = {
   shared: 0,

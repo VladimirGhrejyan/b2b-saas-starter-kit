@@ -6,7 +6,7 @@ Local quality gates are already in place (ESLint/Prettier, Husky, Commitlint, br
 
 ### CI with `nx affected`
 
-- GitHub Actions: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
+- GitHub Actions: [`.github/workflows/main-ci.yml`](../../.github/workflows/main-ci.yml)
 - Always: `format:check`, `lint` (`eslint .`), `nx sync:check`, ESLint plugin tests, `check:node-version`
 - Graph: `pnpm nx affected -t typecheck,test,build` (full `run-many` when there is no previous successful CI run)
 - Compose Postgres/Redis via `pnpm infra:up` so integration specs can run

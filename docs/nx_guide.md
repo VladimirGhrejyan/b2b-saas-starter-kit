@@ -1463,7 +1463,7 @@ Nx is designed to make CI fast and efficient.
 
 ### Basic CI Setup
 
-The live workflow is [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). It runs on pull requests and on pushes to `main`. Nx Cloud is **not** connected.
+The live workflow is [`.github/workflows/main-ci.yml`](../.github/workflows/main-ci.yml). It runs on pull requests and on pushes to `main`. Nx Cloud is **not** connected.
 
 What it does:
 
@@ -1478,7 +1478,7 @@ What it does:
 **Shape of the workflow** (see the file for the full YAML):
 
 ```yaml
-name: CI
+name: Main CI
 on:
   pull_request:
   push:
@@ -1488,18 +1488,20 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Needed for Nx affected
           persist-credentials: false
-      - uses: pnpm/action-setup@v4 # version from package.json packageManager
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6 # version from package.json packageManager
+      - uses: actions/setup-node@v5
         with:
           node-version-file: '.nvmrc'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm infra:up
       - uses: nrwl/nx-set-shas@v5
+        with:
+          workflow-id: main-ci.yml
       - run: pnpm format:check && pnpm lint && pnpm nx sync:check
       - run: pnpm nx affected -t typecheck,test,build --base="$NX_BASE" --head="$NX_HEAD"
 ```
@@ -1548,7 +1550,7 @@ Nx Cloud can distribute tasks across multiple machines:
 - Each machine runs a subset of tasks
 - Huge speedup for large monorepos
 
-CI is [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). DTE is not enabled (it requires Nx Cloud).
+CI is [`.github/workflows/main-ci.yml`](../.github/workflows/main-ci.yml). DTE is not enabled (it requires Nx Cloud).
 
 ---
 

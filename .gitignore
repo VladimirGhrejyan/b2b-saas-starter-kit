@@ -8,7 +8,7 @@ node_modules
 dist
 tmp
 out-tsc
-build
+/build
 coverage
 *.tsbuildinfo
 **/*.gen.ts

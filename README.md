@@ -242,7 +242,7 @@ This workspace is configured with the Nx MCP server and AI agent skills for enha
 4. **Generate applications** — Create backend and frontend apps when ready
 5. **Create more shared libraries** — `packages/shared/contracts` and `packages/shared/kernel-types` (config already at `packages/shared/config`)
 6. **Tighten ESLint TODOs** — Enable package tags / context-isolation once projects exist
-7. **CI** — GitHub Actions in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (no Nx Cloud). PRs run workspace lint/format/sync plus `nx affected` for typecheck, test, and build.
+7. **CI** — GitHub Actions in [`.github/workflows/main-ci.yml`](.github/workflows/main-ci.yml) (no Nx Cloud). PRs run workspace lint/format/sync plus `nx affected` for typecheck, test, and build.
 
 ## Learn More
 
