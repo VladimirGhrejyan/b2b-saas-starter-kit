@@ -4,10 +4,10 @@ import {Reflector} from '@nestjs/core'
 import type {Observable} from 'rxjs'
 import {from, lastValueFrom} from 'rxjs'
 
-import {LoggerLocator} from '@b2b-saas-starter-kit/logger'
+import type {RateLimiterPort} from '@b2b-saas-starter-kit/platform'
+import {CacheKey, RATE_LIMITER, RateLimitExceededError} from '@b2b-saas-starter-kit/platform'
 
-import type {RateLimiterPort} from '@b2b-saas-starter-kit/composition'
-import {CacheKey, RATE_LIMITER, RateLimitExceededError} from '@b2b-saas-starter-kit/composition'
+import {LoggerLocator} from '@b2b-saas-starter-kit/logger'
 
 import type {RateLimitOptions} from './rate-limit.types'
 import {RATE_LIMIT_KEY} from './rate-limit-key'

@@ -1,3 +1,4 @@
+/** App-facing: Nest modules, helpers, and application use cases. Do not re-export platform or infrastructure to bypass Nx tags (ADR-033). */
 export {CompositionModule} from './composition.module'
 export {AssertActiveMembership} from './principal/assert-active-membership'
 export {WorkerModule} from './worker/worker.module'
@@ -30,5 +31,3 @@ export {
   SetOrChangePasswordUseCase,
   UpdateCustomRoleUseCase,
 } from '@b2b-saas-starter-kit/application'
-export type {RateLimiterPort, TenantContext} from '@b2b-saas-starter-kit/platform'
-export {CacheKey, RATE_LIMITER, RateLimitExceededError, TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'

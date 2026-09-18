@@ -7,8 +7,10 @@ import {from, lastValueFrom} from 'rxjs'
 import {Permission} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {ApiPermission} from '@b2b-saas-starter-kit/contracts'
 
-import type {TenantContext} from '@b2b-saas-starter-kit/composition'
-import {AuthorizationService, TENANT_CONTEXT} from '@b2b-saas-starter-kit/composition'
+import type {TenantContext} from '@b2b-saas-starter-kit/platform'
+import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
+
+import {AuthorizationService} from '@b2b-saas-starter-kit/composition'
 
 import {IS_PUBLIC_KEY} from '@b2b-saas-starter-kit/nest-http'
 

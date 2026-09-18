@@ -45,7 +45,7 @@ layer:application    → domain, platform, shared-types, utils
 layer:infrastructure → domain, application, platform, shared…
 layer:nest-http      → contracts, platform, shared (not domain/application/postgres)
 layer:composition    → domain, application, infrastructure, platform…
-type:app             → nest-http / composition / logger / frontend libs / shared (never other apps, never postgres/domain/application)
+type:app             → nest-http / composition / platform / logger / frontend libs / shared (never other apps, never postgres/domain/application)
 ```
 
 ## Forbidden Edges

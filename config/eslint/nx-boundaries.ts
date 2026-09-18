@@ -78,6 +78,7 @@ export class NxBoundaries {
         'layer:composition',
         'layer:nest-http',
         'layer:logger',
+        'layer:platform',
         'layer:ui',
         'layer:frontend-core',
         'layer:feature',

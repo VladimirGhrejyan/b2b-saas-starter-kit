@@ -2,12 +2,10 @@ import {Inject, Injectable} from '@nestjs/common'
 
 import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import {
-  AcceptInvitationUseCase,
-  InviteMemberUseCase,
-  TENANT_CONTEXT,
-  type TenantContext,
-} from '@b2b-saas-starter-kit/composition'
+import type {TenantContext} from '@b2b-saas-starter-kit/platform'
+import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
+
+import {AcceptInvitationUseCase, InviteMemberUseCase} from '@b2b-saas-starter-kit/composition'
 
 import type {AcceptInvitationInputDto} from './dto/accept-invitation.input'
 import {AcceptInvitationMapper} from './dto/accept-invitation.mapper'

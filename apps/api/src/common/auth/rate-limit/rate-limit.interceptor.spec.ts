@@ -3,9 +3,10 @@ import {Reflector} from '@nestjs/core'
 import {firstValueFrom, of} from 'rxjs'
 import {afterEach, describe, expect, it} from 'vitest'
 
+import {RateLimitExceededError} from '@b2b-saas-starter-kit/platform'
+
 import {LoggerLocator, PinoLogger} from '@b2b-saas-starter-kit/logger'
 
-import {RateLimitExceededError} from '@b2b-saas-starter-kit/composition'
 import {InMemoryRateLimiter} from '@b2b-saas-starter-kit/composition/testing'
 
 import {RateLimit} from './rate-limit.decorator'

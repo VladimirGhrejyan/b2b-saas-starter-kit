@@ -193,6 +193,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Rationale:** Matches the planned web follow-up (in-memory access + cookie refresh) and native clients (refresh in the JSON body) without putting `jose` in application/domain. Header-trust remains a non-production seam so `apps/web` keeps working until the frontend phase.
 **Later:** logout UI, select-tenant UI, SSO, passkeys, email verification, MFA, outbox, HTML templates. Web login + Bearer `prepareHeaders` are shipped.
 
+## ADR-033 — Apps may import `layer:platform` directly
+
+**Decision:** `type:app` may depend on `layer:platform`. Backend apps import ports, tokens, and error classes from `@b2b-saas-starter-kit/platform`. Composition remains the app-facing surface for Nest modules and use cases; it must not re-export `platform` or infrastructure to bypass tags. Infrastructure (`postgres`, `redis`, `http-client`, `security`, `node`), `domain`, and `application` stay forbidden. Frontend apps remain blocked by `scope:frontend`.
+**Options:** (A) allow `layer:platform` on `type:app` ✓; (B) documented composition `./app-surface` re-export; (C) keep the forbidden edge and tolerate the bypass.
+**Rationale:** The previous constraint forbade a dependency `apps/api` already needed (`RateLimiterPort`, `TENANT_CONTEXT`, …). `@nx/enforce-module-boundaries` inspects the import specifier, not the origin of a re-export, so composition was used as a dump. Platform is interfaces and errors only, so allowing it costs no adapter coupling. Matching tag constraints AND-combine, so `scope:frontend` still blocks `web`/`admin`. See [`boundaries.md`](./boundaries.md).
+
 ---
 
 ## Deferred decisions

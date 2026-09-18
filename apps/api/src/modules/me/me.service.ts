@@ -1,7 +1,9 @@
 import {Inject, Injectable} from '@nestjs/common'
 
-import type {TenantContext} from '@b2b-saas-starter-kit/composition'
-import {GetMyProfileQuery, TENANT_CONTEXT} from '@b2b-saas-starter-kit/composition'
+import type {TenantContext} from '@b2b-saas-starter-kit/platform'
+import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
+
+import {GetMyProfileQuery} from '@b2b-saas-starter-kit/composition'
 
 import {MeMapper} from './dto/me.mapper'
 import type {MeOutputDto} from './dto/me.output'

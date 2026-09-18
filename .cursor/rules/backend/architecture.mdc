@@ -102,7 +102,7 @@ Delivery kit (`ApiBuilder`, global pipe/filter/interceptor, Swagger, CORS, URI v
 
 ## Composition
 
-Per-context Nest modules bind ports → adapters and register use cases. Apps import composition modules.
+Per-context Nest modules bind ports → adapters and register use cases. Apps import composition modules and platform ports; never adapters.
 
 ```typescript
 @Module({

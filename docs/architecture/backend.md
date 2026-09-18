@@ -116,7 +116,7 @@ Per context, `composition/src/<context>/<context>.module.ts`:
 - Registers **event handlers** / subscribers for the context.
 - Exports a NestJS module that apps import.
 
-Apps (`api`, `worker`) import composition modules and add only transport concerns. This keeps wiring written **once** and apps **thin**.
+Apps (`api`, `worker`) import composition modules (wiring + use cases) and `platform` ports, tokens, and error classes for edge concerns. They never import adapters. This keeps wiring written **once** and apps **thin**.
 
 ```mermaid
 flowchart TB

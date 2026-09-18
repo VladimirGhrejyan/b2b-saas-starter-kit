@@ -124,6 +124,7 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
         "layer:composition",
         "layer:nest-http",
         "layer:logger",
+        "layer:platform",
         "layer:ui",
         "layer:frontend-core",
         "layer:feature",
@@ -145,7 +146,7 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
 - `scope:shared → scope:backend|frontend` — a shared package can never pull framework/infra code.
 - `scope:backend ↔ scope:frontend` — the two never import each other.
 - `type:app → type:app` — apps don't **import** other apps. Runtime hosts (`apps/desktop`, `apps/mobile`) load the `apps/web` **dist** and may declare Nx `implicitDependencies: ["web"]` for graph/build order only.
-- `type:app → postgres/redis/http-client/security/node/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Bootstrap may import `logger` (`layer:logger`) without opening `postgres`, `redis`, `http-client`, `security`, or `node`.
+- `type:app → postgres/redis/http-client/security/node/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Backend apps may import `layer:platform` (ports, tokens, error classes) for edge concerns such as rate limiting and tenant context. Frontend apps remain blocked by `scope:frontend` (matching Nx constraints AND-combine). Bootstrap may import `logger` (`layer:logger`) without opening `postgres`, `redis`, `http-client`, `security`, or `node`. Composition must not re-export `platform` or infrastructure packages to work around tags — `@nx/enforce-module-boundaries` inspects the import specifier, not the origin of a re-export.
 - `nest-http → domain/application/postgres` — the HTTP kit is delivery, not composition.
 
 ## Context isolation (the gap layer-first leaves)

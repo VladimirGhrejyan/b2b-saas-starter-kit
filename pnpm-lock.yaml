@@ -431,6 +431,9 @@ importers:
       '@b2b-saas-starter-kit/nest-http':
         specifier: workspace:*
         version: link:../../packages/nest-http
+      '@b2b-saas-starter-kit/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
       '@b2b-saas-starter-kit/shared-kernel-types':
         specifier: workspace:*
         version: link:../../packages/shared/kernel-types
