@@ -30,6 +30,7 @@ export class RedisTestContext {
     const context = new RedisTestContext(manager)
 
     try {
+      await manager.onModuleInit()
       await context.client.ping()
       await context.client.flushdb()
     } catch (error) {

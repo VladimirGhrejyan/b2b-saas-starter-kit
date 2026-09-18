@@ -4,6 +4,7 @@ import type Redis from 'ioredis'
 
 import type {PubSubPort, Unsubscribe} from '@b2b-saas-starter-kit/platform'
 
+import {RedisReady} from '../kernel/connection/redis-ready'
 import {REDIS_CLIENT} from '../kernel/tokens'
 
 @Injectable()
@@ -26,6 +27,7 @@ export class RedisPubSub implements PubSubPort, OnModuleDestroy {
     }
 
     this.#subscriber.on('message', listener)
+    await RedisReady.wait(this.#subscriber)
     await this.#subscriber.subscribe(channel)
 
     return async () => {
@@ -35,6 +37,12 @@ export class RedisPubSub implements PubSubPort, OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
-    await this.#subscriber.quit()
+    if (this.#subscriber.status === 'ready') {
+      await this.#subscriber.quit()
+
+      return
+    }
+
+    this.#subscriber.disconnect()
   }
 }

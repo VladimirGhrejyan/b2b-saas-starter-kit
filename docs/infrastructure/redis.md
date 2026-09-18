@@ -46,3 +46,10 @@ drop-in). Rules to stay portable — encoded now:
 - Avoid admin commands like `SAVE`/`SWAPDB` and `KEYS` in hot paths.
 
 Only `REDIS_URL` changes when moving to managed Redis; no app code changes.
+
+## Clients
+
+This process uses one **command** client (`maxRetriesPerRequest: 1`, bounded `retryStrategy`,
+`connectTimeout` 5s, `enableOfflineQueue: false`). `rediss://` enables TLS. The pub/sub subscriber
+is an ioredis `duplicate()` of that client. A **blocking** client (`maxRetriesPerRequest: null`) is
+added only when a queue or worker needs blocking commands.

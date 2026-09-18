@@ -10,7 +10,7 @@ Architecture: [`docs/architecture/infrastructure.md`](../../../docs/architecture
 
 ## Layout
 
-Capability folders share one client in `kernel/`. Capabilities must not import each other.
+Capability folders share one **command** client in `kernel/` (`maxRetriesPerRequest: 1`, bounded reconnect, TLS from `rediss://`). Capabilities must not import each other. A blocking client is not created until a queue needs it.
 
 ```
 src/
