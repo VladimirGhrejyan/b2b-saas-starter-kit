@@ -14,6 +14,7 @@ import {Membership, Tenant} from '@b2b-saas-starter-kit/domain'
 import {AlsTenantContext} from '../../../kernel/tenant-context/tenant-context'
 import {TenantContextMismatchError} from '../../../kernel/tenant-context/tenant-context-mismatch.error'
 import {PostgresTestContext} from '../../../testing/postgres-test-context'
+import {runInUnitOfWork} from '../../../testing/run-in-unit-of-work'
 
 import {TypeOrmMembershipRepository} from './typeorm-membership.repository'
 import {TypeOrmTenantRepository} from './typeorm-tenant.repository'
@@ -54,15 +55,17 @@ describe('TypeOrmMembershipRepository', () => {
 
   it('round-trips membership role ids through membership_roles', async () => {
     await tenantContext.withoutTenantScope(async () => {
-      await repo.save(
-        Membership.reconstitute({
-          id: membershipA,
-          tenantId: tenantA,
-          userId: actorA,
-          roleIds: [roleA],
-          status: MembershipStatus.parse('active'),
-        }),
-      )
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
+          Membership.reconstitute({
+            id: membershipA,
+            tenantId: tenantA,
+            userId: actorA,
+            roleIds: [roleA],
+            status: MembershipStatus.parse('active'),
+          }),
+        )
+      })
     })
 
     const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(membershipA))
@@ -78,32 +81,30 @@ describe('TypeOrmMembershipRepository', () => {
     expect(byTenant).toHaveLength(1)
   })
 
-  it('does not let tenant A load tenant B memberships', async () => {
+  it('finds a membership by user and tenant without an established tenant scope', async () => {
     await tenantContext.withoutTenantScope(async () => {
-      await repo.save(
-        Membership.reconstitute({
-          id: membershipB,
-          tenantId: tenantB,
-          userId: actorB,
-          roleIds: [roleB],
-          status: MembershipStatus.parse('active'),
-        }),
-      )
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
+          Membership.reconstitute({
+            id: membershipA,
+            tenantId: tenantA,
+            userId: actorA,
+            roleIds: [roleA],
+            status: MembershipStatus.parse('active'),
+          }),
+        )
+      })
     })
 
-    const byId = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(membershipB))
-    const byTenant = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
-      repo.findByTenant(tenantB),
-    )
+    const found = await repo.findByUserAndTenant(actorA, tenantA)
 
-    expect(byId).toBeNull()
-    expect(byTenant).toEqual([])
+    expect(found?.id).toBe(membershipA)
   })
 
-  it('throws TenantContextMismatchError when ambient tenant disagrees with the aggregate', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
-      await expect(
-        repo.save(
+  it('does not let tenant A load tenant B memberships', async () => {
+    await tenantContext.withoutTenantScope(async () => {
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
           Membership.reconstitute({
             id: membershipB,
             tenantId: tenantB,
@@ -111,7 +112,33 @@ describe('TypeOrmMembershipRepository', () => {
             roleIds: [roleB],
             status: MembershipStatus.parse('active'),
           }),
-        ),
+        )
+      })
+    })
+
+    const byId = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(membershipB))
+
+    await expect(
+      tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findByTenant(tenantB)),
+    ).rejects.toBeInstanceOf(TenantContextMismatchError)
+
+    expect(byId).toBeNull()
+  })
+
+  it('throws TenantContextMismatchError when ambient tenant disagrees with the aggregate', async () => {
+    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+      await expect(
+        runInUnitOfWork(ctx.dataSource, async () => {
+          await repo.save(
+            Membership.reconstitute({
+              id: membershipB,
+              tenantId: tenantB,
+              userId: actorB,
+              roleIds: [roleB],
+              status: MembershipStatus.parse('active'),
+            }),
+          )
+        }),
       ).rejects.toBeInstanceOf(TenantContextMismatchError)
     })
   })

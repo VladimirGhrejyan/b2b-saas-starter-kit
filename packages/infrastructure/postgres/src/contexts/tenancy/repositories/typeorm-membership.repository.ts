@@ -6,9 +6,11 @@ import type {MembershipId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-
 import type {Membership, MembershipRepository} from '@b2b-saas-starter-kit/domain'
 
 import type {TenantContext} from '@b2b-saas-starter-kit/platform'
+import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
+import {ChildCollectionWriter} from '../../../kernel/persistence/child-collection.writer'
 import {TenantAwareRepository} from '../../../kernel/persistence/tenant-aware.repository'
-import {DATA_SOURCE, TENANT_CONTEXT} from '../../../kernel/tokens'
+import {DATA_SOURCE} from '../../../kernel/tokens'
 import {MembershipEntity} from '../entities/membership.entity'
 import {MembershipRoleEntity} from '../entities/membership-role.entity'
 import {MembershipMapper} from '../mappers/membership.mapper'
@@ -35,6 +37,8 @@ export class TypeOrmMembershipRepository extends TenantAwareRepository implement
   }
 
   async findByTenant(tenantId: TenantId): Promise<Membership[]> {
+    this.assertTenant(tenantId)
+
     const rows = await this.scoped(
       'membership',
       this.manager
@@ -61,6 +65,10 @@ export class TypeOrmMembershipRepository extends TenantAwareRepository implement
   }
 
   async findByUserAndTenant(userId: UserId, tenantId: TenantId): Promise<Membership | null> {
+    if (this.hasEstablishedTenantScope()) {
+      this.assertTenant(tenantId)
+    }
+
     return this.withoutTenantScope(async () => {
       const row = await this.manager
         .createQueryBuilder(MembershipEntity, 'membership')
@@ -74,23 +82,37 @@ export class TypeOrmMembershipRepository extends TenantAwareRepository implement
   }
 
   async save(membership: Membership): Promise<void> {
-    const stamped = this.stampTenantId(MembershipMapper.toEntity(membership))
+    const mapped = this.stampTenantId(MembershipMapper.toEntity(membership))
+    const writer = new ChildCollectionWriter(this.manager)
 
-    await this.manager.upsert(
-      MembershipEntity,
-      {id: stamped.id, tenantId: stamped.tenantId, userId: stamped.userId, status: stamped.status},
-      {conflictPaths: ['id']},
-    )
+    await writer.saveVersionedParentAndReplaceChildren({
+      parentEntity: MembershipEntity,
+      parentId: mapped.id,
+      entityName: 'Membership',
+      buildParent: () => {
+        const row = new MembershipEntity()
 
-    await this.manager.delete(MembershipRoleEntity, {membershipId: stamped.id})
+        row.id = mapped.id
+        row.tenantId = mapped.tenantId
+        row.userId = mapped.userId
+        row.status = mapped.status
 
-    if (stamped.roleRows.length === 0) {
-      return
-    }
+        return row
+      },
+      children: {
+        childEntity: MembershipRoleEntity,
+        parentIdColumn: 'membershipId',
+        parentId: mapped.id,
+        buildChildren: () =>
+          mapped.roleRows.map((roleRow) => {
+            const child = new MembershipRoleEntity()
 
-    await this.manager.insert(
-      MembershipRoleEntity,
-      stamped.roleRows.map((roleRow) => ({membershipId: stamped.id, roleId: roleRow.roleId})),
-    )
+            child.membershipId = mapped.id
+            child.roleId = roleRow.roleId
+
+            return child
+          }),
+      },
+    })
   }
 }

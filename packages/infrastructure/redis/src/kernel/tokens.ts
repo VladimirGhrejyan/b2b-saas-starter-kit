@@ -1,6 +1,2 @@
 export const REDIS_CONFIG = Symbol('REDIS_CONFIG')
 export const REDIS_CLIENT = Symbol('REDIS_CLIENT')
-export const CACHE = Symbol('CACHE')
-export const LOCK = Symbol('LOCK')
-export const PUBSUB = Symbol('PUBSUB')
-export const RATE_LIMITER = Symbol('RATE_LIMITER')

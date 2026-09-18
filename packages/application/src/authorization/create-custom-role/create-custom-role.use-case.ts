@@ -1,13 +1,15 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import {RoleId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {RoleRepository} from '@b2b-saas-starter-kit/domain'
-import {PermissionCatalog, Role} from '@b2b-saas-starter-kit/domain'
+import {PermissionCatalog, Role, ROLE_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {Clock, EventPublisher, IdGenerator, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import {CLOCK, EVENT_PUBLISHER, ID_GENERATOR, UNIT_OF_WORK} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {AUTHORIZATION} from '../../shared/authorization.port'
 import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {RoleNameTakenError} from '../errors/role-name-taken.error'
 
@@ -19,12 +21,12 @@ import type {CreateCustomRoleCommand, CreateCustomRoleResult} from './create-cus
 @Injectable()
 export class CreateCustomRoleUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly clock: Clock,
-    private readonly ids: IdGenerator,
-    private readonly authz: AuthorizationPort,
-    private readonly roles: RoleRepository,
-    private readonly events: EventPublisher,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
+    @Inject(ROLE_REPOSITORY) private readonly roles: RoleRepository,
+    @Inject(EVENT_PUBLISHER) private readonly events: EventPublisher,
   ) {}
 
   async execute(command: CreateCustomRoleCommand): Promise<CreateCustomRoleResult> {

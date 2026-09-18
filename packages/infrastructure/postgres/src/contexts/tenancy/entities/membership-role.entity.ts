@@ -1,9 +1,11 @@
 import {Entity, JoinColumn, ManyToOne, PrimaryColumn} from 'typeorm'
 
+import {AuditableEntity} from '../../../kernel/persistence/auditable.entity'
+
 import {MembershipEntity} from './membership.entity'
 
 @Entity({name: 'membership_roles'})
-export class MembershipRoleEntity {
+export class MembershipRoleEntity extends AuditableEntity {
   @PrimaryColumn({name: 'membership_id', type: 'uuid'})
   membershipId!: string
 

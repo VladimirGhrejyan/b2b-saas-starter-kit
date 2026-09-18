@@ -7,9 +7,9 @@ import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 import type {DomainEvent} from '@b2b-saas-starter-kit/domain'
 
 import type {EventBus, TenantContext} from '@b2b-saas-starter-kit/platform'
-import {EVENT_BUS} from '@b2b-saas-starter-kit/platform'
+import {EVENT_BUS, TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
-import {DATA_SOURCE, TENANT_CONTEXT} from '../tokens'
+import {DATA_SOURCE} from '../tokens'
 
 import {OutboxSerializer} from './outbox.serializer'
 import {OutboxEntryEntity} from './outbox-entry.entity'

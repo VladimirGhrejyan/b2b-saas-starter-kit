@@ -2,6 +2,8 @@ import type {MembershipId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-
 
 import type {Membership} from '../membership'
 
+export const MEMBERSHIP_REPOSITORY = Symbol('MEMBERSHIP_REPOSITORY')
+
 /**
  * Persistence port for memberships. Cross-context links are branded IDs only.
  */

@@ -1,11 +1,18 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {MembershipRepository, RoleRepository} from '@b2b-saas-starter-kit/domain'
-import {PermissionCatalog, SystemRoleImmutableError} from '@b2b-saas-starter-kit/domain'
+import {
+  MEMBERSHIP_REPOSITORY,
+  PermissionCatalog,
+  ROLE_REPOSITORY,
+  SystemRoleImmutableError,
+} from '@b2b-saas-starter-kit/domain'
 
 import type {UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import {UNIT_OF_WORK} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {AUTHORIZATION} from '../../shared/authorization.port'
 import {RoleNotFoundError} from '../../shared/errors/role-not-found.error'
 import {RoleInUseError} from '../errors/role-in-use.error'
 
@@ -17,10 +24,10 @@ import type {DeleteCustomRoleCommand} from './delete-custom-role.types'
 @Injectable()
 export class DeleteCustomRoleUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly authz: AuthorizationPort,
-    private readonly roles: RoleRepository,
-    private readonly memberships: MembershipRepository,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
+    @Inject(ROLE_REPOSITORY) private readonly roles: RoleRepository,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
   ) {}
 
   async execute(command: DeleteCustomRoleCommand): Promise<void> {

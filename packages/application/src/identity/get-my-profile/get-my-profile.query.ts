@@ -1,8 +1,10 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {MembershipRepository, UserRepository} from '@b2b-saas-starter-kit/domain'
+import {MEMBERSHIP_REPOSITORY, USER_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {AUTHORIZATION} from '../../shared/authorization.port'
 import {UserNotFoundError} from '../errors/user-not-found.error'
 
 import type {GetMyProfileQueryInput, GetMyProfileResult} from './get-my-profile.types'
@@ -13,9 +15,9 @@ import type {GetMyProfileQueryInput, GetMyProfileResult} from './get-my-profile.
 @Injectable()
 export class GetMyProfileQuery {
   constructor(
-    private readonly users: UserRepository,
-    private readonly memberships: MembershipRepository,
-    private readonly authz: AuthorizationPort,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
   ) {}
 
   async execute(query: GetMyProfileQueryInput): Promise<GetMyProfileResult> {

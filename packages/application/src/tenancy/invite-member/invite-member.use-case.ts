@@ -1,4 +1,4 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import {InvitationId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
@@ -8,7 +8,14 @@ import type {
   RoleRepository,
   UserRepository,
 } from '@b2b-saas-starter-kit/domain'
-import {Invitation, PermissionCatalog} from '@b2b-saas-starter-kit/domain'
+import {
+  Invitation,
+  INVITATION_REPOSITORY,
+  MEMBERSHIP_REPOSITORY,
+  PermissionCatalog,
+  ROLE_REPOSITORY,
+  USER_REPOSITORY,
+} from '@b2b-saas-starter-kit/domain'
 
 import type {
   Clock,
@@ -18,8 +25,10 @@ import type {
   TokenDigest,
   UnitOfWork,
 } from '@b2b-saas-starter-kit/platform'
+import {CLOCK, EVENT_PUBLISHER, ID_GENERATOR, MAILER, TOKEN_DIGEST, UNIT_OF_WORK} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {AUTHORIZATION} from '../../shared/authorization.port'
 import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {InvitationAlreadyPendingError} from '../errors/invitation-already-pending.error'
 import {MembershipAlreadyExistsError} from '../errors/membership-already-exists.error'
@@ -34,17 +43,17 @@ import type {InviteMemberCommand, InviteMemberResult} from './invite-member.type
 @Injectable()
 export class InviteMemberUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly clock: Clock,
-    private readonly ids: IdGenerator,
-    private readonly digest: TokenDigest,
-    private readonly mailer: MailerPort,
-    private readonly authz: AuthorizationPort,
-    private readonly users: UserRepository,
-    private readonly memberships: MembershipRepository,
-    private readonly roles: RoleRepository,
-    private readonly invitations: InvitationRepository,
-    private readonly events: EventPublisher,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    @Inject(TOKEN_DIGEST) private readonly digest: TokenDigest,
+    @Inject(MAILER) private readonly mailer: MailerPort,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
+    @Inject(ROLE_REPOSITORY) private readonly roles: RoleRepository,
+    @Inject(INVITATION_REPOSITORY) private readonly invitations: InvitationRepository,
+    @Inject(EVENT_PUBLISHER) private readonly events: EventPublisher,
   ) {}
 
   async execute(command: InviteMemberCommand): Promise<InviteMemberResult> {

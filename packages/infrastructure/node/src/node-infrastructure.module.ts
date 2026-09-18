@@ -1,8 +1,9 @@
 import {Global, Module} from '@nestjs/common'
 
+import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/platform'
+
 import {SystemClock} from './clock/clock'
 import {UuidV7IdGenerator} from './id-generator/id-generator'
-import {CLOCK, ID_GENERATOR} from './tokens'
 
 /**
  * Nest wrapper around process clock and UUID v7 id generation.

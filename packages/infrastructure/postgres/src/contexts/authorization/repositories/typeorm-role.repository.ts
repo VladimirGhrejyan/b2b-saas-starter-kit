@@ -6,9 +6,11 @@ import type {RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {Role, RoleRepository} from '@b2b-saas-starter-kit/domain'
 
 import type {TenantContext} from '@b2b-saas-starter-kit/platform'
+import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
+import {ChildCollectionWriter} from '../../../kernel/persistence/child-collection.writer'
 import {TenantAwareRepository} from '../../../kernel/persistence/tenant-aware.repository'
-import {DATA_SOURCE, TENANT_CONTEXT} from '../../../kernel/tokens'
+import {DATA_SOURCE} from '../../../kernel/tokens'
 import {RoleEntity} from '../entities/role.entity'
 import {RolePermissionEntity} from '../entities/role-permission.entity'
 import {RoleMapper} from '../mappers/role.mapper'
@@ -35,6 +37,8 @@ export class TypeOrmRoleRepository extends TenantAwareRepository implements Role
   }
 
   async findByTenant(tenantId: TenantId): Promise<Role[]> {
+    this.assertTenant(tenantId)
+
     const rows = await this.scoped(
       'role',
       this.manager
@@ -48,24 +52,38 @@ export class TypeOrmRoleRepository extends TenantAwareRepository implements Role
   }
 
   async save(role: Role): Promise<void> {
-    const stamped = this.stampTenantId(RoleMapper.toEntity(role))
+    const mapped = this.stampTenantId(RoleMapper.toEntity(role))
+    const writer = new ChildCollectionWriter(this.manager)
 
-    await this.manager.upsert(
-      RoleEntity,
-      {id: stamped.id, tenantId: stamped.tenantId, name: stamped.name, isSystem: stamped.isSystem},
-      {conflictPaths: ['id']},
-    )
+    await writer.saveVersionedParentAndReplaceChildren({
+      parentEntity: RoleEntity,
+      parentId: mapped.id,
+      entityName: 'Role',
+      buildParent: () => {
+        const row = new RoleEntity()
 
-    await this.manager.delete(RolePermissionEntity, {roleId: stamped.id})
+        row.id = mapped.id
+        row.tenantId = mapped.tenantId
+        row.name = mapped.name
+        row.isSystem = mapped.isSystem
 
-    if (stamped.permissions.length === 0) {
-      return
-    }
+        return row
+      },
+      children: {
+        childEntity: RolePermissionEntity,
+        parentIdColumn: 'roleId',
+        parentId: mapped.id,
+        buildChildren: () =>
+          mapped.permissions.map((permissionRow) => {
+            const child = new RolePermissionEntity()
 
-    await this.manager.insert(
-      RolePermissionEntity,
-      stamped.permissions.map((permissionRow) => ({roleId: stamped.id, permission: permissionRow.permission})),
-    )
+            child.roleId = mapped.id
+            child.permission = permissionRow.permission
+
+            return child
+          }),
+      },
+    })
   }
 
   async saveMany(roles: Role[]): Promise<void> {

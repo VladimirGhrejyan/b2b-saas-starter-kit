@@ -2,6 +2,8 @@ import type {InvitationId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-t
 
 import type {Invitation} from '../invitation'
 
+export const INVITATION_REPOSITORY = Symbol('INVITATION_REPOSITORY')
+
 /**
  * Persistence port for tenant invitations. The raw token is never stored.
  */

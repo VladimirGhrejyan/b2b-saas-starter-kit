@@ -1,9 +1,11 @@
 import {Column, Entity, OneToMany, PrimaryColumn} from 'typeorm'
 
+import {AuditableEntity} from '../../../kernel/persistence/auditable.entity'
+
 import type {InvitationRoleEntity} from './invitation-role.entity'
 
 @Entity({name: 'invitations'})
-export class InvitationEntity {
+export class InvitationEntity extends AuditableEntity {
   @PrimaryColumn({type: 'uuid'})
   id!: string
 

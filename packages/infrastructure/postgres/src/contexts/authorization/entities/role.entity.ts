@@ -1,10 +1,12 @@
 import {Column, Entity, OneToMany, PrimaryColumn, Unique} from 'typeorm'
 
+import {VersionedEntity} from '../../../kernel/persistence/versioned.entity'
+
 import type {RolePermissionEntity} from './role-permission.entity'
 
 @Entity({name: 'roles'})
 @Unique('uq_roles_tenant_id_name', ['tenantId', 'name'])
-export class RoleEntity {
+export class RoleEntity extends VersionedEntity {
   @PrimaryColumn({type: 'uuid'})
   id!: string
 

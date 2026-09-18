@@ -1,9 +1,10 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {RoleRepository} from '@b2b-saas-starter-kit/domain'
-import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
+import {PermissionCatalog, ROLE_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {AUTHORIZATION} from '../../shared/authorization.port'
 
 import type {ListRolesQueryInput, ListRolesResult} from './list-roles.types'
 
@@ -13,8 +14,8 @@ import type {ListRolesQueryInput, ListRolesResult} from './list-roles.types'
 @Injectable()
 export class ListRolesQuery {
   constructor(
-    private readonly authz: AuthorizationPort,
-    private readonly roles: RoleRepository,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
+    @Inject(ROLE_REPOSITORY) private readonly roles: RoleRepository,
   ) {}
 
   async execute(query: ListRolesQueryInput): Promise<ListRolesResult> {

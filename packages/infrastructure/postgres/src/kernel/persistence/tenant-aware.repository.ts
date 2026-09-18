@@ -34,7 +34,9 @@ export abstract class TenantAwareRepository {
       return qb
     }
 
-    return qb.andWhere(`${alias}.tenantId = :tenantId`, {tenantId: this.tenantContext.getTenantId()})
+    return qb.andWhere(`${alias}.tenantId = :__ambientTenantId`, {
+      __ambientTenantId: this.tenantContext.getTenantId(),
+    })
   }
 
   /**
@@ -67,6 +69,13 @@ export abstract class TenantAwareRepository {
     if (this.tenantContext.getTenantId() !== tenantId) {
       throw new TenantContextMismatchError()
     }
+  }
+
+  /** True when an ambient tenant scope is active (not skipped). */
+  protected hasEstablishedTenantScope(): boolean {
+    const store = tenantAls.getStore()
+
+    return store !== undefined && store.scope !== undefined && !store.skipTenantScope
   }
 
   #isTenantScopeSkipped(): boolean {

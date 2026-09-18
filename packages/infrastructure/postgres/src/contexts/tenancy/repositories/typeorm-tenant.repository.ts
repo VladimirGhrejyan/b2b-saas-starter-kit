@@ -6,9 +6,10 @@ import type {TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {Tenant, TenantRepository} from '@b2b-saas-starter-kit/domain'
 
 import type {TenantContext} from '@b2b-saas-starter-kit/platform'
+import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
 import {TenantAwareRepository} from '../../../kernel/persistence/tenant-aware.repository'
-import {DATA_SOURCE, TENANT_CONTEXT} from '../../../kernel/tokens'
+import {DATA_SOURCE} from '../../../kernel/tokens'
 import {TenantEntity} from '../entities/tenant.entity'
 import {TenantMapper} from '../mappers/tenant.mapper'
 
@@ -33,10 +34,6 @@ export class TypeOrmTenantRepository extends TenantAwareRepository implements Te
   async save(tenant: Tenant): Promise<void> {
     const stamped = this.stampTenantId(TenantMapper.toEntity(tenant))
 
-    await this.manager.upsert(
-      TenantEntity,
-      {id: stamped.id, tenantId: stamped.tenantId, name: stamped.name, status: stamped.status},
-      {conflictPaths: ['id']},
-    )
+    await this.manager.save(TenantEntity, stamped)
   }
 }

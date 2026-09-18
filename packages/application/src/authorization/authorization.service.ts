@@ -1,14 +1,17 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {Permission, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {MembershipRepository, RoleRepository} from '@b2b-saas-starter-kit/domain'
+import {MEMBERSHIP_REPOSITORY, ROLE_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {CachePort} from '@b2b-saas-starter-kit/platform'
+import {CACHE} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../shared/authorization.port'
 import {InsufficientPermissionError} from '../shared/errors/insufficient-permission.error'
 import type {MembershipRolesPort} from '../shared/membership-roles.port'
+import {MEMBERSHIP_ROLES} from '../shared/membership-roles.port'
 
 import {EFFECTIVE_PERMISSIONS_TTL_SECONDS} from './authorization.constants'
 import {effectivePermissionsCacheKey} from './effective-permissions-cache-key'
@@ -22,10 +25,10 @@ import {effectivePermissionsCacheKey} from './effective-permissions-cache-key'
 @Injectable()
 export class AuthorizationService implements AuthorizationPort {
   constructor(
-    private readonly roles: RoleRepository,
-    private readonly membershipRoles: MembershipRolesPort,
-    private readonly cache: CachePort,
-    private readonly memberships: MembershipRepository,
+    @Inject(ROLE_REPOSITORY) private readonly roles: RoleRepository,
+    @Inject(MEMBERSHIP_ROLES) private readonly membershipRoles: MembershipRolesPort,
+    @Inject(CACHE) private readonly cache: CachePort,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
   ) {}
 
   async require(actorId: UserId, permission: Permission, scope: {tenantId: TenantId}): Promise<void> {

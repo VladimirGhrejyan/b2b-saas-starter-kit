@@ -1,6 +1,8 @@
 import type {DynamicModule} from '@nestjs/common'
 import {Module} from '@nestjs/common'
 
+import {CACHE, LOCK, PUBSUB, RATE_LIMITER} from '@b2b-saas-starter-kit/platform'
+
 import {RedisCache} from '../cache/redis-cache.adapter'
 import {RedisLock} from '../lock/redis-lock.adapter'
 import {RedisPubSub} from '../pubsub/redis-pubsub.adapter'
@@ -8,7 +10,7 @@ import {RedisRateLimiter} from '../rate-limit/redis-rate-limiter.adapter'
 
 import {RedisClientManager} from './connection/redis-client.manager'
 import type {RedisInfrastructureModuleAsyncOptions} from './redis-infrastructure.module.types'
-import {CACHE, LOCK, PUBSUB, RATE_LIMITER, REDIS_CLIENT, REDIS_CONFIG} from './tokens'
+import {REDIS_CLIENT, REDIS_CONFIG} from './tokens'
 
 /**
  * Nest wrapper around one ioredis client shared by cache, lock, pub/sub, and rate-limit adapters.

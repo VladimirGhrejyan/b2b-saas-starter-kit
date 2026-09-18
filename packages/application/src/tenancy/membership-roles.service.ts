@@ -1,8 +1,9 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {MembershipRepository} from '@b2b-saas-starter-kit/domain'
+import {MEMBERSHIP_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {MembershipRolesPort} from '../shared/membership-roles.port'
 
@@ -11,7 +12,7 @@ import type {MembershipRolesPort} from '../shared/membership-roles.port'
  */
 @Injectable()
 export class MembershipRolesService implements MembershipRolesPort {
-  constructor(private readonly memberships: MembershipRepository) {}
+  constructor(@Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository) {}
 
   async roleIdsFor(userId: UserId, tenantId: TenantId): Promise<readonly RoleId[]> {
     const membership = await this.memberships.findByUserAndTenant(userId, tenantId)

@@ -2,6 +2,8 @@ import type {RefreshFamilyId, UserId} from '@b2b-saas-starter-kit/shared-kernel-
 
 import type {RefreshSession} from '../refresh-session'
 
+export const REFRESH_SESSION_REPOSITORY = Symbol('REFRESH_SESSION_REPOSITORY')
+
 /**
  * Persistence port for rotating refresh sessions.
  */

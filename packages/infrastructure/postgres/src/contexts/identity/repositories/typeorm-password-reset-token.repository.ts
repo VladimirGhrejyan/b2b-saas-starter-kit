@@ -30,9 +30,7 @@ export class TypeOrmPasswordResetTokenRepository implements PasswordResetTokenRe
   }
 
   async save(token: PasswordResetToken): Promise<void> {
-    await this.#manager.upsert(PasswordResetTokenEntity, PasswordResetTokenMapper.toEntity(token), {
-      conflictPaths: ['userId'],
-    })
+    await this.#manager.save(PasswordResetTokenEntity, PasswordResetTokenMapper.toEntity(token))
   }
 
   get #manager(): EntityManager {

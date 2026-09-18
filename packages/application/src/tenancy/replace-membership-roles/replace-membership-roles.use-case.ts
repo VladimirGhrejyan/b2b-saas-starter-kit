@@ -1,11 +1,13 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {MembershipRepository, RoleRepository} from '@b2b-saas-starter-kit/domain'
-import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
+import {MEMBERSHIP_REPOSITORY, PermissionCatalog, ROLE_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {Clock, EventPublisher, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import {CLOCK, EVENT_PUBLISHER, UNIT_OF_WORK} from '@b2b-saas-starter-kit/platform'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {AUTHORIZATION} from '../../shared/authorization.port'
 import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {LastOwnerRequiredError} from '../errors/last-owner-required.error'
 import {MembershipNotFoundError} from '../errors/membership-not-found.error'
@@ -19,12 +21,12 @@ import type {ReplaceMembershipRolesCommand, ReplaceMembershipRolesResult} from '
 @Injectable()
 export class ReplaceMembershipRolesUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly clock: Clock,
-    private readonly authz: AuthorizationPort,
-    private readonly memberships: MembershipRepository,
-    private readonly roles: RoleRepository,
-    private readonly events: EventPublisher,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
+    @Inject(ROLE_REPOSITORY) private readonly roles: RoleRepository,
+    @Inject(EVENT_PUBLISHER) private readonly events: EventPublisher,
   ) {}
 
   async execute(command: ReplaceMembershipRolesCommand): Promise<ReplaceMembershipRolesResult> {

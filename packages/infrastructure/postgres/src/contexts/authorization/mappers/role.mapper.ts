@@ -1,3 +1,4 @@
+/** Persistence metadata (audit timestamps, version) stays on TypeORM entities — not mapped into domain. */
 import {Permission, RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Role} from '@b2b-saas-starter-kit/domain'

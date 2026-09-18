@@ -6,6 +6,7 @@ import {Invitation, Tenant} from '@b2b-saas-starter-kit/domain'
 
 import {AlsTenantContext} from '../../../kernel/tenant-context/tenant-context'
 import {PostgresTestContext} from '../../../testing/postgres-test-context'
+import {runInUnitOfWork} from '../../../testing/run-in-unit-of-work'
 
 import {TypeOrmInvitationRepository} from './typeorm-invitation.repository'
 import {TypeOrmTenantRepository} from './typeorm-tenant.repository'
@@ -56,7 +57,11 @@ describe('TypeOrmInvitationRepository', () => {
       occurredAt,
     )
 
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.save(invitation))
+    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+      runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(invitation)
+      }),
+    )
 
     const rows = await ctx.dataSource.query<{token_hash: string; email: string}[]>(
       'SELECT token_hash, email FROM invitations WHERE id = $1',

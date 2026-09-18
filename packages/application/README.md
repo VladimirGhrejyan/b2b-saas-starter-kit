@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/application`
 
-Backend application layer — `@Injectable` use cases, published ports, and in-memory test doubles. No HTTP, TypeORM, or `contracts`.
+Backend application layer — `@Injectable` use cases with `@Inject(portToken)`, published ports, and in-memory test doubles. No HTTP, TypeORM, or `contracts`.
 
 **Path:** `packages/application`  
 **Nx project:** `application`  
@@ -17,7 +17,7 @@ Architecture: [`docs/architecture/backend.md`](../../docs/architecture/backend.m
 - `@b2b-saas-starter-kit/domain`
 - `@b2b-saas-starter-kit/platform`
 - `@b2b-saas-starter-kit/shared-kernel-types`
-- `@nestjs/common` (decorator only)
+- `@nestjs/common` (`@Injectable` and `@Inject(portToken)`)
 - `@b2b-saas-starter-kit/utils` (when a generic helper is needed)
 - `node:` builtins
 

@@ -1,11 +1,13 @@
 import {Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, Unique} from 'typeorm'
 
+import {VersionedEntity} from '../../../kernel/persistence/versioned.entity'
+
 import type {MembershipRoleEntity} from './membership-role.entity'
 import {TenantEntity} from './tenant.entity'
 
 @Entity({name: 'memberships'})
 @Unique('uq_memberships_tenant_id_user_id', ['tenantId', 'userId'])
-export class MembershipEntity {
+export class MembershipEntity extends VersionedEntity {
   @PrimaryColumn({type: 'uuid'})
   id!: string
 

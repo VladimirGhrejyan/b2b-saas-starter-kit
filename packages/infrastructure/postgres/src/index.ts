@@ -22,4 +22,4 @@ export {TenantAwareRepository} from './kernel/persistence/tenant-aware.repositor
 export {TypeormUnitOfWork} from './kernel/persistence/unit-of-work'
 export {AlsTenantContext} from './kernel/tenant-context/tenant-context'
 export {TenantContextMismatchError} from './kernel/tenant-context/tenant-context-mismatch.error'
-export {DATA_SOURCE, MAILER, POSTGRES_CONFIG, TENANT_CONTEXT, UNIT_OF_WORK} from './kernel/tokens'
+export {DATA_SOURCE, POSTGRES_CONFIG} from './kernel/tokens'

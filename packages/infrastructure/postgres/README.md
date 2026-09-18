@@ -17,7 +17,7 @@ Architecture: [`docs/architecture/persistence.md`](../../../docs/architecture/pe
 - **`@nestjs/typeorm`** hides `DataSource` lifecycle and encourages `InjectRepository()` in the wrong layer. This package owns a small Nest wrapper (`PostgresInfrastructureModule` + `DataSourceManager`) around a vanilla `DataSource`.
 - **`nestjs-cls`** is a Nest wrapper around the same Node `AsyncLocalStorage`. `TenantContext` and the ambient transaction are per-request / per-job **on one process**. Each instance reconstructs ALS from the message (headers today, token/job payload later). Never share `EntityManager` or ALS stores across instances.
 
-Application use cases stay constructor-injected by TypeScript type. Phase 9 composition will `useFactory` + `inject: [UNIT_OF_WORK, …]`. Tokens in this package are framework-free `Symbol`s — do not add `@Inject` to application here.
+Application use cases inject ports with `@Inject(portToken)`. Port tokens live next to the port (`USER_REPOSITORY` in domain, `UNIT_OF_WORK` in platform). This package owns adapter-internal tokens only (`DATA_SOURCE`, `POSTGRES_CONFIG`).
 
 ## Allowed imports
 
@@ -32,8 +32,6 @@ Never import `contracts`, `composition*`, or `nestjs-cls`.
 | Token             | Binds to                               |
 | ----------------- | -------------------------------------- |
 | `DATA_SOURCE`     | TypeORM `DataSource`                   |
-| `UNIT_OF_WORK`    | `TypeormUnitOfWork`                    |
-| `TENANT_CONTEXT`  | `AlsTenantContext`                     |
 | `POSTGRES_CONFIG` | `{DATABASE_URL, POSTGRES_POOL_MAX, …}` |
 
 Pool, connect/statement/lock/idle-in-transaction timeouts, `application_name`, and slow-query threshold (`POSTGRES_SLOW_QUERY_MS` → TypeORM `maxQueryExecutionTime`) are optional env vars with defaults. `DATABASE_URL` remains required. Query logging stays off.

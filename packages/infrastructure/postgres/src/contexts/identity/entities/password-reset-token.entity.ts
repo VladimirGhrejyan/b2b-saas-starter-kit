@@ -1,7 +1,9 @@
 import {Column, Entity, PrimaryColumn} from 'typeorm'
 
+import {AuditableEntity} from '../../../kernel/persistence/auditable.entity'
+
 @Entity({name: 'password_reset_tokens'})
-export class PasswordResetTokenEntity {
+export class PasswordResetTokenEntity extends AuditableEntity {
   @PrimaryColumn({name: 'user_id', type: 'uuid'})
   userId!: string
 

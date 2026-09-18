@@ -16,16 +16,18 @@ Source of truth: `docs/architecture/persistence.md`.
 
 | Artifact | Location |
 |----------|----------|
-| Repository ports | `packages/domain/<context>/ports` |
+| Repository ports + tokens (`USER_REPOSITORY`, …) | `packages/domain/<context>/ports` |
 | Domain errors | `packages/domain/<context>/errors` |
 | Domain models | `packages/domain/<context>` |
 | TypeORM entities + mappers + repo impls | `packages/infrastructure/postgres/src/contexts/<context>` |
 | Migrations (global) | `packages/infrastructure/postgres/src/kernel/migrations` |
 | Migration CLI | `packages/infrastructure/postgres/src/kernel/migration-cli` |
 | `DataSource` manager + factory + runner | `packages/infrastructure/postgres/src/kernel/data-source` |
-| DI tokens (`DATA_SOURCE`, `UNIT_OF_WORK`, `TENANT_CONTEXT`, `CLOCK`, `ID_GENERATOR`) | `packages/infrastructure/postgres/src/kernel/tokens.ts` |
+| Adapter-internal DI tokens (`DATA_SOURCE`, `POSTGRES_CONFIG`) | `packages/infrastructure/postgres/src/kernel/tokens.ts` |
+| Port DI tokens (`UNIT_OF_WORK`, `TENANT_CONTEXT`, `CLOCK`, …) | colocated with the port (`domain` / `platform`) |
 | `UnitOfWork` port | `packages/platform` |
 | `UnitOfWork` impl (`TypeormUnitOfWork` + ALS) | `packages/infrastructure/postgres/src/kernel/persistence` |
+| `AuditableEntity`, `VersionedEntity`, `ChildCollectionWriter` | `packages/infrastructure/postgres/src/kernel/persistence` |
 | `TenantContext` impl (`AlsTenantContext`) | `packages/infrastructure/postgres/src/kernel/tenant-context` |
 | In-memory fakes | `packages/application/src/testing` |
 
@@ -42,7 +44,7 @@ export interface TenantRepository {
 
 // infrastructure/postgres — TypeORM entity (never exported as domain)
 @Entity('tenants')
-export class TenantEntity {
+export class TenantEntity extends AuditableEntity {
   @PrimaryColumn('uuid') id!: string
   @Column() name!: string
   @Column() status!: string
@@ -75,6 +77,10 @@ Do **not** put `EntityManager` on domain port signatures. Do **not** use `@nestj
 ## Tenant-Aware Repositories
 
 Tenant-owned repos extend `TenantAwareRepository` (ambient `TenantContext`). See `multi-tenancy.mdc`.
+
+## Audit & Version Columns
+
+Every entity extends `AuditableEntity`; versioned parent aggregates extend `VersionedEntity`. Child-collection saves use `ChildCollectionWriter` inside `uow.run()`. See `audit-and-versioning.mdc`.
 
 ## Cross-Context Data
 

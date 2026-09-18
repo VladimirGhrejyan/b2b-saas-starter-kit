@@ -1,0 +1,105 @@
+---
+description: Row audit timestamps, optimistic version columns, and child-collection writes
+globs:
+  - "packages/infrastructure/postgres/**/*.ts"
+  - "packages/application/**/*.ts"
+  - "packages/composition*/**/*.ts"
+  - "apps/api/**/*.ts"
+  - "apps/worker/**/*.ts"
+alwaysApply: false
+---
+
+# Audit Timestamps & Optimistic Versioning
+
+Source of truth: `docs/architecture/persistence.md` (audit/version section).
+
+Kernel bases live in `packages/infrastructure/postgres/src/kernel/persistence/`.
+
+## Base entities
+
+| Base | Columns | Use for |
+|------|---------|---------|
+| `AuditableEntity` | `created_at`, `updated_at` (`timestamptz`) | **Every** production table row |
+| `VersionedEntity` | above + `@VersionColumn()` `version` | Parent rows of child-collection aggregates |
+
+```typescript
+// ✅ All new TypeORM entities extend a kernel base
+@Entity('users')
+export class UserEntity extends AuditableEntity {
+  @PrimaryColumn('uuid') id!: string
+  // …
+}
+
+@Entity('roles')
+export class RoleEntity extends VersionedEntity {
+  @PrimaryColumn('uuid') id!: string
+  // …
+}
+```
+
+**Versioned parents today:** `RoleEntity`, `MembershipEntity`.  
+**Auditable-only parents with child rows:** `InvitationEntity` (roles replaced via join table).  
+**Child join tables** (`role_permissions`, `membership_roles`, `invitation_roles`) also extend `AuditableEntity`.
+
+## Domain stays pure
+
+Audit/version columns are **infrastructure-only**. Do **not** add `version`, `createdAt`, or `updatedAt` to domain aggregates, ports, or application commands. Mappers ignore them on read; writers stamp them on save.
+
+## Writes
+
+### Single-table repos
+
+Use `manager.save(Entity, mapped)` — **not** `upsert`. Repositories join the ambient transaction via `transactionAls` (see `persistence.mdc`).
+
+### Parent + child-collection repos
+
+`Role`, `Membership`, and `Invitation` saves go through `ChildCollectionWriter`:
+
+- **`saveVersionedParentAndReplaceChildren`** — versioned parent (`Role`, `Membership`); maps `OptimisticLockVersionMismatchError` → `OptimisticConcurrencyError`
+- **`saveAuditableParentAndReplaceChildren`** — auditable parent only (`Invitation`)
+
+Both paths:
+
+1. Require an ambient `UnitOfWork` transaction (`AssertAmbientTransaction.assert()`)
+2. `SELECT … FOR UPDATE` on the parent row before write
+3. Preserve `createdAt` (and `version` for versioned) from the locked row
+4. Delete + insert child rows (full collection replace)
+
+Use cases that mutate these aggregates **must** wrap `save` in `uow.run()`. Test seeds/helpers too (`runInUnitOfWork`, or inject `UNIT_OF_WORK`).
+
+```typescript
+// ✅ application use case
+await this.uow.run(async () => {
+  await this.roles.save(role)
+})
+
+// ❌ repository save outside UoW — throws AmbientTransactionRequiredError
+await this.roles.save(role)
+```
+
+## Migrations
+
+New tables:
+
+- Add `created_at` / `updated_at` (`timestamptz`, `NOT NULL`, sensible default/backfill for existing rows)
+- Add `version` (`integer`, `NOT NULL`, default `1`) only on versioned parent tables
+
+Register migrations in `postgres-migrations.ts`. Never hand-roll audit columns on entities without a matching migration.
+
+## Tenant reads with explicit `tenantId`
+
+When a repo method accepts `tenantId` but may run **without** ambient tenant scope (e.g. `findByUserAndTenant` for select-tenant), call `assertTenant(tenantId)` only if `hasEstablishedTenantScope()` — not when context is unset.
+
+## Anti-patterns
+
+```typescript
+// ❌ Manual timestamp columns on entities
+@CreateDateColumn() createdAt!: Date // extend AuditableEntity instead
+
+// ❌ Domain aggregate carrying ORM version
+class Role { constructor(readonly version: number) {} }
+
+// ❌ Child-collection save without parent lock / UoW
+await manager.save(parent)
+await manager.delete(children)
+```

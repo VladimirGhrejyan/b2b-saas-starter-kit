@@ -56,11 +56,11 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) generic ports in platform; (B) per-context ports in domain; (C) hybrid ✓.
 **Rationale:** Caching/locking are technical capabilities, not domain concepts; domain stays Redis-free; one shared adapter avoids duplication. See [`infrastructure.md`](./infrastructure.md).
 
-## ADR-010 — NestJS confined to outer ring; application is Nest-aware only via `@Injectable`
+## ADR-010 — NestJS confined to outer ring; application is Nest-aware via `@Injectable` and `@Inject(portToken)`
 
-**Decision:** NestJS lives in `apps` + `infrastructure` (where a Nest adapter is justified) + `packages/nest-http` + `composition`; domain is fully pure; the only Nest in application is the `@Injectable` decorator. Logger is **not** a Nest provider.
-**Options:** (A) framework-free application (factory wiring); (B/C) `@Injectable`-only application ✓.
-**Rationale:** For a starter kit, pure-application factory wiring adds boilerplate that obscures intent; the domain stays pure where it matters. See [`backend.md`](./backend.md).
+**Decision:** NestJS lives in `apps` + `infrastructure` (where a Nest adapter is justified) + `packages/nest-http` + `composition`; domain is fully pure. Application may use `@Injectable` and `@Inject(portToken)` from `@nestjs/common` so constructors resolve Symbol tokens colocated with ports. Logger is **not** a Nest provider — never `@Inject()` it.
+**Options:** (A) framework-free application (factory wiring); (B) `@Injectable`-only with composition `useFactory` blocks; (C) `@Injectable` + `@Inject(portToken)` ✓.
+**Rationale:** Interface tokens erase at runtime, so factories that inject concrete adapter classes are not actually inverted. Port-owned Symbols plus `@Inject` let composition bind `{provide: USER_REPOSITORY, useClass: TypeOrmUserRepository}` once. Domain stays Nest-free. See [`backend.md`](./backend.md).
 
 ## ADR-011 — Dedicated composition layer for DI wiring
 
@@ -167,7 +167,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 **Decision:** HTTP bootstrap helpers (`ApiBuilder`, global pipe/filter/interceptor, Swagger, `@Public()`, process error handlers) live in `packages/nest-http` (`@b2b-saas-starter-kit/nest-http`, `layer:nest-http`). Composition remains port→adapter Nest modules only. `HttpStatus` and the error envelope live in `contracts`. The kit does not import domain, application, or postgres. JWT / `RequirePermission` stay in `apps/api`.
 **Options:** (A) stuff pipes/filters/Swagger into `apps/api`; (B) mix HTTP kit into `composition`; (C) one Nest+Pino `common` package; (D) dedicated `nest-http` + separate logger adapter ✓.
-**Rationale:** Apps stay thin and consistent; workers must not pull Nest/Swagger; application must not import Nest beyond `@Injectable`. See [`backend.md`](./backend.md), [`workspace-topology.md`](./workspace-topology.md).
+**Rationale:** Apps stay thin and consistent; workers must not pull Nest/Swagger; application must not import Nest beyond `@Injectable` / `@Inject(portToken)`. See [`backend.md`](./backend.md), [`workspace-topology.md`](./workspace-topology.md).
 
 ## ADR-029 — URI versioning, CORS, and HTTP bootstrap defaults
 

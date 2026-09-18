@@ -3,6 +3,7 @@ import {Module} from '@nestjs/common'
 import {
   AcceptInvitationUseCase,
   AttachMemberUseCase,
+  AUTHORIZATION,
   AuthorizationService,
   CreateCustomRoleUseCase,
   CreateTenantUseCase,
@@ -12,7 +13,9 @@ import {
   InviteMemberUseCase,
   ListRolesQuery,
   ListTenantMembersQuery,
+  LoginUseCase,
   ReplaceMembershipRolesUseCase,
+  SelectTenantUseCase,
   UpdateCustomRoleUseCase,
 } from '@b2b-saas-starter-kit/application'
 
@@ -26,7 +29,6 @@ import {AuthorizationModule} from './authorization/authorization.module'
 import {IdentityModule} from './identity/identity.module'
 import {AssertActiveMembership} from './principal/assert-active-membership'
 import {TenancyModule} from './tenancy/tenancy.module'
-import {compositionProviders} from './composition.providers'
 
 @Module({
   imports: [
@@ -41,11 +43,29 @@ import {compositionProviders} from './composition.providers'
     }),
     NodeInfrastructureModule,
     SecurityModule,
-    IdentityModule,
     TenancyModule,
+    IdentityModule,
     AuthorizationModule,
   ],
-  providers: compositionProviders,
+  providers: [
+    AuthorizationService,
+    {provide: AUTHORIZATION, useExisting: AuthorizationService},
+    AssertActiveMembership,
+    CreateTenantUseCase,
+    GetMyProfileQuery,
+    GetTenantQuery,
+    ListTenantMembersQuery,
+    InviteMemberUseCase,
+    AcceptInvitationUseCase,
+    AttachMemberUseCase,
+    ReplaceMembershipRolesUseCase,
+    LoginUseCase,
+    SelectTenantUseCase,
+    ListRolesQuery,
+    CreateCustomRoleUseCase,
+    UpdateCustomRoleUseCase,
+    DeleteCustomRoleUseCase,
+  ],
   exports: [
     IdentityModule,
     TenancyModule,
@@ -58,11 +78,14 @@ import {compositionProviders} from './composition.providers'
     AcceptInvitationUseCase,
     AttachMemberUseCase,
     ReplaceMembershipRolesUseCase,
+    LoginUseCase,
+    SelectTenantUseCase,
     ListRolesQuery,
     CreateCustomRoleUseCase,
     UpdateCustomRoleUseCase,
     DeleteCustomRoleUseCase,
     AuthorizationService,
+    AUTHORIZATION,
     AssertActiveMembership,
   ],
 })

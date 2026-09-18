@@ -1,9 +1,11 @@
 import {Column, Entity, PrimaryColumn} from 'typeorm'
 
+import {AuditableEntity} from '../persistence/auditable.entity'
+
 import type {OutboxStatus} from './outbox-status'
 
 @Entity({name: 'outbox'})
-export class OutboxEntryEntity {
+export class OutboxEntryEntity extends AuditableEntity {
   @PrimaryColumn({type: 'uuid'})
   id!: string
 
@@ -18,9 +20,6 @@ export class OutboxEntryEntity {
 
   @Column({type: 'text'})
   status!: OutboxStatus
-
-  @Column({name: 'created_at', type: 'timestamptz'})
-  createdAt!: Date
 
   @Column({name: 'processed_at', type: 'timestamptz', nullable: true})
   processedAt!: Date | null

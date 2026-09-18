@@ -1,11 +1,12 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import {RefreshSessionId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {RefreshSessionRepository} from '@b2b-saas-starter-kit/domain'
-import {RefreshSession} from '@b2b-saas-starter-kit/domain'
+import {REFRESH_SESSION_REPOSITORY, RefreshSession} from '@b2b-saas-starter-kit/domain'
 
 import type {Clock, IdGenerator, TokenDigest, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import {CLOCK, ID_GENERATOR, TOKEN_DIGEST, UNIT_OF_WORK} from '@b2b-saas-starter-kit/platform'
 
 import {REFRESH_TTL_MS} from '../authentication.constants'
 import {InvalidRefreshTokenError} from '../errors/invalid-refresh-token.error'
@@ -18,11 +19,11 @@ import type {RotateRefreshCommand, RotateRefreshResult} from './rotate-refresh.t
 @Injectable()
 export class RotateRefreshUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly clock: Clock,
-    private readonly ids: IdGenerator,
-    private readonly digest: TokenDigest,
-    private readonly sessions: RefreshSessionRepository,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    @Inject(TOKEN_DIGEST) private readonly digest: TokenDigest,
+    @Inject(REFRESH_SESSION_REPOSITORY) private readonly sessions: RefreshSessionRepository,
   ) {}
 
   async execute(command: RotateRefreshCommand): Promise<RotateRefreshResult> {

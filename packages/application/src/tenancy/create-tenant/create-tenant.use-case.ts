@@ -1,11 +1,21 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import {MembershipId, RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {MembershipRepository, RoleRepository, TenantRepository, UserRepository} from '@b2b-saas-starter-kit/domain'
-import {Membership, Role, SystemRoleNames, Tenant} from '@b2b-saas-starter-kit/domain'
+import {
+  Membership,
+  MEMBERSHIP_REPOSITORY,
+  Role,
+  ROLE_REPOSITORY,
+  SystemRoleNames,
+  Tenant,
+  TENANT_REPOSITORY,
+  USER_REPOSITORY,
+} from '@b2b-saas-starter-kit/domain'
 
 import type {Clock, EventPublisher, IdGenerator, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import {CLOCK, EVENT_PUBLISHER, ID_GENERATOR, UNIT_OF_WORK} from '@b2b-saas-starter-kit/platform'
 
 import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
 import {OwnerUserNotFoundError} from '../errors/owner-user-not-found.error'
@@ -18,14 +28,14 @@ import type {CreateTenantCommand, CreateTenantResult} from './create-tenant.type
 @Injectable()
 export class CreateTenantUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly clock: Clock,
-    private readonly ids: IdGenerator,
-    private readonly users: UserRepository,
-    private readonly tenants: TenantRepository,
-    private readonly roles: RoleRepository,
-    private readonly memberships: MembershipRepository,
-    private readonly events: EventPublisher,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(TENANT_REPOSITORY) private readonly tenants: TenantRepository,
+    @Inject(ROLE_REPOSITORY) private readonly roles: RoleRepository,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
+    @Inject(EVENT_PUBLISHER) private readonly events: EventPublisher,
   ) {}
 
   async execute(command: CreateTenantCommand): Promise<CreateTenantResult> {

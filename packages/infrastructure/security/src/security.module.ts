@@ -1,8 +1,9 @@
 import {Global, Module} from '@nestjs/common'
 
+import {PASSWORD_HASHER, TOKEN_DIGEST} from '@b2b-saas-starter-kit/platform'
+
 import {Argon2PasswordHasher} from './password-hasher/argon2-password-hasher'
 import {Sha256TokenDigest} from './token-digest/sha256-token-digest'
-import {PASSWORD_HASHER, TOKEN_DIGEST} from './tokens'
 
 /**
  * Nest wrapper around Argon2id hashing and SHA-256 token digest.

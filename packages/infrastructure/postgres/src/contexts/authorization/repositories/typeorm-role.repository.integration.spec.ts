@@ -7,6 +7,7 @@ import {PermissionCatalog, Role} from '@b2b-saas-starter-kit/domain'
 import {AlsTenantContext} from '../../../kernel/tenant-context/tenant-context'
 import {TenantContextMismatchError} from '../../../kernel/tenant-context/tenant-context-mismatch.error'
 import {PostgresTestContext} from '../../../testing/postgres-test-context'
+import {runInUnitOfWork} from '../../../testing/run-in-unit-of-work'
 
 import {TypeOrmRoleRepository} from './typeorm-role.repository'
 
@@ -38,24 +39,26 @@ describe('TypeOrmRoleRepository', () => {
 
   it('round-trips save and saveMany including permissions', async () => {
     await tenantContext.withoutTenantScope(async () => {
-      await repo.save(
-        Role.reconstitute({
-          id: ownerA,
-          tenantId: tenantA,
-          name: 'Owner',
-          permissions: PermissionCatalog.all,
-          isSystem: true,
-        }),
-      )
-      await repo.saveMany([
-        Role.reconstitute({
-          id: memberA,
-          tenantId: tenantA,
-          name: 'Member',
-          permissions: [PermissionCatalog.tenancyTenantRead],
-          isSystem: true,
-        }),
-      ])
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
+          Role.reconstitute({
+            id: ownerA,
+            tenantId: tenantA,
+            name: 'Owner',
+            permissions: PermissionCatalog.all,
+            isSystem: true,
+          }),
+        )
+        await repo.saveMany([
+          Role.reconstitute({
+            id: memberA,
+            tenantId: tenantA,
+            name: 'Member',
+            permissions: [PermissionCatalog.tenancyTenantRead],
+            isSystem: true,
+          }),
+        ])
+      })
     })
 
     const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(ownerA))
@@ -70,30 +73,8 @@ describe('TypeOrmRoleRepository', () => {
 
   it('does not let tenant A load tenant B roles', async () => {
     await tenantContext.withoutTenantScope(async () => {
-      await repo.save(
-        Role.reconstitute({
-          id: ownerB,
-          tenantId: tenantB,
-          name: 'Owner',
-          permissions: PermissionCatalog.all,
-          isSystem: true,
-        }),
-      )
-    })
-
-    const byId = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(ownerB))
-    const byTenant = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
-      repo.findByTenant(tenantB),
-    )
-
-    expect(byId).toBeNull()
-    expect(byTenant).toEqual([])
-  })
-
-  it('throws TenantContextMismatchError when ambient tenant disagrees with the aggregate', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
-      await expect(
-        repo.save(
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
           Role.reconstitute({
             id: ownerB,
             tenantId: tenantB,
@@ -101,7 +82,33 @@ describe('TypeOrmRoleRepository', () => {
             permissions: PermissionCatalog.all,
             isSystem: true,
           }),
-        ),
+        )
+      })
+    })
+
+    const byId = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(ownerB))
+
+    await expect(
+      tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findByTenant(tenantB)),
+    ).rejects.toBeInstanceOf(TenantContextMismatchError)
+
+    expect(byId).toBeNull()
+  })
+
+  it('throws TenantContextMismatchError when ambient tenant disagrees with the aggregate', async () => {
+    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+      await expect(
+        runInUnitOfWork(ctx.dataSource, async () => {
+          await repo.save(
+            Role.reconstitute({
+              id: ownerB,
+              tenantId: tenantB,
+              name: 'Owner',
+              permissions: PermissionCatalog.all,
+              isSystem: true,
+            }),
+          )
+        }),
       ).rejects.toBeInstanceOf(TenantContextMismatchError)
     })
   })

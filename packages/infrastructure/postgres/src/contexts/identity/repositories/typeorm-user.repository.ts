@@ -30,7 +30,7 @@ export class TypeOrmUserRepository implements UserRepository {
   }
 
   async save(user: User): Promise<void> {
-    await this.#manager.upsert(UserEntity, UserMapper.toEntity(user), {conflictPaths: ['id']})
+    await this.#manager.save(UserEntity, UserMapper.toEntity(user))
   }
 
   get #manager(): EntityManager {

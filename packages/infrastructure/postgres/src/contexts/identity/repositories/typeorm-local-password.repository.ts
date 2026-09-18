@@ -24,7 +24,7 @@ export class TypeOrmLocalPasswordRepository implements LocalPasswordRepository {
   }
 
   async save(password: LocalPassword): Promise<void> {
-    await this.#manager.upsert(LocalPasswordEntity, LocalPasswordMapper.toEntity(password), {conflictPaths: ['userId']})
+    await this.#manager.save(LocalPasswordEntity, LocalPasswordMapper.toEntity(password))
   }
 
   get #manager(): EntityManager {

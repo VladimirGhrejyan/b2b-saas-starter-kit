@@ -23,7 +23,6 @@ export class PostgresEventPublisher implements EventPublisher {
     }
 
     const manager = this.#requireAmbientManager()
-    const now = new Date()
     const rows = events.map((event) => {
       const entity = new OutboxEntryEntity()
 
@@ -32,7 +31,6 @@ export class PostgresEventPublisher implements EventPublisher {
       entity.payload = OutboxSerializer.serialize(event)
       entity.tenantId = OutboxSerializer.extractTenantId(event)
       entity.status = OutboxStatus.parse('pending')
-      entity.createdAt = now
       entity.processedAt = null
       entity.attemptCount = 0
 

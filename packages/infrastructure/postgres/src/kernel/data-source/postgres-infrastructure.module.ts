@@ -1,13 +1,19 @@
 import type {DynamicModule} from '@nestjs/common'
 import {Module} from '@nestjs/common'
 
-import {EVENT_BUS, EVENT_PUBLISHER, InProcessEventBus} from '@b2b-saas-starter-kit/platform'
+import {
+  EVENT_BUS,
+  EVENT_PUBLISHER,
+  InProcessEventBus,
+  TENANT_CONTEXT,
+  UNIT_OF_WORK,
+} from '@b2b-saas-starter-kit/platform'
 
 import {OutboxRelay} from '../outbox/outbox-relay'
 import {PostgresEventPublisher} from '../outbox/postgres-event-publisher'
 import {TypeormUnitOfWork} from '../persistence/unit-of-work'
 import {AlsTenantContext} from '../tenant-context/tenant-context'
-import {DATA_SOURCE, POSTGRES_CONFIG, TENANT_CONTEXT, UNIT_OF_WORK} from '../tokens'
+import {DATA_SOURCE, POSTGRES_CONFIG} from '../tokens'
 
 import {DataSourceManager} from './data-source.manager'
 import type {PostgresInfrastructureModuleAsyncOptions} from './postgres-infrastructure.module.types'

@@ -1,4 +1,4 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import {RefreshFamilyId, RefreshSessionId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
@@ -8,9 +8,16 @@ import type {
   RefreshSessionRepository,
   UserRepository,
 } from '@b2b-saas-starter-kit/domain'
-import {RefreshSession} from '@b2b-saas-starter-kit/domain'
+import {
+  LOCAL_PASSWORD_REPOSITORY,
+  MEMBERSHIP_REPOSITORY,
+  REFRESH_SESSION_REPOSITORY,
+  RefreshSession,
+  USER_REPOSITORY,
+} from '@b2b-saas-starter-kit/domain'
 
 import type {Clock, IdGenerator, PasswordHasher, TokenDigest, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import {CLOCK, ID_GENERATOR, PASSWORD_HASHER, TOKEN_DIGEST, UNIT_OF_WORK} from '@b2b-saas-starter-kit/platform'
 
 import {REFRESH_TTL_MS} from '../authentication.constants'
 import {InvalidCredentialsError} from '../errors/invalid-credentials.error'
@@ -24,15 +31,15 @@ import type {LoginCommand, LoginResult} from './login.types'
 @Injectable()
 export class LoginUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly clock: Clock,
-    private readonly ids: IdGenerator,
-    private readonly hasher: PasswordHasher,
-    private readonly digest: TokenDigest,
-    private readonly users: UserRepository,
-    private readonly passwords: LocalPasswordRepository,
-    private readonly sessions: RefreshSessionRepository,
-    private readonly memberships: MembershipRepository,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(ID_GENERATOR) private readonly ids: IdGenerator,
+    @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
+    @Inject(TOKEN_DIGEST) private readonly digest: TokenDigest,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(LOCAL_PASSWORD_REPOSITORY) private readonly passwords: LocalPasswordRepository,
+    @Inject(REFRESH_SESSION_REPOSITORY) private readonly sessions: RefreshSessionRepository,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
   ) {}
 
   async execute(command: LoginCommand): Promise<LoginResult> {

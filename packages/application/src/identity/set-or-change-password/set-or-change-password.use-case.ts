@@ -1,9 +1,15 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {LocalPasswordRepository, RefreshSessionRepository, UserRepository} from '@b2b-saas-starter-kit/domain'
-import {LocalPassword} from '@b2b-saas-starter-kit/domain'
+import {
+  LOCAL_PASSWORD_REPOSITORY,
+  LocalPassword,
+  REFRESH_SESSION_REPOSITORY,
+  USER_REPOSITORY,
+} from '@b2b-saas-starter-kit/domain'
 
 import type {Clock, PasswordHasher, UnitOfWork} from '@b2b-saas-starter-kit/platform'
+import {CLOCK, PASSWORD_HASHER, UNIT_OF_WORK} from '@b2b-saas-starter-kit/platform'
 
 import {UserNotFoundError} from '../../shared/errors/user-not-found.error'
 import {MIN_PASSWORD_LENGTH} from '../authentication.constants'
@@ -19,12 +25,12 @@ import type {SetOrChangePasswordCommand} from './set-or-change-password.types'
 @Injectable()
 export class SetOrChangePasswordUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly clock: Clock,
-    private readonly hasher: PasswordHasher,
-    private readonly users: UserRepository,
-    private readonly passwords: LocalPasswordRepository,
-    private readonly sessions: RefreshSessionRepository,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(LOCAL_PASSWORD_REPOSITORY) private readonly passwords: LocalPasswordRepository,
+    @Inject(REFRESH_SESSION_REPOSITORY) private readonly sessions: RefreshSessionRepository,
   ) {}
 
   async execute(command: SetOrChangePasswordCommand): Promise<void> {

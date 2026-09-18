@@ -23,7 +23,7 @@ apps/api, apps/worker          ← thin transport (LoggerLocator.init; api also 
   → nest-http                  ← HTTP kit (pipe/filter/Swagger/CORS/versioning)
   → composition/<context>      ← Nest modules (port → adapter wiring)
   → infrastructure/{postgres,logger,redis,messaging}
-  → application/<context>      ← @Injectable use cases
+  → application/<context>      ← @Injectable use cases with @Inject(portToken)
   → domain/<context>           ← pure models + repository PORTS
   → shared-kernel-types
 
@@ -52,20 +52,23 @@ export class MembersController {
 
 ## Application
 
-- `@Injectable` use cases only Nest seam allowed
+- `@Injectable` use cases with `@Inject(portToken)` for every port constructor param. No controllers, TypeORM, Redis, or `contracts`.
 - Own transaction boundaries via `UnitOfWork`
+- **Do not `@Inject()` Logger.** Use `LoggerLocator.get().context(UseCase.name)` from `@b2b-saas-starter-kit/platform` after process `LoggerLocator.init`.
 - Own fine-grained authorization
 - Depend on **ports** from `domain` / `platform`, never on infrastructure
 - Log with `LoggerLocator.get().context(CreateUserUseCase.name)` — **never** `@Inject()` Logger
 - Never import `@b2b-saas-starter-kit/contracts`
 
 ```typescript
+import {Inject, Injectable} from '@nestjs/common'
+
 @Injectable()
 export class InviteMemberUseCase {
   constructor(
-    private readonly uow: UnitOfWork,
-    private readonly authz: AuthorizationPort,
-    private readonly memberships: MembershipRepository,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
   ) {}
 
   async execute(cmd: InviteMemberCommand) {
@@ -105,7 +108,7 @@ Per-context Nest modules bind ports → adapters and register use cases. Apps im
 @Module({
   providers: [
     InviteMemberUseCase,
-    { provide: MembershipRepository, useClass: TypeOrmMembershipRepository },
+    {provide: MEMBERSHIP_REPOSITORY, useClass: TypeOrmMembershipRepository},
   ],
   exports: [InviteMemberUseCase],
 })
@@ -114,7 +117,7 @@ export class TenancyModule {}
 
 ## Forbidden
 
-- Domain/application importing infrastructure or Nest beyond `@Injectable`
+- Domain/application importing infrastructure or Nest beyond `@Injectable` / `@Inject(portToken)`
 - `@Inject()` Logger or `nestjs-pino`
 - Application importing `contracts`
 - Business logic in controllers

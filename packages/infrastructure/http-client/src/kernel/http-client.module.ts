@@ -1,12 +1,14 @@
 import type {DynamicModule} from '@nestjs/common'
 import {Module} from '@nestjs/common'
 
+import {HTTP_CLIENT} from '@b2b-saas-starter-kit/platform'
+
 import {UndiciHttpClient} from '../http-client.adapter'
 
 import type {HttpClientConfig} from './config/http-client-config'
 import {HttpClientAgentManager} from './connection/http-client-agent.manager'
 import type {HttpClientModuleAsyncOptions} from './http-client.module.types'
-import {HTTP_CLIENT, HTTP_CLIENT_CONFIG} from './tokens'
+import {HTTP_CLIENT_CONFIG} from './tokens'
 
 /**
  * Nest wrapper around one process-wide undici Agent and {@link UndiciHttpClient}.

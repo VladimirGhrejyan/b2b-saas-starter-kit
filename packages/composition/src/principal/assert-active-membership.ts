@@ -2,11 +2,11 @@ import {Inject, Injectable} from '@nestjs/common'
 
 import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import type {Membership} from '@b2b-saas-starter-kit/domain'
+import type {Membership, MembershipRepository} from '@b2b-saas-starter-kit/domain'
+import {MEMBERSHIP_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {TenantContext} from '@b2b-saas-starter-kit/platform'
-
-import {TENANT_CONTEXT, TypeOrmMembershipRepository} from '@b2b-saas-starter-kit/postgres'
+import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
 /**
  * Looks up an active membership without requiring ambient tenant scope.
@@ -14,7 +14,7 @@ import {TENANT_CONTEXT, TypeOrmMembershipRepository} from '@b2b-saas-starter-kit
 @Injectable()
 export class AssertActiveMembership {
   constructor(
-    private readonly memberships: TypeOrmMembershipRepository,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
     @Inject(TENANT_CONTEXT) private readonly tenantContext: TenantContext,
   ) {}
 

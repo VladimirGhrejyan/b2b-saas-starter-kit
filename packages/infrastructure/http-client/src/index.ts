@@ -5,4 +5,4 @@ export {loadHttpClientConfigFromEnv} from './kernel/config/load-http-client-conf
 export {HttpClientAgentManager} from './kernel/connection/http-client-agent.manager'
 export {HttpClientModule} from './kernel/http-client.module'
 export type {HttpClientModuleAsyncOptions} from './kernel/http-client.module.types'
-export {HTTP_CLIENT, HTTP_CLIENT_CONFIG} from './kernel/tokens'
+export {HTTP_CLIENT_CONFIG} from './kernel/tokens'

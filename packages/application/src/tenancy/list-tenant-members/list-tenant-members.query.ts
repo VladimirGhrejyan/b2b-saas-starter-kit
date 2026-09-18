@@ -1,9 +1,10 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {MembershipRepository, UserRepository} from '@b2b-saas-starter-kit/domain'
-import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
+import {MEMBERSHIP_REPOSITORY, PermissionCatalog, USER_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {AUTHORIZATION} from '../../shared/authorization.port'
 
 import type {ListTenantMembersQueryInput, ListTenantMembersResult} from './list-tenant-members.types'
 
@@ -15,9 +16,9 @@ import type {ListTenantMembersQueryInput, ListTenantMembersResult} from './list-
 @Injectable()
 export class ListTenantMembersQuery {
   constructor(
-    private readonly authz: AuthorizationPort,
-    private readonly memberships: MembershipRepository,
-    private readonly users: UserRepository,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
+    @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
   ) {}
 
   async execute(query: ListTenantMembersQueryInput): Promise<ListTenantMembersResult> {

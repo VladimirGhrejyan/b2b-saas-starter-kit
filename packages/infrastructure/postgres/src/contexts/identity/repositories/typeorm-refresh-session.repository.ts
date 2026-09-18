@@ -24,7 +24,7 @@ export class TypeOrmRefreshSessionRepository implements RefreshSessionRepository
   }
 
   async save(session: RefreshSession): Promise<void> {
-    await this.#manager.upsert(RefreshSessionEntity, RefreshSessionMapper.toEntity(session), {conflictPaths: ['id']})
+    await this.#manager.save(RefreshSessionEntity, RefreshSessionMapper.toEntity(session))
   }
 
   async revokeFamily(familyId: RefreshFamilyId, at: Date): Promise<void> {

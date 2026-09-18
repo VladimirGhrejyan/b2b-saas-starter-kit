@@ -1,49 +1,40 @@
 import {Module} from '@nestjs/common'
 
-import type {
-  Clock,
-  EventPublisher,
-  IdGenerator,
-  MailerPort,
-  PasswordHasher,
-  TokenDigest,
-  UnitOfWork,
-} from '@b2b-saas-starter-kit/platform'
-import {EVENT_PUBLISHER} from '@b2b-saas-starter-kit/platform'
+import {
+  LOCAL_PASSWORD_REPOSITORY,
+  PASSWORD_RESET_TOKEN_REPOSITORY,
+  REFRESH_SESSION_REPOSITORY,
+  USER_REPOSITORY,
+} from '@b2b-saas-starter-kit/domain'
+
+import type {MailerPort} from '@b2b-saas-starter-kit/platform'
+import {MAILER} from '@b2b-saas-starter-kit/platform'
 
 import {
   CreateUserUseCase,
   LoggingMailer,
-  LoginUseCase,
   LogoutUseCase,
   RegisterUserUseCase,
   RequestPasswordResetUseCase,
   ResetPasswordUseCase,
   RotateRefreshUseCase,
-  SelectTenantUseCase,
   SetOrChangePasswordUseCase,
 } from '@b2b-saas-starter-kit/application'
 
 import {
-  MAILER,
   TypeOrmLocalPasswordRepository,
-  TypeOrmMembershipRepository,
   TypeOrmPasswordResetTokenRepository,
   TypeOrmRefreshSessionRepository,
   TypeOrmUserRepository,
-  UNIT_OF_WORK,
 } from '@b2b-saas-starter-kit/postgres'
-import {PASSWORD_HASHER, TOKEN_DIGEST} from '@b2b-saas-starter-kit/security'
 import {SmtpMailer, tryLoadSmtpConfigFromEnv} from '@b2b-saas-starter-kit/mail'
-import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
 
 @Module({
   providers: [
-    TypeOrmUserRepository,
-    TypeOrmLocalPasswordRepository,
-    TypeOrmRefreshSessionRepository,
-    TypeOrmPasswordResetTokenRepository,
-    TypeOrmMembershipRepository,
+    {provide: USER_REPOSITORY, useClass: TypeOrmUserRepository},
+    {provide: LOCAL_PASSWORD_REPOSITORY, useClass: TypeOrmLocalPasswordRepository},
+    {provide: REFRESH_SESSION_REPOSITORY, useClass: TypeOrmRefreshSessionRepository},
+    {provide: PASSWORD_RESET_TOKEN_REPOSITORY, useClass: TypeOrmPasswordResetTokenRepository},
     LoggingMailer,
     {
       provide: MAILER,
@@ -54,158 +45,23 @@ import {CLOCK, ID_GENERATOR} from '@b2b-saas-starter-kit/node'
       },
       inject: [LoggingMailer],
     },
-    {
-      provide: CreateUserUseCase,
-      useFactory: (
-        uow: UnitOfWork,
-        clock: Clock,
-        ids: IdGenerator,
-        users: TypeOrmUserRepository,
-        events: EventPublisher,
-      ) => new CreateUserUseCase(uow, clock, ids, users, events),
-      inject: [UNIT_OF_WORK, CLOCK, ID_GENERATOR, TypeOrmUserRepository, EVENT_PUBLISHER],
-    },
-    {
-      provide: RegisterUserUseCase,
-      useFactory: (
-        uow: UnitOfWork,
-        clock: Clock,
-        ids: IdGenerator,
-        hasher: PasswordHasher,
-        users: TypeOrmUserRepository,
-        passwords: TypeOrmLocalPasswordRepository,
-        events: EventPublisher,
-      ) => new RegisterUserUseCase(uow, clock, ids, hasher, users, passwords, events),
-      inject: [
-        UNIT_OF_WORK,
-        CLOCK,
-        ID_GENERATOR,
-        PASSWORD_HASHER,
-        TypeOrmUserRepository,
-        TypeOrmLocalPasswordRepository,
-        EVENT_PUBLISHER,
-      ],
-    },
-    {
-      provide: LoginUseCase,
-      useFactory: (
-        uow: UnitOfWork,
-        clock: Clock,
-        ids: IdGenerator,
-        hasher: PasswordHasher,
-        digest: TokenDigest,
-        users: TypeOrmUserRepository,
-        passwords: TypeOrmLocalPasswordRepository,
-        sessions: TypeOrmRefreshSessionRepository,
-        memberships: TypeOrmMembershipRepository,
-      ) => new LoginUseCase(uow, clock, ids, hasher, digest, users, passwords, sessions, memberships),
-      inject: [
-        UNIT_OF_WORK,
-        CLOCK,
-        ID_GENERATOR,
-        PASSWORD_HASHER,
-        TOKEN_DIGEST,
-        TypeOrmUserRepository,
-        TypeOrmLocalPasswordRepository,
-        TypeOrmRefreshSessionRepository,
-        TypeOrmMembershipRepository,
-      ],
-    },
-    {
-      provide: RotateRefreshUseCase,
-      useFactory: (
-        uow: UnitOfWork,
-        clock: Clock,
-        ids: IdGenerator,
-        digest: TokenDigest,
-        sessions: TypeOrmRefreshSessionRepository,
-      ) => new RotateRefreshUseCase(uow, clock, ids, digest, sessions),
-      inject: [UNIT_OF_WORK, CLOCK, ID_GENERATOR, TOKEN_DIGEST, TypeOrmRefreshSessionRepository],
-    },
-    {
-      provide: LogoutUseCase,
-      useFactory: (uow: UnitOfWork, clock: Clock, digest: TokenDigest, sessions: TypeOrmRefreshSessionRepository) =>
-        new LogoutUseCase(uow, clock, digest, sessions),
-      inject: [UNIT_OF_WORK, CLOCK, TOKEN_DIGEST, TypeOrmRefreshSessionRepository],
-    },
-    {
-      provide: SelectTenantUseCase,
-      useFactory: (memberships: TypeOrmMembershipRepository) => new SelectTenantUseCase(memberships),
-      inject: [TypeOrmMembershipRepository],
-    },
-    {
-      provide: RequestPasswordResetUseCase,
-      useFactory: (
-        uow: UnitOfWork,
-        clock: Clock,
-        ids: IdGenerator,
-        digest: TokenDigest,
-        mailer: MailerPort,
-        users: TypeOrmUserRepository,
-        resetTokens: TypeOrmPasswordResetTokenRepository,
-      ) => new RequestPasswordResetUseCase(uow, clock, ids, digest, mailer, users, resetTokens),
-      inject: [
-        UNIT_OF_WORK,
-        CLOCK,
-        ID_GENERATOR,
-        TOKEN_DIGEST,
-        MAILER,
-        TypeOrmUserRepository,
-        TypeOrmPasswordResetTokenRepository,
-      ],
-    },
-    {
-      provide: ResetPasswordUseCase,
-      useFactory: (
-        uow: UnitOfWork,
-        clock: Clock,
-        hasher: PasswordHasher,
-        digest: TokenDigest,
-        passwords: TypeOrmLocalPasswordRepository,
-        resetTokens: TypeOrmPasswordResetTokenRepository,
-        sessions: TypeOrmRefreshSessionRepository,
-      ) => new ResetPasswordUseCase(uow, clock, hasher, digest, passwords, resetTokens, sessions),
-      inject: [
-        UNIT_OF_WORK,
-        CLOCK,
-        PASSWORD_HASHER,
-        TOKEN_DIGEST,
-        TypeOrmLocalPasswordRepository,
-        TypeOrmPasswordResetTokenRepository,
-        TypeOrmRefreshSessionRepository,
-      ],
-    },
-    {
-      provide: SetOrChangePasswordUseCase,
-      useFactory: (
-        uow: UnitOfWork,
-        clock: Clock,
-        hasher: PasswordHasher,
-        users: TypeOrmUserRepository,
-        passwords: TypeOrmLocalPasswordRepository,
-        sessions: TypeOrmRefreshSessionRepository,
-      ) => new SetOrChangePasswordUseCase(uow, clock, hasher, users, passwords, sessions),
-      inject: [
-        UNIT_OF_WORK,
-        CLOCK,
-        PASSWORD_HASHER,
-        TypeOrmUserRepository,
-        TypeOrmLocalPasswordRepository,
-        TypeOrmRefreshSessionRepository,
-      ],
-    },
-  ],
-  exports: [
-    TypeOrmUserRepository,
-    TypeOrmLocalPasswordRepository,
-    TypeOrmRefreshSessionRepository,
-    TypeOrmPasswordResetTokenRepository,
     CreateUserUseCase,
     RegisterUserUseCase,
-    LoginUseCase,
     RotateRefreshUseCase,
     LogoutUseCase,
-    SelectTenantUseCase,
+    RequestPasswordResetUseCase,
+    ResetPasswordUseCase,
+    SetOrChangePasswordUseCase,
+  ],
+  exports: [
+    USER_REPOSITORY,
+    LOCAL_PASSWORD_REPOSITORY,
+    REFRESH_SESSION_REPOSITORY,
+    PASSWORD_RESET_TOKEN_REPOSITORY,
+    CreateUserUseCase,
+    RegisterUserUseCase,
+    RotateRefreshUseCase,
+    LogoutUseCase,
     RequestPasswordResetUseCase,
     ResetPasswordUseCase,
     SetOrChangePasswordUseCase,

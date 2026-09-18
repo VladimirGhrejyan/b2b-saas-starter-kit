@@ -1,9 +1,10 @@
-import {Injectable} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 
 import type {TenantRepository} from '@b2b-saas-starter-kit/domain'
-import {PermissionCatalog} from '@b2b-saas-starter-kit/domain'
+import {PermissionCatalog, TENANT_REPOSITORY} from '@b2b-saas-starter-kit/domain'
 
 import type {AuthorizationPort} from '../../shared/authorization.port'
+import {AUTHORIZATION} from '../../shared/authorization.port'
 import {TenantNotFoundError} from '../errors/tenant-not-found.error'
 
 import type {GetTenantQueryInput, GetTenantResult} from './get-tenant.types'
@@ -14,8 +15,8 @@ import type {GetTenantQueryInput, GetTenantResult} from './get-tenant.types'
 @Injectable()
 export class GetTenantQuery {
   constructor(
-    private readonly authz: AuthorizationPort,
-    private readonly tenants: TenantRepository,
+    @Inject(AUTHORIZATION) private readonly authz: AuthorizationPort,
+    @Inject(TENANT_REPOSITORY) private readonly tenants: TenantRepository,
   ) {}
 
   async execute(query: GetTenantQueryInput): Promise<GetTenantResult> {

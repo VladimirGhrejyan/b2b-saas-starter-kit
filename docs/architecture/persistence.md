@@ -6,20 +6,22 @@ Related: [`backend.md`](./backend.md) (layers), [`multi-tenancy.md`](./multi-ten
 
 ## Where everything lives
 
-| Artifact                                      | Location                                                       | Layer          |
-| --------------------------------------------- | -------------------------------------------------------------- | -------------- |
-| Repository **ports** (interfaces)             | `domain/<context>/ports`                                       | domain         |
-| Domain models (aggregates/VOs)                | `domain/<context>`                                             | domain         |
-| TypeORM **entities** (`*.entity.ts`)          | `infrastructure/postgres/src/contexts/<context>/entities`      | infrastructure |
-| **Mappers** (entity ↔ domain)                 | `infrastructure/postgres/src/contexts/<context>/mappers`       | infrastructure |
-| Repository **implementations**                | `infrastructure/postgres/src/contexts/<context>/repositories`  | infrastructure |
-| `DataSource` / TypeORM config                 | `packages/infrastructure/postgres/src/kernel/data-source`      | infrastructure |
-| **Migrations** (single global set)            | `packages/infrastructure/postgres/src/kernel/migrations`       | infrastructure |
-| Migration CLI (Nx create/generate/run/revert) | `packages/infrastructure/postgres/src/kernel/migration-cli`    | infrastructure |
-| Tenant-aware **base repository**              | `packages/infrastructure/postgres/src/kernel/persistence`      | infrastructure |
-| DI **tokens** (`DATA_SOURCE`, …)              | `packages/infrastructure/postgres/src/kernel/tokens.ts`        | infrastructure |
-| `UnitOfWork` **port**                         | `platform`                                                     | platform       |
-| `UnitOfWork` **implementation**               | `packages/infrastructure/postgres` (`TypeormUnitOfWork` + ALS) | infrastructure |
+| Artifact                                                          | Location                                                                                                                  | Layer          |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| Repository **ports** + DI **tokens** (`USER_REPOSITORY`, …)       | `domain/<context>/ports`                                                                                                  | domain         |
+| Domain models (aggregates/VOs)                                    | `domain/<context>`                                                                                                        | domain         |
+| TypeORM **entities** (`*.entity.ts`)                              | `infrastructure/postgres/src/contexts/<context>/entities`                                                                 | infrastructure |
+| **Mappers** (entity ↔ domain)                                     | `infrastructure/postgres/src/contexts/<context>/mappers`                                                                  | infrastructure |
+| Repository **implementations**                                    | `infrastructure/postgres/src/contexts/<context>/repositories`                                                             | infrastructure |
+| `DataSource` / TypeORM config                                     | `packages/infrastructure/postgres/src/kernel/data-source`                                                                 | infrastructure |
+| **Migrations** (single global set)                                | `packages/infrastructure/postgres/src/kernel/migrations`                                                                  | infrastructure |
+| Migration CLI (Nx create/generate/run/revert)                     | `packages/infrastructure/postgres/src/kernel/migration-cli`                                                               | infrastructure |
+| Tenant-aware **base repository**                                  | `packages/infrastructure/postgres/src/kernel/persistence`                                                                 | infrastructure |
+| **Audit/version** base entities + child writer                    | `packages/infrastructure/postgres/src/kernel/persistence` (`AuditableEntity`, `VersionedEntity`, `ChildCollectionWriter`) | infrastructure |
+| Adapter-internal DI **tokens** (`DATA_SOURCE`, `POSTGRES_CONFIG`) | `packages/infrastructure/postgres/src/kernel/tokens.ts`                                                                   | infrastructure |
+| Port DI **tokens** (`UNIT_OF_WORK`, `TENANT_CONTEXT`, …)          | colocated with the port in `platform`                                                                                     | platform       |
+| `UnitOfWork` **port**                                             | `platform`                                                                                                                | platform       |
+| `UnitOfWork` **implementation**                                   | `packages/infrastructure/postgres` (`TypeormUnitOfWork` + ALS)                                                            | infrastructure |
 
 **Dependency direction:** `infrastructure/postgres` → `domain` (implements its ports) + `application` + `platform`. The domain never sees TypeORM.
 
@@ -77,7 +79,7 @@ export class TypeOrmTenantRepository extends TenantAwareRepository implements Te
     /* query + TenantMapper.toDomain */
   }
   async save(tenant: Tenant) {
-    /* TenantMapper.toEntity + upsert */
+    /* TenantMapper.toEntity + manager.save */
   }
 }
 ```
@@ -137,9 +139,37 @@ export class CreateTenantUseCase {
 
 Rejected alternatives — ambient CLS `@Transactional`, and explicit `EntityManager` threading — are in [`decisions.md`](./decisions.md).
 
+## Audit timestamps and optimistic versioning
+
+Every production table row carries **`created_at`** and **`updated_at`** (`timestamptz`). TypeORM entities extend **`AuditableEntity`** in `kernel/persistence/auditable.entity.ts` — do not declare those columns ad hoc.
+
+Parent rows of **child-collection aggregates** also carry a **`version`** column for optimistic concurrency. Those entities extend **`VersionedEntity`**. Today: `roles`, `memberships`. Child join tables (`role_permissions`, `membership_roles`, `invitation_roles`) are auditable only.
+
+Audit/version fields are **infrastructure-only**. Domain aggregates and mappers do not expose `version`, `createdAt`, or `updatedAt`.
+
+### Write paths
+
+| Pattern                     | API                                                           | When                                |
+| --------------------------- | ------------------------------------------------------------- | ----------------------------------- |
+| Single-table row            | `manager.save(Entity, mapped)`                                | Users, tenants, sessions, outbox, … |
+| Versioned parent + children | `ChildCollectionWriter.saveVersionedParentAndReplaceChildren` | Roles, memberships                  |
+| Auditable parent + children | `ChildCollectionWriter.saveAuditableParentAndReplaceChildren` | Invitations                         |
+
+Child-collection saves:
+
+1. **Require** an ambient `UnitOfWork` transaction (`AssertAmbientTransaction`).
+2. Lock the parent row (`SELECT … FOR UPDATE`), preserve `createdAt` / `version` from the existing row, then `save`.
+3. Replace child rows with delete + insert (full collection snapshot).
+
+Use **`save`**, not **`upsert`**, for all writes. Application use cases that mutate child-collection aggregates must wrap repository calls in `uow.run()`. A version mismatch surfaces as `OptimisticConcurrencyError`.
+
+New migrations must add audit columns to every new table and `version` only where the entity extends `VersionedEntity`.
+
 ## Tenant-aware base repository
 
 All tenant-owned repositories extend a shared **`TenantAwareRepository`** that automatically constrains reads/writes to the current tenant using the ambient `TenantContext`. This is the primary isolation mechanism; details, the cross-tenant escape hatch, and the optional Postgres RLS backstop are in [`multi-tenancy.md`](./multi-tenancy.md).
+
+Repo methods that accept an explicit `tenantId` but may run without ambient tenant scope (e.g. `findByUserAndTenant` during select-tenant) should call `assertTenant(tenantId)` only when `hasEstablishedTenantScope()` — not when no scope is set.
 
 ## Coupling analysis: does a shared persistence layer create bad coupling?
 

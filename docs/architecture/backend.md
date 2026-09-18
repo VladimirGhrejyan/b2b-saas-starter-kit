@@ -56,16 +56,16 @@ Allowed imports: `shared-kernel-types`, `zod` (pure). Nothing else.
 Use-case orchestration. This is where a request becomes a sequence of domain operations inside a transaction.
 
 - **Use cases** (a.k.a. application services / interactors), one responsibility each (e.g. `InviteMemberUseCase`, `AssignRoleUseCase`).
-- Use cases are **`@Injectable`** — this is the _only_ tolerated framework seam in the application layer (chosen for DI ergonomics). No controllers, no HTTP, no TypeORM, no Redis clients here.
+- Use cases are **`@Injectable`** and inject ports with **`@Inject(portToken)`**. No controllers, no HTTP, no TypeORM, no Redis clients here.
 - Owns **transaction boundaries** via the `UnitOfWork` port (see [`persistence.md`](./persistence.md)).
 - Owns **fine-grained authorization** checks (see [`authorization.md`](./authorization.md)).
 - Consumes **repository ports** (from `domain`) and **capability ports** (from `platform`), including `LoggerLocator.get()` for structured logs. **Do not** `@Inject()` a Logger — it is a process locator, not a Nest provider.
 - Receives **command inputs** (plain typed objects), _not_ wire DTOs. Mapping `contracts` DTO → command happens in `apps/api`.
 - **Published ports** (`AuthorizationPort`, `MembershipRolesPort`) live in `application/src/shared/` so other contexts import the interface, not a sibling-context file. The authorization **resolver** is an application service composing `RoleRepository` + `MembershipRolesPort` (not a cross-context SQL join, not an infrastructure adapter).
 
-Allowed imports: `domain`, `platform`, `shared-kernel-types`, `utils`, `@nestjs/common` (decorator only).
+Allowed imports: `domain`, `platform`, `shared-kernel-types`, `utils`, `@nestjs/common` (`@Injectable` and `@Inject(portToken)` only).
 
-> Rationale for the `@Injectable` seam: a fully framework-free application layer (manual provider factories) adds wiring boilerplate that obscures the teaching intent of a starter kit. The domain — where purity truly matters — remains 100% framework-free. Recorded in [`decisions.md`](./decisions.md).
+> Rationale for the Nest seam: TypeScript interfaces are erased, so composition cannot bind `{provide: UserRepository, useClass: …}`. Each port owns a `Symbol` token; use cases `@Inject` that token. Manual `useFactory` wiring that injects concrete adapter classes is not runtime inversion. The domain stays 100% framework-free. Recorded in [`decisions.md`](./decisions.md).
 
 ## Platform layer (`packages/platform`)
 
@@ -111,8 +111,8 @@ Depends on Nest, `contracts`, `platform` (`LoggerLocator.get`). Does **not** dep
 
 Per context, `composition/src/<context>/<context>.module.ts`:
 
-- Binds each **port** to its **adapter** (`{ provide: UserRepository, useClass: TypeOrmUserRepository }`).
-- Registers the context's **use cases** as providers.
+- Binds each **port** to its **adapter** (`{ provide: USER_REPOSITORY, useClass: TypeOrmUserRepository }`).
+- Registers the context's **use cases** as class providers (`CreateUserUseCase`, …).
 - Registers **event handlers** / subscribers for the context.
 - Exports a NestJS module that apps import.
 
@@ -140,7 +140,7 @@ NestJS is the **delivery + composition framework**, nothing more:
 - **Controllers** live only in `apps/api` (and BullMQ processors in `apps/worker`). They validate input via the `nest-http` pipe (nestjs-zod against `contracts`), map to commands, invoke use cases, and map results back to responses.
 - **Reusable HTTP bootstrap** (versioning, CORS, helmet, Swagger, global pipe/filter/interceptor) lives in `packages/nest-http`.
 - **Dependency injection / module composition** lives in `composition` (reusable) and is assembled by the apps.
-- **No NestJS in `domain`.** The only NestJS in `application` is the `@Injectable` decorator. **Logger is not a Nest provider.**
+- **No NestJS in `domain`.** Application may use `@Injectable` and `@Inject(portToken)`. **Logger is not a Nest provider.**
 
 This guarantees the domain and (almost all of) the application layer are unit-testable with plain Vitest, no Nest test harness required.
 
@@ -151,7 +151,7 @@ HTTP request  (/v1/…)
   → nest-http global pipe (nestjs-zod vs contracts schema)
   → apps/api coarse permission guard
   → controller maps DTO → application command
-  → application use case (@Injectable)
+  → application use case (`@Injectable`, `@Inject(portToken)`)
       → LoggerLocator.get().context(…) as needed (not injected)
       → open UnitOfWork (transaction)
       → fine-grained authorization / policy check

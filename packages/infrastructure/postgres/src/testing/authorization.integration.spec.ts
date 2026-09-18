@@ -77,16 +77,20 @@ describe('AuthorizationService through TypeORM repositories', () => {
         status: UserStatus.parse('active'),
       }),
     )
+    const uow = new TypeormUnitOfWork(ctx.dataSource)
+
     await tenantContext.run({tenantId: tenant.tenantId, actorId: owner.userId}, async () => {
-      await memberships.save(
-        Membership.reconstitute({
-          id: MEMBER_MEMBERSHIP,
-          tenantId: tenant.tenantId,
-          userId: MEMBER_USER,
-          roleIds: [tenant.roleIds.member],
-          status: MembershipStatus.parse('active'),
-        }),
-      )
+      await uow.run(async () => {
+        await memberships.save(
+          Membership.reconstitute({
+            id: MEMBER_MEMBERSHIP,
+            tenantId: tenant.tenantId,
+            userId: MEMBER_USER,
+            roleIds: [tenant.roleIds.member],
+            status: MembershipStatus.parse('active'),
+          }),
+        )
+      })
     })
 
     const ownerPermissions = await tenantContext.run({tenantId: tenant.tenantId, actorId: owner.userId}, async () =>

@@ -2,6 +2,8 @@ import type {RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {Role} from '../role'
 
+export const ROLE_REPOSITORY = Symbol('ROLE_REPOSITORY')
+
 /**
  * Persistence port for tenant-scoped roles. Adapters join the ambient transaction.
  */

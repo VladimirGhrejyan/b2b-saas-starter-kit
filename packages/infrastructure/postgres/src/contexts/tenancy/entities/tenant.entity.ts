@@ -1,7 +1,9 @@
 import {Column, Entity, Index, PrimaryColumn} from 'typeorm'
 
+import {AuditableEntity} from '../../../kernel/persistence/auditable.entity'
+
 @Entity({name: 'tenants'})
-export class TenantEntity {
+export class TenantEntity extends AuditableEntity {
   @PrimaryColumn({type: 'uuid'})
   id!: string
 

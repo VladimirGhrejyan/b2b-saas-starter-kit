@@ -1,7 +1,9 @@
 import {Column, Entity, PrimaryColumn} from 'typeorm'
 
+import {AuditableEntity} from '../../../kernel/persistence/auditable.entity'
+
 @Entity({name: 'refresh_sessions'})
-export class RefreshSessionEntity {
+export class RefreshSessionEntity extends AuditableEntity {
   @PrimaryColumn({type: 'uuid'})
   id!: string
 
