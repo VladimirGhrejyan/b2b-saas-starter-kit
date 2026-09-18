@@ -38,7 +38,7 @@ The dev override is **not** used in staging (so Postgres/Redis are never publish
 ## Operational settings (staging overlay)
 
 - `restart: unless-stopped` on every service.
-- Healthchecks on Postgres, Redis, and each app (`/health`); app `depends_on` uses
+- Healthchecks on Postgres, Redis, and each app (`GET /health` on the API — readiness: Postgres `SELECT 1` + Redis `PING`; `GET /live` is process-only and does not touch dependencies); app `depends_on` uses
   `condition: service_healthy`.
 - Modest `deploy.resources.limits` per service to protect the box.
 - JSON-file log rotation (`max-size`, `max-file`) to bound disk usage.

@@ -10,6 +10,7 @@ import {
   UNIT_OF_WORK,
 } from '@b2b-saas-starter-kit/platform'
 
+import {PostgresHealthIndicator} from '../health/postgres-health.indicator'
 import {PostgresIdempotencyStore} from '../idempotency/postgres-idempotency.store'
 import {OutboxRelay} from '../outbox/outbox-relay'
 import {PostgresEventPublisher} from '../outbox/postgres-event-publisher'
@@ -66,6 +67,7 @@ export class PostgresInfrastructureModule {
           provide: IDEMPOTENCY,
           useExisting: PostgresIdempotencyStore,
         },
+        PostgresHealthIndicator,
         OutboxRelay,
       ],
       exports: [
@@ -79,6 +81,7 @@ export class PostgresInfrastructureModule {
         EVENT_BUS,
         EVENT_PUBLISHER,
         IDEMPOTENCY,
+        PostgresHealthIndicator,
         OutboxRelay,
       ],
     }

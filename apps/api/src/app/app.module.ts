@@ -2,7 +2,7 @@ import {Module} from '@nestjs/common'
 
 import {CompositionModule} from '@b2b-saas-starter-kit/composition'
 
-import {createHttpProviders, HttpRequestModule} from '@b2b-saas-starter-kit/nest-http'
+import {createHttpProviders, HealthModule, HttpRequestModule} from '@b2b-saas-starter-kit/nest-http'
 
 import {CommonModule} from '../common/common.module'
 import {codedErrorHttpStatuses} from '../common/http/coded-error-http-statuses'
@@ -18,6 +18,7 @@ import {UsersModule} from '../modules/users/users.module'
   imports: [
     HttpRequestModule,
     CompositionModule,
+    HealthModule,
     CommonModule,
     AuthModule,
     UsersModule,

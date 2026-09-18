@@ -55,6 +55,8 @@ pnpm nx run postgres:migration:revert
 
 Kernel table `idempotency_keys` backs `IdempotencyPort` (claimed and completed inside the ambient UnitOfWork). Do not export the entity.
 
+`PostgresHealthIndicator` answers readiness with `SELECT 1` on `DATA_SOURCE`. It does not open a UnitOfWork or read tenant ALS. Failures become `{status: 'down', message: 'unreachable'}` — no connection strings.
+
 `migrationsRun` is never `true` at `DataSource` init. Apply with `migration:run` (local, CI, or a staging one-shot). Do not run `create` / `generate` on staging.
 
 ## Phase 7 Definition of Done

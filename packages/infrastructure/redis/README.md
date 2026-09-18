@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/redis`
 
-ioredis adapters for the platform `CachePort`, `LockPort`, `PubSubPort`, and `RateLimiterPort`. Composition wires this package; `apps/api` must not import it.
+ioredis adapters for the platform `CachePort`, `LockPort`, `PubSubPort`, `RateLimiterPort`, and `HealthIndicator` (PING). Composition wires this package; `apps/api` must not import it.
 
 **Path:** `packages/infrastructure/redis`  
 **Nx project:** `redis`  
@@ -14,7 +14,7 @@ Capability folders share one **command** client in `kernel/` (`maxRetriesPerRequ
 
 ```
 src/
-  kernel/     # config, client manager, Nest module, tokens, test context
+  kernel/     # config, client manager, Nest module, tokens, test context, health
   cache/      # RedisCache adapter
   lock/       # RedisLock adapter
   pubsub/     # RedisPubSub adapter (publisher + duplicate subscriber)
@@ -37,6 +37,10 @@ Never import domain, application, contracts, TypeORM, or other infrastructure pa
 ## Permission cache
 
 `AuthorizationService` cache-aside uses a tenant-prefixed key. Future role/membership writes must `del` the same key (not implemented yet).
+
+## Health
+
+`RedisHealthIndicator` answers readiness with command-client `PING`. Failures become `{status: 'down', message: 'unreachable'}` — no connection strings.
 
 ## Commands
 

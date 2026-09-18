@@ -1,5 +1,5 @@
 import type {INestApplication} from '@nestjs/common'
-import {VersioningType} from '@nestjs/common'
+import {RequestMethod, VersioningType} from '@nestjs/common'
 import {afterEach, describe, expect, it, vi} from 'vitest'
 
 import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
@@ -66,6 +66,21 @@ describe('ApiBuilder', () => {
     builder.enableVersioning()
 
     expect(app.enableVersioning).toHaveBeenCalledWith({type: VersioningType.URI, defaultVersion: '1'})
+  })
+
+  it('excludes health probes from the global prefix', () => {
+    const app = createApp()
+    const builder = new ApiBuilder(app as unknown as INestApplication, createConfig({globalPrefix: 'api'}))
+
+    builder.useGlobalPrefix()
+
+    expect(app.setGlobalPrefix).toHaveBeenCalledWith('api', {
+      exclude: [
+        {path: 'live', method: RequestMethod.GET},
+        {path: 'ready', method: RequestMethod.GET},
+        {path: 'health', method: RequestMethod.GET},
+      ],
+    })
   })
 
   it('skips helmet when isPlainHttp is true', () => {

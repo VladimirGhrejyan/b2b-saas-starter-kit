@@ -98,6 +98,30 @@ describe('HttpRequestInterceptor', () => {
     expect(response.headers[REQUEST_ID_RESPONSE_HEADER]).toBeUndefined()
     expect(logger.records).toEqual([])
   })
+
+  it('skips health probe paths', async () => {
+    const logger = new FakeLogger()
+
+    LoggerLocator.init(logger)
+
+    const live = createHttp({method: 'GET', url: '/live', headers: {}})
+
+    await firstValueFrom(
+      new HttpRequestInterceptor().intercept(createContext(live.request, live.response), createNext()),
+    )
+    live.finish()
+
+    const ready = createHttp({method: 'GET', url: '/ready', headers: {}, statusCode: 503})
+
+    await firstValueFrom(
+      new HttpRequestInterceptor().intercept(createContext(ready.request, ready.response), createNext()),
+    )
+    ready.finish()
+
+    expect(live.response.headers[REQUEST_ID_RESPONSE_HEADER]).toBeUndefined()
+    expect(ready.response.headers[REQUEST_ID_RESPONSE_HEADER]).toBeUndefined()
+    expect(logger.records).toEqual([])
+  })
 })
 
 function createNext(): CallHandler {

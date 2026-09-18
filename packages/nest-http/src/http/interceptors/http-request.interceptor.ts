@@ -10,6 +10,7 @@ import {DateUtils, TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 import type {RequestContext} from '@b2b-saas-starter-kit/platform'
 import {LoggerLocator, RequestContextLocator} from '@b2b-saas-starter-kit/platform'
 
+import {HealthProbePaths} from '../health/health-probe-paths'
 import {REQUEST_CONTEXT_KEY} from '../request-context-key'
 
 import {REQUEST_ID_HEADER, REQUEST_ID_RESPONSE_HEADER, SWAGGER_PATH_PREFIX} from './http-request.constants'
@@ -21,7 +22,7 @@ export class HttpRequestInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<HttpIncomingRequest>()
     const response = context.switchToHttp().getResponse<HttpOutgoingResponse>()
 
-    if (this.isSwaggerPath(request)) {
+    if (this.isSwaggerPath(request) || this.isHealthProbePath(request)) {
       return next.handle()
     }
 
@@ -37,6 +38,10 @@ export class HttpRequestInterceptor implements NestInterceptor {
     })
 
     return from(RequestContextLocator.run(store, () => lastValueFrom(next.handle())))
+  }
+
+  private isHealthProbePath(request: HttpIncomingRequest): boolean {
+    return HealthProbePaths.matches(request.originalUrl ?? request.url ?? '')
   }
 
   private isSwaggerPath(request: HttpIncomingRequest): boolean {

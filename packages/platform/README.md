@@ -14,7 +14,7 @@ Architecture: [`docs/architecture/backend.md`](../../docs/architecture/backend.m
 
 ## Internal layout
 
-One folder per capability under `src/`: `clock`, `id-generator`, `unit-of-work`, `tenant-context`, `logger`. Import only from `@b2b-saas-starter-kit/platform`. Do not deep-import those folders.
+One folder per capability under `src/`: `clock`, `id-generator`, `unit-of-work`, `tenant-context`, `logger`, `health`. Import only from `@b2b-saas-starter-kit/platform`. Do not deep-import those folders.
 
 ## Allowed imports
 
@@ -25,17 +25,18 @@ Never import Nest, TypeORM, Redis, `domain`, `application`, `contracts`, `utils`
 
 ## Who consumes vs who implements
 
-| Port              | Consumes                                         | Implements                                             |
-| ----------------- | ------------------------------------------------ | ------------------------------------------------------ |
-| `UnitOfWork`      | Application use cases                            | `infrastructure/postgres` (`TypeormUnitOfWork`)        |
-| `TenantContext`   | Edge sets via `run`; infra reads via getters     | `infrastructure/postgres` (`AlsTenantContext`)         |
-| `Clock`           | Application (pass `now()` into domain factories) | `infrastructure/node` (`SystemClock`)                  |
-| `IdGenerator`     | Application (`UserId.parse(ids.generate())`)     | `infrastructure/node` (`UuidV7IdGenerator`)            |
-| `PasswordHasher`  | Application (local credentials)                  | `infrastructure/security` (`Argon2PasswordHasher`)     |
-| `TokenDigest`     | Application (refresh / reset tokens)             | `infrastructure/security` (`Sha256TokenDigest`)        |
-| `Logger`          | Application / edge via `LoggerLocator.get()`     | `infrastructure/logger` (`PinoLogger`)                 |
-| `RateLimiterPort` | HTTP edge (`RateLimitInterceptor`)               | `infrastructure/redis` (`RedisRateLimiter`)            |
-| `IdempotencyPort` | HTTP edge (`IdempotencyInterceptor`)             | `infrastructure/postgres` (`PostgresIdempotencyStore`) |
+| Port              | Consumes                                         | Implements                                                                              |
+| ----------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `UnitOfWork`      | Application use cases                            | `infrastructure/postgres` (`TypeormUnitOfWork`)                                         |
+| `TenantContext`   | Edge sets via `run`; infra reads via getters     | `infrastructure/postgres` (`AlsTenantContext`)                                          |
+| `Clock`           | Application (pass `now()` into domain factories) | `infrastructure/node` (`SystemClock`)                                                   |
+| `IdGenerator`     | Application (`UserId.parse(ids.generate())`)     | `infrastructure/node` (`UuidV7IdGenerator`)                                             |
+| `PasswordHasher`  | Application (local credentials)                  | `infrastructure/security` (`Argon2PasswordHasher`)                                      |
+| `TokenDigest`     | Application (refresh / reset tokens)             | `infrastructure/security` (`Sha256TokenDigest`)                                         |
+| `Logger`          | Application / edge via `LoggerLocator.get()`     | `infrastructure/logger` (`PinoLogger`)                                                  |
+| `RateLimiterPort` | HTTP edge (`RateLimitInterceptor`)               | `infrastructure/redis` (`RedisRateLimiter`)                                             |
+| `IdempotencyPort` | HTTP edge (`IdempotencyInterceptor`)             | `infrastructure/postgres` (`PostgresIdempotencyStore`)                                  |
+| `HealthIndicator` | HTTP edge (`HealthController` readiness)         | `infrastructure/postgres` + `redis` (`PostgresHealthIndicator`, `RedisHealthIndicator`) |
 
 Domain never imports this package.
 
@@ -74,6 +75,8 @@ await tenantContext.run({tenantId, actorId}, async () => {
 | `Logger` / `LogLevel`              | `context(name)` + pino-style level methods                            |
 | `LoggerLocator`                    | Process locator (`init` / `get` / `reset`; throw if unset)            |
 | `LoggerNotInitializedError`        | Thrown by `LoggerLocator.get()` before `init`                         |
+| `HealthIndicator`                  | `name` + `check()` for readiness                                      |
+| `HEALTH_INDICATORS`                | Multi-token of `HealthIndicator`                                      |
 
 ## Must not go here yet
 

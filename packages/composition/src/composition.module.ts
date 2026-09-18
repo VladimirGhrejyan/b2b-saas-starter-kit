@@ -26,6 +26,7 @@ import {SecurityModule} from '@b2b-saas-starter-kit/security'
 import {NodeInfrastructureModule} from '@b2b-saas-starter-kit/node'
 
 import {AuthorizationModule} from './authorization/authorization.module'
+import {HealthIndicatorsModule} from './health/health-indicators.module'
 import {IdentityModule} from './identity/identity.module'
 import {AssertActiveMembership} from './principal/assert-active-membership'
 import {TenancyModule} from './tenancy/tenancy.module'
@@ -46,6 +47,7 @@ import {TenancyModule} from './tenancy/tenancy.module'
     TenancyModule,
     IdentityModule,
     AuthorizationModule,
+    HealthIndicatorsModule,
   ],
   providers: [
     AuthorizationService,
@@ -86,6 +88,7 @@ import {TenancyModule} from './tenancy/tenancy.module'
     DeleteCustomRoleUseCase,
     AuthorizationService,
     AUTHORIZATION,
+    HealthIndicatorsModule,
     AssertActiveMembership,
   ],
 })

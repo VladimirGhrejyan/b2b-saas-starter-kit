@@ -205,6 +205,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) Redis key with TTL; (B) Postgres row in the mutation transaction ✓; (C) wait forever on in-flight duplicates; (D) immediate 409 without waiting.
 **Rationale:** The record must survive a process restart and must not commit without the work it guards. Redis cannot join the TypeORM transaction. Immediate 409 is racy under a unique-index wait; wait-then-replay is the honest concurrent behaviour, with lock timeout as the stuck-request escape hatch. See [`postgresql.md`](../infrastructure/postgresql.md).
 
+## ADR-035 — Health, liveness, and readiness probes
+
+**Decision:** Unversioned public `GET /live` (process-only, always 200), `GET /ready` (Postgres `SELECT 1` + Redis `PING`; 200 when all up, 503 otherwise), and `GET /health` as a readiness alias for the deferred staging overlay. `HealthIndicator` and the `HEALTH_INDICATORS` multi-token live on `platform` (same inversion as `IdempotencyPort`) so adapters never import `nest-http`. HTTP aggregation is a small controller in `nest-http`, not `@nestjs/terminus`. Probes are excluded from URI versioning, the global prefix, auth (`@Public()`), and access logs.
+**Options:** (A) Terminus + TypeORM/Redis indicators; (B) platform indicators + nest-http aggregator ✓; (C) a single `/health` that always pings dependencies.
+**Rationale:** Orchestrators need a liveness check that cannot fail because Postgres or Redis is down. Terminus DB helpers would pull TypeORM into `nest-http`/`apps/api`. Adapters cannot depend on `nest-http` (`layer:infrastructure`). `/health` matches [`staging.md`](../infrastructure/staging.md) without a compose app overlay in this slice.
+
 ---
 
 ## Deferred decisions

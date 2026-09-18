@@ -1,0 +1,1 @@
+export const HEALTH_INDICATORS = Symbol('HEALTH_INDICATORS')

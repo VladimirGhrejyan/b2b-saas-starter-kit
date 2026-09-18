@@ -44,6 +44,28 @@ describe('HTTP e2e', () => {
     await flushRedis(app)
   })
 
+  it('exposes unversioned liveness and readiness probes', async () => {
+    const live = await request(app.getHttpServer()).get('/live').expect(200)
+
+    expect(live.body).toEqual({status: 'ok'})
+
+    const ready = await request(app.getHttpServer()).get('/ready').expect(200)
+
+    expect(ready.body).toEqual({
+      status: 'ok',
+      checks: {
+        postgres: {status: 'up'},
+        redis: {status: 'up'},
+      },
+    })
+
+    const health = await request(app.getHttpServer()).get('/health').expect(200)
+
+    expect(health.body).toEqual(ready.body)
+
+    await request(app.getHttpServer()).get('/v1/live').expect(404)
+  })
+
   it('creates a user, tenant, and returns owner permissions on /v1/me', async () => {
     const createdUser = await request(app.getHttpServer())
       .post('/v1/users')

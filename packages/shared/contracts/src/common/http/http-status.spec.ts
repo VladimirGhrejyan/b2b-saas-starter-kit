@@ -8,5 +8,6 @@ describe('HttpStatus', () => {
     expect(HttpStatus.FORBIDDEN).toBe(403)
     expect(HttpStatus.CONFLICT).toBe(409)
     expect(HttpStatus.TOO_MANY_REQUESTS).toBe(429)
+    expect(HttpStatus.SERVICE_UNAVAILABLE).toBe(503)
   })
 })

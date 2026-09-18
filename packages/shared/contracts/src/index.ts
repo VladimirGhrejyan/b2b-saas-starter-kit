@@ -1,5 +1,7 @@
 export type {ErrorOutput} from './common/http/error.output'
 export {errorOutputSchema} from './common/http/error.output'
+export type {HealthCheckResult, HealthOutput} from './common/http/health.output'
+export {healthCheckResultSchema, healthOutputSchema} from './common/http/health.output'
 export type {HttpMethodName} from './common/http/http-method'
 export {HttpMethod} from './common/http/http-method'
 export type {HttpStatusCode} from './common/http/http-status'

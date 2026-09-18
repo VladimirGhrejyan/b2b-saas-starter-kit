@@ -75,6 +75,10 @@ This prevents the classic "saved to DB but the job never fired" (or vice-versa) 
 
 `IdempotencyPort` lives in `platform`. The Postgres adapter writes `idempotency_keys` in the ambient `UnitOfWork` so a retried mutation replays the original response. HTTP consumption is `@Idempotent()` + `IdempotencyInterceptor` in `nest-http` (registered after auth in `apps/api`). See [ADR-034](./decisions.md).
 
+## Health probes
+
+`HealthIndicator` lives in `platform`. Postgres answers with `SELECT 1` on `DATA_SOURCE` (no UnitOfWork / tenant ALS); Redis answers with command-client `PING`. `nest-http` exposes unversioned `GET /live` (process-only), `GET /ready` (aggregate indicators; 503 if any are down), and `GET /health` as a readiness alias for staging. See [ADR-035](./decisions.md).
+
 ## Logging & observability
 
 - **`Logger` port** lives in `platform`: `context(name)`, `trace` / `debug` / `info` / `warn` / `error` / `fatal`, with pino-style overloads (`msg` or `(data, msg)`). Domain does not log.

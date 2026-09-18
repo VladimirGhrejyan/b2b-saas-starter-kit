@@ -9,6 +9,7 @@ import {RedisPubSub} from '../pubsub/redis-pubsub.adapter'
 import {RedisRateLimiter} from '../rate-limit/redis-rate-limiter.adapter'
 
 import {RedisClientManager} from './connection/redis-client.manager'
+import {RedisHealthIndicator} from './health/redis-health.indicator'
 import type {RedisInfrastructureModuleAsyncOptions} from './redis-infrastructure.module.types'
 import {REDIS_CLIENT, REDIS_CONFIG} from './tokens'
 
@@ -53,6 +54,7 @@ export class RedisInfrastructureModule {
           provide: RATE_LIMITER,
           useExisting: RedisRateLimiter,
         },
+        RedisHealthIndicator,
       ],
       exports: [
         REDIS_CONFIG,
@@ -65,6 +67,7 @@ export class RedisInfrastructureModule {
         PUBSUB,
         RedisRateLimiter,
         RATE_LIMITER,
+        RedisHealthIndicator,
       ],
     }
   }

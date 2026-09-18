@@ -4,6 +4,7 @@ import helmet from 'helmet'
 
 import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
 
+import {HealthProbePaths} from '../http/health/health-probe-paths'
 import {OpenApi} from '../openapi/open-api'
 
 import type {ApiHttpConfig} from './api-http-config.types'
@@ -66,7 +67,9 @@ export class ApiBuilder {
       return this
     }
 
-    this.#app.setGlobalPrefix(prefix)
+    this.#app.setGlobalPrefix(prefix, {
+      exclude: HealthProbePaths.globalPrefixExclude(),
+    })
 
     return this
   }

@@ -53,6 +53,8 @@ await new ApiBuilder(app, apiHttpConfig)
 
 `@Idempotent()` marks a mutating route that requires `Idempotency-Key`. `IdempotencyInterceptor` lives in this package; `apps/api` registers it after auth so the key is scoped by tenant or actor. The store is Postgres (`IdempotencyPort`), not Redis.
 
+Unversioned `GET /live` (process-only), `GET /ready` (Postgres + Redis indicators), and `GET /health` (readiness alias) live in `HealthModule`. They are `VERSION_NEUTRAL`, `@Public()`, excluded from the global prefix, and skipped by access logs so orchestrator 503s do not warn-spam. See [ADR-035](../../docs/architecture/decisions.md).
+
 `OpenApi.setup` (via `ApiBuilder.setupSwagger`) mounts Swagger UI, optional basic-auth (including `/docs-json` and `/docs-yaml`), bearer auth, and writes `openapi.json` into the static directory when `staticAssets` or `swagger.schema` is set.
 
 ## Contracts in controllers
