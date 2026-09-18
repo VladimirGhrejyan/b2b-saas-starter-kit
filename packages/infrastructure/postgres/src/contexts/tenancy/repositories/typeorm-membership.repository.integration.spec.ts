@@ -25,8 +25,10 @@ const actorA = UserId.parse('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
 const actorB = UserId.parse('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
 const membershipA = MembershipId.parse('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1')
 const membershipB = MembershipId.parse('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1')
+const membershipC = MembershipId.parse('cccccccc-cccc-4ccc-8ccc-ccccccccccc1')
 const roleA = RoleId.parse('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2')
 const roleB = RoleId.parse('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2')
+const roleC = RoleId.parse('cccccccc-cccc-4ccc-8ccc-ccccccccccc2')
 
 describe('TypeOrmMembershipRepository', () => {
   let ctx: PostgresTestContext
@@ -123,6 +125,44 @@ describe('TypeOrmMembershipRepository', () => {
     ).rejects.toBeInstanceOf(TenantContextMismatchError)
 
     expect(byId).toBeNull()
+  })
+
+  it('finds memberships that hold a role and reconstitutes every role id', async () => {
+    await tenantContext.withoutTenantScope(async () => {
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
+          Membership.reconstitute({
+            id: membershipA,
+            tenantId: tenantA,
+            userId: actorA,
+            roleIds: [roleA, roleC],
+            status: MembershipStatus.parse('active'),
+          }),
+        )
+        await repo.save(
+          Membership.reconstitute({
+            id: membershipC,
+            tenantId: tenantA,
+            userId: actorB,
+            roleIds: [roleA],
+            status: MembershipStatus.parse('active'),
+          }),
+        )
+      })
+    })
+
+    const holders = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+      repo.findByTenantAndRole(tenantA, roleC),
+    )
+
+    expect(holders).toHaveLength(1)
+    expect(holders[0]?.id).toBe(membershipA)
+    expect(holders[0]?.roleIds).toEqual(expect.arrayContaining([roleA, roleC]))
+    expect(holders[0]?.roleIds).toHaveLength(2)
+
+    await expect(
+      tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findByTenantAndRole(tenantB, roleC)),
+    ).rejects.toBeInstanceOf(TenantContextMismatchError)
   })
 
   it('throws TenantContextMismatchError when ambient tenant disagrees with the aggregate', async () => {

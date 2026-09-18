@@ -9,6 +9,7 @@ export const ROLE_REPOSITORY = Symbol('ROLE_REPOSITORY')
  */
 export interface RoleRepository {
   findById(id: RoleId): Promise<Role | null>
+  findByIds(ids: readonly RoleId[]): Promise<Role[]>
   findByTenant(tenantId: TenantId): Promise<Role[]>
   save(role: Role): Promise<void>
   saveMany(roles: Role[]): Promise<void>

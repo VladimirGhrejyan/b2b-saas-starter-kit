@@ -44,9 +44,9 @@ export class DeleteCustomRoleUseCase {
         throw new SystemRoleImmutableError()
       }
 
-      const memberships = await this.memberships.findByTenant(command.tenantId)
+      const holders = await this.memberships.findByTenantAndRole(command.tenantId, role.id)
 
-      if (memberships.some((membership) => membership.roleIds.includes(role.id))) {
+      if (holders.length > 0) {
         throw new RoleInUseError()
       }
 

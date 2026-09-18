@@ -45,6 +45,16 @@ function createAuthz() {
   return {roles, memberships, cache, authz}
 }
 
+class CountingRoleRepository extends InMemoryRoleRepository {
+  findByIdsCalls = 0
+
+  override findByIds(ids: readonly RoleId[]): Promise<Role[]> {
+    this.findByIdsCalls += 1
+
+    return super.findByIds(ids)
+  }
+}
+
 describe('AuthorizationService', () => {
   it('unions Owner permissions to the full catalog', async () => {
     const {roles, memberships, authz} = createAuthz()
@@ -137,6 +147,26 @@ describe('AuthorizationService', () => {
     expect(first).toEqual([...PermissionCatalog.all])
     expect(second).toEqual(first)
     expect(roleLookups).toBe(1)
+  })
+
+  it('resolves a multi-role membership with one findByIds on cache miss', async () => {
+    const roles = new CountingRoleRepository()
+    const memberships = new InMemoryMembershipRepository()
+    const cache = new InMemoryCache()
+    const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache, memberships)
+    const ownerRole = Role.createSystemRole(OWNER_ROLE_A, TENANT_A, 'Owner', OCCURRED_AT)
+    const memberRole = Role.createSystemRole(MEMBER_ROLE_A, TENANT_A, 'Member', OCCURRED_AT)
+
+    await roles.save(ownerRole)
+    await roles.save(memberRole)
+    await memberships.save(
+      Membership.create(MEMBERSHIP_A, TENANT_A, USER_ID, [ownerRole.id, memberRole.id], OCCURRED_AT),
+    )
+
+    const effective = await authz.getEffectivePermissions(USER_ID, TENANT_A)
+
+    expect(effective).toEqual([...PermissionCatalog.all])
+    expect(roles.findByIdsCalls).toBe(1)
   })
 
   it('does not leak tenant A permissions into tenant B', async () => {

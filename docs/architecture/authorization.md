@@ -60,7 +60,7 @@ The `AuthorizationPort` is defined so the application asks _questions_ ("does th
 ## How permissions are represented
 
 - A permission is a namespaced string constant, grouped by context/resource/action. The canonical list is owned by the **authorization** context; cross-cutting permission _identifiers_ that the frontend also needs are surfaced through `contracts` (as enums/types), so backend and frontend agree on the vocabulary without the frontend importing backend internals.
-- **Effective permissions** for a principal in a tenant = union of permissions across their roles in that membership. Resolution is cached (tenant-prefixed Redis key). `AuthorizationPort.invalidate` / `invalidateHoldersOf` `del` that key after membership and custom-role writes.
+- **Effective permissions** for a principal in a tenant = union of permissions across their roles in that membership. Resolution loads those roles in one `RoleRepository.findByIds` and is cached (tenant-prefixed Redis key, 60s TTL). `AuthorizationPort.invalidate` deletes the user+tenant key. `invalidateHoldersOf` loads only memberships that hold that role (`MembershipRepository.findByTenantAndRole`) and deletes their keys.
 
 ## Tenant-scoped authorization
 

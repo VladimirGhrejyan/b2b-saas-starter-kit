@@ -59,23 +59,17 @@ export class AuthorizationService implements AuthorizationPort {
   }
 
   async invalidateHoldersOf(roleId: RoleId, tenantId: TenantId): Promise<void> {
-    const memberships = await this.memberships.findByTenant(tenantId)
+    const memberships = await this.memberships.findByTenantAndRole(tenantId, roleId)
 
-    for (const membership of memberships) {
-      if (membership.roleIds.includes(roleId)) {
-        await this.invalidate(membership.userId, tenantId)
-      }
-    }
+    await Promise.all(memberships.map((membership) => this.invalidate(membership.userId, tenantId)))
   }
 
   private async resolvePermissions(userId: UserId, tenantId: TenantId): Promise<Permission[]> {
     const roleIds = await this.membershipRoles.roleIdsFor(userId, tenantId)
     const permissions = new Set<Permission>()
 
-    for (const roleId of roleIds) {
-      const role = await this.roles.findById(roleId)
-
-      if (role === null || role.tenantId !== tenantId) {
+    for (const role of await this.roles.findByIds(roleIds)) {
+      if (role.tenantId !== tenantId) {
         continue
       }
 

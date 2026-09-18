@@ -2,6 +2,7 @@ import {Inject, Injectable} from '@nestjs/common'
 import type {DataSource} from 'typeorm'
 
 import type {RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 
 import type {Role, RoleRepository} from '@b2b-saas-starter-kit/domain'
 
@@ -34,6 +35,22 @@ export class TypeOrmRoleRepository extends TenantAwareRepository implements Role
     ).getOne()
 
     return row === null ? null : RoleMapper.toDomain(row)
+  }
+
+  async findByIds(ids: readonly RoleId[]): Promise<Role[]> {
+    if (TypeScriptUtils.isEmpty(ids)) {
+      return []
+    }
+
+    const rows = await this.scoped(
+      'role',
+      this.manager
+        .createQueryBuilder(RoleEntity, 'role')
+        .leftJoinAndSelect('role.permissions', 'permission')
+        .where('role.id IN (:...ids)', {ids: [...ids]}),
+    ).getMany()
+
+    return rows.map((row) => RoleMapper.toDomain(row))
   }
 
   async findByTenant(tenantId: TenantId): Promise<Role[]> {

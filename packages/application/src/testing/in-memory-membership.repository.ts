@@ -1,4 +1,4 @@
-import type {MembershipId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {Membership, MembershipRepository} from '@b2b-saas-starter-kit/domain'
 
@@ -16,6 +16,14 @@ export class InMemoryMembershipRepository implements MembershipRepository, InMem
 
   findByTenant(tenantId: TenantId): Promise<Membership[]> {
     return Promise.resolve([...this.#memberships.values()].filter((membership) => membership.tenantId === tenantId))
+  }
+
+  findByTenantAndRole(tenantId: TenantId, roleId: RoleId): Promise<Membership[]> {
+    return Promise.resolve(
+      [...this.#memberships.values()].filter(
+        (membership) => membership.tenantId === tenantId && membership.roleIds.includes(roleId),
+      ),
+    )
   }
 
   findByUser(userId: UserId): Promise<Membership[]> {

@@ -14,6 +14,20 @@ export class InMemoryRoleRepository implements RoleRepository, InMemorySnapshota
     return Promise.resolve(this.#roles.get(id) ?? null)
   }
 
+  findByIds(ids: readonly RoleId[]): Promise<Role[]> {
+    if (ids.length === 0) {
+      return Promise.resolve([])
+    }
+
+    return Promise.resolve(
+      ids.flatMap((id) => {
+        const role = this.#roles.get(id)
+
+        return role === undefined ? [] : [role]
+      }),
+    )
+  }
+
   findByTenant(tenantId: TenantId): Promise<Role[]> {
     return Promise.resolve([...this.#roles.values()].filter((role) => role.tenantId === tenantId))
   }

@@ -71,6 +71,50 @@ describe('TypeOrmRoleRepository', () => {
     expect(found?.hasPermission(Permission.parse('tenancy.members.read'))).toBe(true)
   })
 
+  it('finds roles by ids in one query and omits missing and other-tenant ids', async () => {
+    const missing = RoleId.parse('99999999-9999-4999-8999-999999999999')
+
+    await tenantContext.withoutTenantScope(async () => {
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
+          Role.reconstitute({
+            id: ownerA,
+            tenantId: tenantA,
+            name: 'Owner',
+            permissions: PermissionCatalog.all,
+            isSystem: true,
+          }),
+        )
+        await repo.save(
+          Role.reconstitute({
+            id: memberA,
+            tenantId: tenantA,
+            name: 'Member',
+            permissions: [PermissionCatalog.tenancyTenantRead],
+            isSystem: true,
+          }),
+        )
+        await repo.save(
+          Role.reconstitute({
+            id: ownerB,
+            tenantId: tenantB,
+            name: 'Owner',
+            permissions: PermissionCatalog.all,
+            isSystem: true,
+          }),
+        )
+      })
+    })
+
+    const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+      repo.findByIds([ownerA, memberA, ownerB, missing]),
+    )
+    const empty = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findByIds([]))
+
+    expect(found.map((role) => role.id).sort()).toEqual([ownerA, memberA].sort())
+    expect(empty).toEqual([])
+  })
+
   it('does not let tenant A load tenant B roles', async () => {
     await tenantContext.withoutTenantScope(async () => {
       await runInUnitOfWork(ctx.dataSource, async () => {

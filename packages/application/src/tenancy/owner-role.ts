@@ -24,15 +24,16 @@ export class OwnerRole {
    */
   static async assertAssignable(roles: RoleRepository, tenantId: TenantId, roleIds: readonly RoleId[]): Promise<void> {
     const ownerRole = await OwnerRole.find(roles, tenantId)
+    const found = new Map((await roles.findByIds(roleIds)).map((role) => [role.id, role]))
 
     for (const roleId of roleIds) {
       if (ownerRole !== null && roleId === ownerRole.id) {
         throw new CannotAssignOwnerRoleError()
       }
 
-      const role = await roles.findById(roleId)
+      const role = found.get(roleId)
 
-      if (role === null || role.tenantId !== tenantId) {
+      if (role === undefined || role.tenantId !== tenantId) {
         throw new RoleNotFoundError()
       }
     }

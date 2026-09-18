@@ -6,6 +6,7 @@ import {TenancyCreateInvitations1787745264239} from '../migrations/1787745264239
 import {AuthorizationBackfillAdminPermissions1787745264240} from '../migrations/1787745264240-authorization-backfill-admin-permissions'
 import {KernelCreateOutbox1787745264241} from '../migrations/1787745264241-kernel-create-outbox'
 import {KernelAddAuditAndVersionColumns1787745264242} from '../migrations/1787745264242-kernel-add-audit-and-version-columns'
+import {TenancyIndexMembershipRolesRoleId1787745264243} from '../migrations/1787745264243-tenancy-index-membership-roles-role-id'
 
 import type {DataSourceClass} from './create-data-source.types'
 
@@ -21,4 +22,5 @@ export const postgresMigrations: DataSourceClass[] = [
   AuthorizationBackfillAdminPermissions1787745264240,
   KernelCreateOutbox1787745264241,
   KernelAddAuditAndVersionColumns1787745264242,
+  TenancyIndexMembershipRolesRoleId1787745264243,
 ]

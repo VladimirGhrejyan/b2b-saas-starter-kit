@@ -1,7 +1,7 @@
 import {Inject, Injectable} from '@nestjs/common'
 import type {DataSource} from 'typeorm'
 
-import type {MembershipId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {Membership, MembershipRepository} from '@b2b-saas-starter-kit/domain'
 
@@ -43,6 +43,22 @@ export class TypeOrmMembershipRepository extends TenantAwareRepository implement
       'membership',
       this.manager
         .createQueryBuilder(MembershipEntity, 'membership')
+        .leftJoinAndSelect('membership.roleRows', 'roleRow')
+        .where('membership.tenantId = :tenantId', {tenantId})
+        .orderBy('membership.id', 'ASC'),
+    ).getMany()
+
+    return rows.map((row) => MembershipMapper.toDomain(row))
+  }
+
+  async findByTenantAndRole(tenantId: TenantId, roleId: RoleId): Promise<Membership[]> {
+    this.assertTenant(tenantId)
+
+    const rows = await this.scoped(
+      'membership',
+      this.manager
+        .createQueryBuilder(MembershipEntity, 'membership')
+        .innerJoin('membership.roleRows', 'filterRole', 'filterRole.roleId = :roleId', {roleId})
         .leftJoinAndSelect('membership.roleRows', 'roleRow')
         .where('membership.tenantId = :tenantId', {tenantId})
         .orderBy('membership.id', 'ASC'),
