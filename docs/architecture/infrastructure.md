@@ -71,6 +71,10 @@ This prevents the classic "saved to DB but the job never fired" (or vice-versa) 
 
 `PubSubPort` (Redis pub/sub) supports lightweight fan-out (e.g. cache invalidation across instances, future realtime). It is **not** a durability mechanism — anything that must not be lost uses the outbox. A realtime `gateway` app can later subscribe to `PubSubPort` channels; it is deferred for now (see [`decisions.md`](./decisions.md)).
 
+## Idempotency
+
+`IdempotencyPort` lives in `platform`. The Postgres adapter writes `idempotency_keys` in the ambient `UnitOfWork` so a retried mutation replays the original response. HTTP consumption is `@Idempotent()` + `IdempotencyInterceptor` in `nest-http` (registered after auth in `apps/api`). See [ADR-034](./decisions.md).
+
 ## Logging & observability
 
 - **`Logger` port** lives in `platform`: `context(name)`, `trace` / `debug` / `info` / `warn` / `error` / `fatal`, with pino-style overloads (`msg` or `(data, msg)`). Domain does not log.

@@ -9,7 +9,8 @@ import {fileURLToPath} from 'node:url'
 export class TypeormMigrationCli {
   static readonly #migrationsDir = fileURLToPath(new URL('../migrations/', import.meta.url))
 
-  static readonly #namePattern = /^(identity|tenancy|authorization|audit|notifications)-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
+  static readonly #namePattern =
+    /^(identity|tenancy|authorization|audit|notifications|kernel)-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 
   static readonly #registerHint =
     'Review the file, then append the class to src/kernel/data-source/postgres-migrations.ts.'
@@ -123,7 +124,7 @@ ${downSqls.join('\n')}
 
     if (!TypeormMigrationCli.#namePattern.test(name)) {
       throw new Error(
-        'Migration name must be context-prefixed kebab-case, e.g. tenancy-add-slug (identity|tenancy|authorization|audit|notifications)',
+        'Migration name must be context-prefixed kebab-case, e.g. tenancy-add-slug (identity|tenancy|authorization|audit|notifications|kernel)',
       )
     }
 

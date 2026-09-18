@@ -13,8 +13,10 @@ describe('TypeormMigrationCli', () => {
     )
   })
 
-  it('reads a positional context-prefixed name', () => {
-    expect(TypeormMigrationCli.readName(['jiti', 'create.ts', 'identity-add-phone'])).toBe('identity-add-phone')
+  it('reads a positional kernel-prefixed name', () => {
+    expect(TypeormMigrationCli.readName(['jiti', 'create.ts', 'kernel-create-idempotency-keys'])).toBe(
+      'kernel-create-idempotency-keys',
+    )
   })
 
   it('rejects a name without a context prefix', () => {

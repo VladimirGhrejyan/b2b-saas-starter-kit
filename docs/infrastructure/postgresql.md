@@ -36,6 +36,10 @@ pnpm nx run postgres:migration:revert
 
 `create` / `generate` (CLI in `src/kernel/migration-cli/`) write a file under `packages/infrastructure/postgres/src/kernel/migrations/`. Register the class in `postgres-migrations.ts` after review. On staging, run **only** `migration:run` as a one-shot job against the internal `DATABASE_URL` (host `postgres`); do not generate on the server.
 
+## Idempotency
+
+Mutating routes marked `@Idempotent()` persist a row in `idempotency_keys` in the same UnitOfWork as the handler. Unique `(scope, endpoint, idempotency_key)` — `scope` is `t:<tenantId>` or `u:<actorId>`. TTL is 24 hours (`expires_at`); expired-row cleanup is a later scheduler job. Concurrent duplicates wait on the unique index (replay after commit) or return 409 after a 2s `lock_timeout`.
+
 Integration tests derive `app_test` from `DATABASE_URL` (swap the database name to `*_test`) and create that database if it is missing. They also read `infra/env/.env` and rewrite localhost URLs to `POSTGRES_PORT`. If Postgres is down, they fail with `run pnpm infra:up`. If a native Postgres occupies the port (no `app` role), they fail with a hint to change `POSTGRES_PORT`.
 
 ```bash

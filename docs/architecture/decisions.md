@@ -199,6 +199,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) allow `layer:platform` on `type:app` ✓; (B) documented composition `./app-surface` re-export; (C) keep the forbidden edge and tolerate the bypass.
 **Rationale:** The previous constraint forbade a dependency `apps/api` already needed (`RateLimiterPort`, `TENANT_CONTEXT`, …). `@nx/enforce-module-boundaries` inspects the import specifier, not the origin of a re-export, so composition was used as a dump. Platform is interfaces and errors only, so allowing it costs no adapter coupling. Matching tag constraints AND-combine, so `scope:frontend` still blocks `web`/`admin`. See [`boundaries.md`](./boundaries.md).
 
+## ADR-034 — Idempotency for mutating HTTP requests
+
+**Decision:** Opt-in `@Idempotent()` routes require `Idempotency-Key`. `IdempotencyPort` on `platform` is implemented by a Postgres `idempotency_keys` table, claimed and completed inside the same `UnitOfWork` as the mutation. The unique key is `(scope, endpoint, key)` where `scope` is `t:<tenantId>` or `u:<actorId>` — not nullable `tenant_id`, because Postgres unique constraints do not collapse NULLs (`POST /v1/tenants` has no ambient tenant). Concurrent duplicates wait on the unique index and replay after commit; `SET LOCAL lock_timeout = '2s'` maps a stuck in-flight to `409 IDEMPOTENCY_IN_PROGRESS`. Thrown handler errors roll back the claim (not cached). The interceptor lives in `nest-http` but is registered in `apps/api` `CommonModule` after auth so `RequestContextLocator` already has actor/tenant.
+**Options:** (A) Redis key with TTL; (B) Postgres row in the mutation transaction ✓; (C) wait forever on in-flight duplicates; (D) immediate 409 without waiting.
+**Rationale:** The record must survive a process restart and must not commit without the work it guards. Redis cannot join the TypeORM transaction. Immediate 409 is racy under a unique-index wait; wait-then-replay is the honest concurrent behaviour, with lock timeout as the stuck-request escape hatch. See [`postgresql.md`](../infrastructure/postgresql.md).
+
 ---
 
 ## Deferred decisions

@@ -11,6 +11,7 @@ import {InvitationRoleEntity} from '../../contexts/tenancy/entities/invitation-r
 import {MembershipEntity} from '../../contexts/tenancy/entities/membership.entity'
 import {MembershipRoleEntity} from '../../contexts/tenancy/entities/membership-role.entity'
 import {TenantEntity} from '../../contexts/tenancy/entities/tenant.entity'
+import {IdempotencyKeyEntity} from '../idempotency/idempotency-key.entity'
 import {OutboxEntryEntity} from '../outbox/outbox-entry.entity'
 
 export const postgresEntities = [
@@ -26,4 +27,5 @@ export const postgresEntities = [
   RoleEntity,
   RolePermissionEntity,
   OutboxEntryEntity,
+  IdempotencyKeyEntity,
 ]

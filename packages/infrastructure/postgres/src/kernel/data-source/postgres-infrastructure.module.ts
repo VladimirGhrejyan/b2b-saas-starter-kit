@@ -4,11 +4,13 @@ import {Module} from '@nestjs/common'
 import {
   EVENT_BUS,
   EVENT_PUBLISHER,
+  IDEMPOTENCY,
   InProcessEventBus,
   TENANT_CONTEXT,
   UNIT_OF_WORK,
 } from '@b2b-saas-starter-kit/platform'
 
+import {PostgresIdempotencyStore} from '../idempotency/postgres-idempotency.store'
 import {OutboxRelay} from '../outbox/outbox-relay'
 import {PostgresEventPublisher} from '../outbox/postgres-event-publisher'
 import {TypeormUnitOfWork} from '../persistence/unit-of-work'
@@ -59,6 +61,11 @@ export class PostgresInfrastructureModule {
           provide: EVENT_PUBLISHER,
           useExisting: PostgresEventPublisher,
         },
+        PostgresIdempotencyStore,
+        {
+          provide: IDEMPOTENCY,
+          useExisting: PostgresIdempotencyStore,
+        },
         OutboxRelay,
       ],
       exports: [
@@ -71,6 +78,7 @@ export class PostgresInfrastructureModule {
         UNIT_OF_WORK,
         EVENT_BUS,
         EVENT_PUBLISHER,
+        IDEMPOTENCY,
         OutboxRelay,
       ],
     }

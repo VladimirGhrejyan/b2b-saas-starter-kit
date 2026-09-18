@@ -25,16 +25,17 @@ Never import Nest, TypeORM, Redis, `domain`, `application`, `contracts`, `utils`
 
 ## Who consumes vs who implements
 
-| Port              | Consumes                                         | Implements                                         |
-| ----------------- | ------------------------------------------------ | -------------------------------------------------- |
-| `UnitOfWork`      | Application use cases                            | `infrastructure/postgres` (`TypeormUnitOfWork`)    |
-| `TenantContext`   | Edge sets via `run`; infra reads via getters     | `infrastructure/postgres` (`AlsTenantContext`)     |
-| `Clock`           | Application (pass `now()` into domain factories) | `infrastructure/node` (`SystemClock`)              |
-| `IdGenerator`     | Application (`UserId.parse(ids.generate())`)     | `infrastructure/node` (`UuidV7IdGenerator`)        |
-| `PasswordHasher`  | Application (local credentials)                  | `infrastructure/security` (`Argon2PasswordHasher`) |
-| `TokenDigest`     | Application (refresh / reset tokens)             | `infrastructure/security` (`Sha256TokenDigest`)    |
-| `Logger`          | Application / edge via `LoggerLocator.get()`     | `infrastructure/logger` (`PinoLogger`)             |
-| `RateLimiterPort` | HTTP edge (`RateLimitInterceptor`)               | `infrastructure/redis` (`RedisRateLimiter`)        |
+| Port              | Consumes                                         | Implements                                             |
+| ----------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| `UnitOfWork`      | Application use cases                            | `infrastructure/postgres` (`TypeormUnitOfWork`)        |
+| `TenantContext`   | Edge sets via `run`; infra reads via getters     | `infrastructure/postgres` (`AlsTenantContext`)         |
+| `Clock`           | Application (pass `now()` into domain factories) | `infrastructure/node` (`SystemClock`)                  |
+| `IdGenerator`     | Application (`UserId.parse(ids.generate())`)     | `infrastructure/node` (`UuidV7IdGenerator`)            |
+| `PasswordHasher`  | Application (local credentials)                  | `infrastructure/security` (`Argon2PasswordHasher`)     |
+| `TokenDigest`     | Application (refresh / reset tokens)             | `infrastructure/security` (`Sha256TokenDigest`)        |
+| `Logger`          | Application / edge via `LoggerLocator.get()`     | `infrastructure/logger` (`PinoLogger`)                 |
+| `RateLimiterPort` | HTTP edge (`RateLimitInterceptor`)               | `infrastructure/redis` (`RedisRateLimiter`)            |
+| `IdempotencyPort` | HTTP edge (`IdempotencyInterceptor`)             | `infrastructure/postgres` (`PostgresIdempotencyStore`) |
 
 Domain never imports this package.
 

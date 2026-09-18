@@ -1,3 +1,5 @@
+import {randomUUID} from 'node:crypto'
+
 import type {INestApplication} from '@nestjs/common'
 import {VersioningType} from '@nestjs/common'
 import {NestFactory} from '@nestjs/core'
@@ -55,6 +57,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('x-user-id', userId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(201)
 
@@ -115,6 +118,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(201)
 
@@ -142,6 +146,7 @@ describe('HTTP e2e', () => {
     const response = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('x-user-id', '00000000-0000-4000-8000-000000000001')
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(404)
 
@@ -170,6 +175,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await agent
       .post('/v1/tenants')
       .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(201)
 
@@ -227,6 +233,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Mel Co'})
       .expect(201)
 
@@ -279,6 +286,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(201)
     const tenantId = TenantId.parse(createdTenant.body.id)
@@ -291,6 +299,7 @@ describe('HTTP e2e', () => {
       .post(`/v1/tenants/${tenantId}/invitations`)
       .set('x-user-id', ownerId)
       .set('x-tenant-id', tenantId)
+      .set('Idempotency-Key', randomUUID())
       .send({email: 'invited@example.com', roleIds: [memberRoleId]})
       .expect(201)
 
@@ -327,6 +336,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(201)
     const tenantId = TenantId.parse(createdTenant.body.id)
@@ -336,6 +346,7 @@ describe('HTTP e2e', () => {
       .post(`/v1/tenants/${tenantId}/members`)
       .set('x-user-id', ownerId)
       .set('x-tenant-id', tenantId)
+      .set('Idempotency-Key', randomUUID())
       .send({userId: existingId, roleIds: [memberRoleId]})
       .expect(201)
 
@@ -362,6 +373,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(201)
     const tenantId = TenantId.parse(createdTenant.body.id)
@@ -393,6 +405,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(201)
     const tenantId = TenantId.parse(createdTenant.body.id)
@@ -404,6 +417,7 @@ describe('HTTP e2e', () => {
       .post(`/v1/tenants/${tenantId}/roles`)
       .set('x-user-id', ownerId)
       .set('x-tenant-id', tenantId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Reviewer', permissions: [PermissionName.tenancyTenantRead]})
       .expect(201)
 
@@ -431,6 +445,7 @@ describe('HTTP e2e', () => {
     const createdTenant = await request(app.getHttpServer())
       .post('/v1/tenants')
       .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Acme'})
       .expect(201)
     const tenantId = TenantId.parse(createdTenant.body.id)
@@ -439,6 +454,7 @@ describe('HTTP e2e', () => {
       .post(`/v1/tenants/${tenantId}/roles`)
       .set('x-user-id', ownerId)
       .set('x-tenant-id', tenantId)
+      .set('Idempotency-Key', randomUUID())
       .send({name: 'Auditor', permissions: [PermissionName.identityUsersRead]})
       .expect(201)
 
@@ -446,6 +462,7 @@ describe('HTTP e2e', () => {
       .post(`/v1/tenants/${tenantId}/members`)
       .set('x-user-id', ownerId)
       .set('x-tenant-id', tenantId)
+      .set('Idempotency-Key', randomUUID())
       .send({userId: guestId, roleIds: [createdRole.body.id]})
       .expect(201)
 
@@ -488,5 +505,68 @@ describe('HTTP e2e', () => {
       .post('/v1/auth/login')
       .send({email: 'nopw@example.com', password: 'next-password'})
       .expect(200)
+  })
+
+  it('requires Idempotency-Key on POST /v1/tenants', async () => {
+    const createdUser = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'ada@example.com', displayName: 'Ada'})
+      .expect(201)
+
+    const response = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', createdUser.body.id)
+      .send({name: 'Acme'})
+      .expect(400)
+
+    expect(response.body.code).toBe('IDEMPOTENCY_KEY_REQUIRED')
+  })
+
+  it('replays POST /v1/tenants with the same Idempotency-Key', async () => {
+    const createdUser = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'ada@example.com', displayName: 'Ada'})
+      .expect(201)
+    const key = randomUUID()
+
+    const first = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', createdUser.body.id)
+      .set('Idempotency-Key', key)
+      .send({name: 'Acme'})
+      .expect(201)
+
+    const second = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', createdUser.body.id)
+      .set('Idempotency-Key', key)
+      .send({name: 'Acme'})
+      .expect(201)
+
+    expect(second.body).toEqual(first.body)
+  })
+
+  it('rejects reusing Idempotency-Key with a different body', async () => {
+    const createdUser = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'ada@example.com', displayName: 'Ada'})
+      .expect(201)
+    const key = randomUUID()
+
+    await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', createdUser.body.id)
+      .set('Idempotency-Key', key)
+      .send({name: 'Acme'})
+      .expect(201)
+
+    const response = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', createdUser.body.id)
+      .set('Idempotency-Key', key)
+      .send({name: 'Other'})
+      .expect(409)
+
+    expect(response.body.code).toBe('IDEMPOTENCY_KEY_REUSED')
   })
 })

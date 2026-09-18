@@ -51,7 +51,9 @@ pnpm nx run postgres:migration:run
 pnpm nx run postgres:migration:revert
 ```
 
-`create` writes an empty class. `generate` diffs current entities against the live schema in `DATABASE_URL` and writes `queryRunner.query(…)` SQL. Both are drafts: review the file, then **append** the class to `src/kernel/data-source/postgres-migrations.ts` (order is the timeline). Names must be context-prefixed kebab-case (`identity-…`, `tenancy-…`, `authorization-…`). The CLI loads TypeScript through SWC (`legacyDecorator` + `decoratorMetadata`) so TypeORM entities emit `design:type`; tsx/esbuild cannot.
+`create` writes an empty class. `generate` diffs current entities against the live schema in `DATABASE_URL` and writes `queryRunner.query(…)` SQL. Both are drafts: review the file, then **append** the class to `src/kernel/data-source/postgres-migrations.ts` (order is the timeline). Names must be context-prefixed kebab-case (`identity-…`, `tenancy-…`, `authorization-…`, `kernel-…`). The CLI loads TypeScript through SWC (`legacyDecorator` + `decoratorMetadata`) so TypeORM entities emit `design:type`; tsx/esbuild cannot.
+
+Kernel table `idempotency_keys` backs `IdempotencyPort` (claimed and completed inside the ambient UnitOfWork). Do not export the entity.
 
 `migrationsRun` is never `true` at `DataSource` init. Apply with `migration:run` (local, CI, or a staging one-shot). Do not run `create` / `generate` on staging.
 

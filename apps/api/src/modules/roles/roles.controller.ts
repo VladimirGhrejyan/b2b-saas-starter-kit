@@ -2,7 +2,7 @@ import {Body, Controller, HttpCode, Param} from '@nestjs/common'
 
 import {HttpStatus, PermissionName} from '@b2b-saas-starter-kit/contracts'
 
-import {ApiErrorResponses, ApiRoute, Response} from '@b2b-saas-starter-kit/nest-http'
+import {ApiErrorResponses, ApiRoute, Idempotent, Response} from '@b2b-saas-starter-kit/nest-http'
 
 import {RequirePermission} from '../../common/auth/permission/require-permission.decorator'
 import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
@@ -38,6 +38,7 @@ export class RolesController {
   }
 
   @RequirePermission(PermissionName.authorizationRolesManage)
+  @Idempotent()
   @ApiRoute(RolesRoutes.create)
   @Response({
     status: HttpStatus.CREATED,

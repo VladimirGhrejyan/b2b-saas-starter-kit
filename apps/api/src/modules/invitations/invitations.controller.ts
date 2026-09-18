@@ -2,7 +2,7 @@ import {Body, Controller, Param} from '@nestjs/common'
 
 import {HttpStatus, PermissionName} from '@b2b-saas-starter-kit/contracts'
 
-import {ApiErrorResponses, ApiRoute, Public, Response} from '@b2b-saas-starter-kit/nest-http'
+import {ApiErrorResponses, ApiRoute, Idempotent, Public, Response} from '@b2b-saas-starter-kit/nest-http'
 
 import {RequirePermission} from '../../common/auth/permission/require-permission.decorator'
 import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
@@ -21,6 +21,7 @@ export class InvitationsController {
   constructor(private readonly invitations: InvitationsService) {}
 
   @RequirePermission(PermissionName.tenancyMembersInvite)
+  @Idempotent()
   @ApiRoute(InvitationsRoutes.invite)
   @Response({
     status: HttpStatus.CREATED,

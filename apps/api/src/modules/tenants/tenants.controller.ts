@@ -2,7 +2,7 @@ import {Body, Controller, Param} from '@nestjs/common'
 
 import {HttpStatus, PermissionName} from '@b2b-saas-starter-kit/contracts'
 
-import {ApiErrorResponses, ApiRoute, Response} from '@b2b-saas-starter-kit/nest-http'
+import {ApiErrorResponses, ApiRoute, Idempotent, Response} from '@b2b-saas-starter-kit/nest-http'
 
 import {RequirePermission} from '../../common/auth/permission/require-permission.decorator'
 import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
@@ -21,6 +21,7 @@ export class TenantsController {
   constructor(private readonly tenants: TenantsService) {}
 
   @TenantOptional()
+  @Idempotent()
   @ApiRoute(TenantsRoutes.create)
   @Response({
     status: HttpStatus.CREATED,
@@ -28,9 +29,10 @@ export class TenantsController {
     type: CreateTenantOutputDto,
   })
   @ApiErrorResponses([
-    {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation'},
+    {status: HttpStatus.BAD_REQUEST, description: 'Request body failed validation or Idempotency-Key is missing'},
     {status: HttpStatus.UNAUTHORIZED, description: 'x-user-id is missing or invalid'},
     {status: HttpStatus.NOT_FOUND, description: 'Owner user was not found'},
+    {status: HttpStatus.CONFLICT, description: 'Idempotency-Key is in progress or was reused with a different body'},
   ])
   create(
     @Body() body: CreateTenantInputDto,

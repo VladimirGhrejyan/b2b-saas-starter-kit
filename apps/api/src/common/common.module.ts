@@ -3,6 +3,8 @@ import {APP_INTERCEPTOR} from '@nestjs/core'
 
 import {CompositionModule} from '@b2b-saas-starter-kit/composition'
 
+import {IdempotencyInterceptor} from '@b2b-saas-starter-kit/nest-http'
+
 import {JwtAccessService} from './auth/jwt/jwt-access.service'
 import {JWT_ACCESS_CONFIG} from './auth/jwt/jwt-access-config.token'
 import {loadJwtAccessConfigFromEnv} from './auth/jwt/load-jwt-access-config'
@@ -33,6 +35,10 @@ import {DevSeeder} from './seeding/dev-seeder'
     {
       provide: APP_INTERCEPTOR,
       useClass: RequirePermissionInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IdempotencyInterceptor,
     },
   ],
   exports: [JwtAccessService, RefreshCookie],

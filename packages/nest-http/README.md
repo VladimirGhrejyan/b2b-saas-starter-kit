@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/nest-http`
 
-Nest HTTP delivery kit: `ApiBuilder`, global pipe/filter/interceptor, Swagger, CORS, URI versioning, `@Public()`, `@ApiRoute()`, process error handlers.
+Nest HTTP delivery kit: `ApiBuilder`, global pipe/filter/interceptor, Swagger, CORS, URI versioning, `@Public()`, `@ApiRoute()`, `@Idempotent()`, process error handlers.
 
 **Path:** `packages/nest-http`  
 **Nx project:** `nest-http`  
@@ -50,6 +50,8 @@ await new ApiBuilder(app, apiHttpConfig)
 ```
 
 `createHttpProviders()` registers `ApiValidationPipe`, `ApiExceptionFilter`, and `ApiSerializerInterceptor`. Pass optional `codedErrorHttpStatuses` so duck-typed `{code, message}` errors map to HTTP status; unmapped codes become **409** and are logged at `warn`. `HttpException`s with `status >= 500` are logged and do not leak internals. CORS throws when `isProduction` is true and `corsOrigins` is empty. Helmet is skipped when `isPlainHttp` is true. URI versioning defaults to `'1'`.
+
+`@Idempotent()` marks a mutating route that requires `Idempotency-Key`. `IdempotencyInterceptor` lives in this package; `apps/api` registers it after auth so the key is scoped by tenant or actor. The store is Postgres (`IdempotencyPort`), not Redis.
 
 `OpenApi.setup` (via `ApiBuilder.setupSwagger`) mounts Swagger UI, optional basic-auth (including `/docs-json` and `/docs-yaml`), bearer auth, and writes `openapi.json` into the static directory when `staticAssets` or `swagger.schema` is set.
 
