@@ -5,6 +5,7 @@ import {Permission, RoleId, TenantId} from '@b2b-saas-starter-kit/shared-kernel-
 import {PermissionCatalog, Role} from '@b2b-saas-starter-kit/domain'
 
 import {RoleEntity} from '../../contexts/authorization/entities/role.entity'
+import {RolePermissionEntity} from '../../contexts/authorization/entities/role-permission.entity'
 import {TypeOrmRoleRepository} from '../../contexts/authorization/repositories/typeorm-role.repository'
 import {PostgresTestContext} from '../../testing/postgres-test-context'
 import {runInUnitOfWork} from '../../testing/run-in-unit-of-work'
@@ -106,5 +107,49 @@ describe('audit and version persistence', () => {
     const row = await ctx.dataSource.getRepository(RoleEntity).findOneBy({id: roleId})
 
     expect(row?.version).toBe(2)
+  })
+
+  it('requires an ambient transaction for child-collection deletes', async () => {
+    await tenantContext.withoutTenantScope(async () => {
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
+          Role.reconstitute({
+            id: roleId,
+            tenantId: tenantA,
+            name: 'Owner',
+            permissions: [Permission.parse('tenancy.tenant.read')],
+            isSystem: false,
+          }),
+        )
+      })
+
+      await expect(repo.delete(roleId)).rejects.toBeInstanceOf(AmbientTransactionRequiredError)
+    })
+  })
+
+  it('deletes the parent and child rows inside a unit of work', async () => {
+    await tenantContext.withoutTenantScope(async () => {
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
+          Role.reconstitute({
+            id: roleId,
+            tenantId: tenantA,
+            name: 'Owner',
+            permissions: PermissionCatalog.all,
+            isSystem: true,
+          }),
+        )
+      })
+
+      await runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.delete(roleId)
+      })
+    })
+
+    const parent = await ctx.dataSource.getRepository(RoleEntity).findOneBy({id: roleId})
+    const children = await ctx.dataSource.getRepository(RolePermissionEntity).findBy({roleId})
+
+    expect(parent).toBeNull()
+    expect(children).toEqual([])
   })
 })

@@ -154,12 +154,13 @@ Audit/version fields are **infrastructure-only**. Domain aggregates and mappers 
 | Single-table row            | `manager.save(Entity, mapped)`                                | Users, tenants, sessions, outbox, … |
 | Versioned parent + children | `ChildCollectionWriter.saveVersionedParentAndReplaceChildren` | Roles, memberships                  |
 | Auditable parent + children | `ChildCollectionWriter.saveAuditableParentAndReplaceChildren` | Invitations                         |
+| Parent + children delete    | `ChildCollectionWriter.deleteParentAndChildren`               | Roles                               |
 
-Child-collection saves:
+Child-collection saves **and deletes**:
 
 1. **Require** an ambient `UnitOfWork` transaction (`AssertAmbientTransaction`).
-2. Lock the parent row (`SELECT … FOR UPDATE`), preserve `createdAt` / `version` from the existing row, then `save`.
-3. Replace child rows with delete + insert (full collection snapshot).
+2. Lock the parent row (`SELECT … FOR UPDATE`), preserve `createdAt` / `version` from the existing row on save, then `save` or delete children then parent.
+3. Replace child rows with delete + insert on save (full collection snapshot).
 
 Use **`save`**, not **`upsert`**, for all writes. Application use cases that mutate child-collection aggregates must wrap repository calls in `uow.run()`. A version mismatch surfaces as `OptimisticConcurrencyError`.
 

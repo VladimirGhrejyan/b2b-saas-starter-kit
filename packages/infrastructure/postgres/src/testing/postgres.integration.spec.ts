@@ -45,6 +45,18 @@ class ProbeRepository extends TenantAwareRepository {
     return this.withoutTenantScope(async () => this.findNames())
   }
 
+  async findNamesByExplicitTenant(tenantId: TenantId): Promise<string[]> {
+    const rows = await this.scoped(
+      'row',
+      this.manager
+        .createQueryBuilder(InfraProbeRowEntity, 'row')
+        .where('row.tenantId = :tenantId', {tenantId})
+        .orderBy('row.name', 'ASC'),
+    ).getMany()
+
+    return rows.map((row) => row.name)
+  }
+
   rejectIfMismatch(tenantId: TenantId): void {
     this.assertTenant(tenantId)
   }
@@ -119,6 +131,21 @@ describe('postgres (compose)', () => {
         repo.rejectIfMismatch(tenantB)
       }).toThrow(TenantContextMismatchError)
     })
+  })
+
+  it('does not let a caller :tenantId bind overwrite the ambient scoped filter', async () => {
+    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+      await repo.insert('alpha')
+    })
+    await tenantContext.run({tenantId: tenantB, actorId: actorB}, async () => {
+      await repo.insert('beta')
+    })
+
+    const names = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+      repo.findNamesByExplicitTenant(tenantB),
+    )
+
+    expect(names).toEqual([])
   })
 
   it('rolls back both inserts when UnitOfWork work throws', async () => {

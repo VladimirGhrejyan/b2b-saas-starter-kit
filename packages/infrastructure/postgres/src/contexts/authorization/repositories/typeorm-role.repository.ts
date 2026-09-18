@@ -116,7 +116,13 @@ export class TypeOrmRoleRepository extends TenantAwareRepository implements Role
       return
     }
 
-    await this.manager.delete(RolePermissionEntity, {roleId: id})
-    await this.manager.delete(RoleEntity, {id})
+    const writer = new ChildCollectionWriter(this.manager)
+
+    await writer.deleteParentAndChildren({
+      parentEntity: RoleEntity,
+      parentId: id,
+      childEntity: RolePermissionEntity,
+      parentIdColumn: 'roleId',
+    })
   }
 }

@@ -29,36 +29,21 @@ Bootstrap writes require `TenantContext.withoutTenantScope()`. No ALS store is n
 
 `PostgresConfig` now includes pool max, connect/statement/lock/idle-in-transaction timeouts, `application_name`, and `maxQueryExecutionTime` (via `POSTGRES_SLOW_QUERY_MS`). Defaults apply when only `DATABASE_URL` is set. Query `logging` stays `false`.
 
-### 3. Multi-statement writes assume an ambient transaction but don't require one — High, Architectural Weakness (correctness)
+### 3. Multi-statement writes assume an ambient transaction but don't require one — High, Architectural Weakness (correctness) — **done**
 
-`src/contexts/authorization/typeorm-role.repository.ts` / `src/contexts/tenancy/typeorm-membership.repository.ts`
+`src/kernel/persistence/child-collection.writer.ts`
 
-`save()` performs `upsert(parent)` → `delete(children)` → `insert(children)` as three statements, and `saveMany()` loops `save()`. `manager` resolves to `dataSource.manager` (auto-commit) when no `transactionAls` store is present.
+Child-collection **saves and deletes** go through `ChildCollectionWriter`, which throws `AmbientTransactionRequiredError` when `transactionAls` has no store. Role, membership, and invitation `save` (and role `delete`) no longer auto-commit a half-written aggregate. Single-table writes (users, tenants) may still use `dataSource.manager` when no UoW is open.
 
-**Why it matters:** Outside `uow.run`, a failure between statements leaves a half-written aggregate (role with no permissions, membership with stale roles). `saveMany` can persist some roles and not others. The correctness of these repos silently depends on the caller wrapping them.
+### 4. Child-collection "delete-then-insert" is racy under concurrency — Medium, Improvement — **done**
 
-**Recommendation:** Either (a) assert an ambient transaction for multi-statement writes (throw if `transactionAls.getStore()` is undefined), or (b) wrap the child-replacement in `this.dataSource.transaction` when no ambient tx exists. (a) is more in keeping with the explicit-UoW design. At minimum, document the invariant on the port.
+Same writer. Parent rows are locked `SELECT … FOR UPDATE` before child replace or parent+child delete. Versioned parents (`roles`, `memberships`) also increment `version` on save.
 
-### 4. Child-collection "delete-then-insert" is racy under concurrency — Medium, Improvement
+### 5. Parameter-name collision in `scoped()` silently overrides the caller's filter — Medium, Bug (contract) — **done**
 
-Same two repos. `DELETE role_permissions WHERE role_id=x; INSERT ...` under default READ COMMITTED lets two concurrent saves of the same aggregate interleave (lost update / transient empty state). Recommend taking a row lock on the parent (`SELECT … FOR UPDATE`) within the tx, or diffing with `ON CONFLICT`, so aggregate updates serialize.
+`src/kernel/persistence/tenant-aware.repository.ts`
 
-### 5. Parameter-name collision in `scoped()` silently overrides the caller's filter — Medium, Bug (contract)
-
-`src/kernel/persistence/tenant-aware.repository.ts` binds `:tenantId`:
-
-```typescript
-protected scoped<T extends ObjectLiteral>(alias: string, qb: SelectQueryBuilder<T>): SelectQueryBuilder<T> {
-  if (this.#isTenantScopeSkipped()) {
-    return qb
-  }
-  return qb.andWhere(`${alias}.tenantId = :tenantId`, {tenantId: this.tenantContext.getTenantId()})
-}
-```
-
-But `findByTenant(tenantId)` already binds `:tenantId` to its argument, then `scoped` overwrites that same parameter with the ambient value. So `findByTenant(X)` executed under ambient `Y` silently returns `Y`'s rows. It **fails closed** (no cross-tenant leak — you only ever see ambient), so this is not a security hole, but the explicit argument is silently ignored, which can mask bugs.
-
-**Recommendation:** Use a collision-proof param name (e.g. `:__ambientTenantId`) in `scoped`, and have `findByTenant`/`findByUserAndTenant` call `assertTenant(tenantId)` so a mismatch is an explicit error rather than a silent substitution.
+`scoped()` binds `:__ambientTenantId`. Methods that take an explicit `tenantId` call `assertTenant` (or `assertTenant` only when `hasEstablishedTenantScope()` for `findByUserAndTenant`). A mismatch is `TenantContextMismatchError` instead of a silent substitution.
 
 ### 6. Driver unique-violation leaks instead of a typed conflict — Medium, Improvement
 
@@ -94,8 +79,8 @@ But `findByTenant(tenantId)` already binds `:tenantId` to its argument, then `sc
 
 ## Final Assessment
 
-- **Should change now:** none remaining from this review pass (Findings 1 and 2 are done).
-- **Should change soon:** Findings 3–5 (transaction requirement for multi-statement writes, the delete/insert race, and the `:tenantId` param collision) — correctness issues that will bite under real concurrency.
+- **Should change now:** none remaining from this review pass (Findings 1–5 are done).
+- **Should change soon:** none remaining from Findings 3–5.
 - **Can defer:** Findings 6–8 and the optional items.
 - **Keep as-is:** the overall port/adapter structure, UoW/ALS design, custom `DataSource` lifecycle, per-context layout, and review-first migrations.
 

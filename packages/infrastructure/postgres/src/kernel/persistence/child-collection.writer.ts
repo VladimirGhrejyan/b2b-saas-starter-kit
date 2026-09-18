@@ -3,12 +3,12 @@ import {OptimisticLockVersionMismatchError} from 'typeorm'
 
 import {AssertAmbientTransaction} from './assert-ambient-transaction'
 import type {AuditableEntity} from './auditable.entity'
-import type {ReplaceChildrenOptions} from './child-collection.writer.types'
+import type {DeleteParentAndChildrenOptions, ReplaceChildrenOptions} from './child-collection.writer.types'
 import {OptimisticConcurrencyError} from './optimistic-concurrency.error'
 import type {VersionedEntity} from './versioned.entity'
 
 /**
- * Saves parent rows with child-collection replacement under a parent row lock.
+ * Saves and deletes parent rows with child-collection replacement under a parent row lock.
  */
 export class ChildCollectionWriter {
   constructor(private readonly manager: EntityManager) {}
@@ -68,6 +68,24 @@ export class ChildCollectionWriter {
 
     await this.manager.save(options.parentEntity, parent)
     await this.#replaceChildren(options.children)
+  }
+
+  async deleteParentAndChildren<TParent extends ObjectLiteral, TChild extends ObjectLiteral>(
+    options: DeleteParentAndChildrenOptions<TParent, TChild>,
+  ): Promise<void> {
+    AssertAmbientTransaction.assert()
+
+    const existing = await this.manager.findOne(options.parentEntity, {
+      where: {id: options.parentId} as object,
+      lock: {mode: 'pessimistic_write'},
+    })
+
+    if (existing === null) {
+      return
+    }
+
+    await this.manager.delete(options.childEntity, {[options.parentIdColumn]: options.parentId})
+    await this.manager.delete(options.parentEntity, {id: options.parentId})
   }
 
   async #replaceChildren<TChild extends ObjectLiteral>(options: ReplaceChildrenOptions<TChild>): Promise<void> {

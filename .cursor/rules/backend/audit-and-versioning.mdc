@@ -57,15 +57,16 @@ Use `manager.save(Entity, mapped)` — **not** `upsert`. Repositories join the a
 
 - **`saveVersionedParentAndReplaceChildren`** — versioned parent (`Role`, `Membership`); maps `OptimisticLockVersionMismatchError` → `OptimisticConcurrencyError`
 - **`saveAuditableParentAndReplaceChildren`** — auditable parent only (`Invitation`)
+- **`deleteParentAndChildren`** — parent + child rows (`Role.delete`)
 
-Both paths:
+Save and delete paths:
 
 1. Require an ambient `UnitOfWork` transaction (`AssertAmbientTransaction.assert()`)
 2. `SELECT … FOR UPDATE` on the parent row before write
-3. Preserve `createdAt` (and `version` for versioned) from the locked row
-4. Delete + insert child rows (full collection replace)
+3. Preserve `createdAt` (and `version` for versioned) from the locked row on save
+4. Delete + insert child rows (full collection replace) on save; delete children then parent on delete
 
-Use cases that mutate these aggregates **must** wrap `save` in `uow.run()`. Test seeds/helpers too (`runInUnitOfWork`, or inject `UNIT_OF_WORK`).
+Use cases that mutate these aggregates **must** wrap `save` / `delete` in `uow.run()`. Test seeds/helpers too (`runInUnitOfWork`, or inject `UNIT_OF_WORK`).
 
 ```typescript
 // ✅ application use case
@@ -73,8 +74,9 @@ await this.uow.run(async () => {
   await this.roles.save(role)
 })
 
-// ❌ repository save outside UoW — throws AmbientTransactionRequiredError
+// ❌ repository save or delete outside UoW — throws AmbientTransactionRequiredError
 await this.roles.save(role)
+await this.roles.delete(role.id)
 ```
 
 ## Migrations
