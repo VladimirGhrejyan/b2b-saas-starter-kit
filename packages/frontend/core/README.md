@@ -49,7 +49,7 @@ export const membersApi = api.injectEndpoints({
 const canReadMembers = useCan('tenancy.members.read')
 ```
 
-`prepareHeaders` sets `Authorization: Bearer` from the in-memory session `accessToken`. `fetchBaseQuery` uses `credentials: 'include'` so the `Path=/v1/auth` refresh cookie is sent on `/auth/web/*`. A 401 on a product route runs a single-flight `POST /auth/web/refresh` and retries once; failure clears the session.
+`prepareHeaders` sets `Authorization: Bearer` from the in-memory session `accessToken`. `fetchBaseQuery` uses `credentials: 'include'` so the `Path=/v1/auth` refresh cookie is sent on `/auth/web/*`. A 401 on a product route runs a single-flight `POST /auth/web/refresh` and retries once; failure clears the session. Mutations that match `@Idempotent()` API routes set `extraOptions: {idempotent: true}` so `FrontendApi` sends a stable `Idempotency-Key` (reused on that 401 retry); login stays unmarked.
 
 ## Allowed imports
 

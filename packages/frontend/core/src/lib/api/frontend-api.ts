@@ -10,16 +10,19 @@ import {SessionSelectors} from '../../session/session.selectors'
 import type {SessionState} from '../../session/session.state'
 import type {AppDispatch} from '../redux/create-store.types'
 
+import type {FrontendApiExtraOptions} from './frontend-api.types'
+import {IdempotencyKey} from './idempotency-key'
 import {isAuthSessionUrl} from './is-auth-session-url'
 import {restoreWebSession} from './restore-web-session'
 
 export class FrontendApi {
-  static readonly baseQuery: BaseQueryFn<string | FetchArgs, unknown, ErrorOutput> = async (
+  static readonly baseQuery: BaseQueryFn<string | FetchArgs, unknown, ErrorOutput, FrontendApiExtraOptions> = async (
     args,
     api,
     extraOptions,
   ) => {
-    const result = await FrontendApi.fetch(args, api, extraOptions)
+    const request = IdempotencyKey.apply(args, extraOptions)
+    const result = await FrontendApi.fetch(request, api, extraOptions)
 
     if (result.error) {
       const mapped = {
@@ -27,7 +30,7 @@ export class FrontendApi {
         meta: result.meta,
       }
 
-      if (mapped.error.code !== 'UNAUTHORIZED' || isAuthSessionUrl(args)) {
+      if (mapped.error.code !== 'UNAUTHORIZED' || isAuthSessionUrl(request)) {
         return mapped
       }
 
@@ -37,7 +40,7 @@ export class FrontendApi {
         return mapped
       }
 
-      const retry = await FrontendApi.fetch(args, api, extraOptions)
+      const retry = await FrontendApi.fetch(request, api, extraOptions)
 
       if (retry.error) {
         return {
@@ -85,14 +88,14 @@ export class FrontendApi {
 
   private static fetch(
     args: string | FetchArgs,
-    api: Parameters<BaseQueryFn<string | FetchArgs, unknown, ErrorOutput>>[1],
-    extraOptions: Parameters<BaseQueryFn<string | FetchArgs, unknown, ErrorOutput>>[2],
+    api: Parameters<BaseQueryFn<string | FetchArgs, unknown, ErrorOutput, FrontendApiExtraOptions>>[1],
+    extraOptions: FrontendApiExtraOptions | undefined,
   ) {
     return fetchBaseQuery({
       baseUrl: FrontendCoreConfigLocator.get().baseUrl,
       credentials: 'include',
       prepareHeaders: FrontendApi.prepareHeaders,
-    })(args, api, extraOptions)
+    })(args, api, extraOptions ?? {})
   }
 
   private static errorData(error: FetchBaseQueryError): unknown {

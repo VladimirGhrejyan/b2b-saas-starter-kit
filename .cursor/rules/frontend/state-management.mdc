@@ -69,6 +69,7 @@ export const membersApi = api.injectEndpoints({
     }),
     inviteMember: build.mutation<MembershipOutput, InviteMemberInput>({
       query: (body) => ({url: '/tenants/current/invitations', method: 'POST', body}),
+      extraOptions: {idempotent: true},
       invalidatesTags: [{type: 'Membership', id: 'LIST'}],
     }),
   }),
