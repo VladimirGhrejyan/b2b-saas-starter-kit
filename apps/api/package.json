@@ -90,6 +90,7 @@
     "@b2b-saas-starter-kit/nest-http": "workspace:*",
     "@b2b-saas-starter-kit/platform": "workspace:*",
     "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*",
+    "@b2b-saas-starter-kit/telemetry": "workspace:*",
     "@b2b-saas-starter-kit/utils": "workspace:*",
     "@nestjs/common": "^12.0.3",
     "@nestjs/core": "^12.0.3",

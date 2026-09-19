@@ -6,7 +6,7 @@ Postgres persistence adapters: a custom TypeORM `DataSource` lifecycle (no `@nes
 **Nx project:** `postgres`  
 **Tags:** `scope:backend`, `layer:infrastructure`
 
-`packages/infrastructure/` is a grouping directory (like `packages/shared/`). Each concern is its own Nx project: `postgres`, `logger`, `redis`, `http-client`, `security`, `node`; `messaging` later.
+`packages/infrastructure/` is a grouping directory (like `packages/shared/`). Each concern is its own Nx project: `postgres`, `logger`, `telemetry`, `redis`, `http-client`, `security`, `node`; `messaging` later.
 
 Core adapters live under `src/kernel/` (config, DataSource, persistence plumbing, migrations). Bounded-context files live under `src/contexts/<context>/{entities,mappers,repositories}`. TypeORM relations stay inside one context folder; cross-context links are uuid columns. The public API exports repository classes only — never entities or mappers.
 

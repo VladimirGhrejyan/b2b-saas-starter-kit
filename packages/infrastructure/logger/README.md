@@ -12,12 +12,15 @@ Architecture: [`docs/architecture/infrastructure.md`](../../../docs/architecture
 
 Wrap `pino` (and `pino.child({context})`) behind the platform locator so application never imports Pino. The extra `layer:logger` tag lets `type:app` bootstrap this package without opening `postgres`.
 
+The Pino mixin adds `requestId` / `tenantId` / `actorId` from `RequestContextLocator` and, when an OpenTelemetry span is active, `traceId` / `spanId` from `@opentelemetry/api` (no SDK in this package).
+
 Not a Nest provider. Do not add `@Injectable()`, `@Inject(Logger)`, or `nestjs-pino`.
 
 ## Allowed imports
 
 - `@b2b-saas-starter-kit/platform`
 - `pino`, `pino-pretty`
+- `@opentelemetry/api` (span join only; the SDK lives in `telemetry`)
 - `node:` builtins
 
 Never import Nest, domain, application, contracts, TypeORM, or other infrastructure packages.
@@ -46,7 +49,7 @@ pnpm nx run logger:test
 ## Phase 9 Definition of Done
 
 - [x] Package at `packages/infrastructure/logger` with tags `scope:backend`, `layer:infrastructure`, `layer:logger`
-- [x] Depends on `platform` + `pino` / `pino-pretty` only (no Nest)
+- [x] Depends on `platform` + `pino` / `pino-pretty` + `@opentelemetry/api` (no Nest, no SDK)
 - [x] `PinoLogger` implements `Logger` with one private `log` method and `pino.child({context})`
 - [x] Default level `info`; `Error` → `{err}`; redact authorization headers
 - [x] Unit tests: level filtering, context, `err`, redact

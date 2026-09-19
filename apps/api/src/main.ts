@@ -1,12 +1,13 @@
+import type {Type} from '@nestjs/common'
 import {NestFactory} from '@nestjs/core'
 
 import {ConfigLoader} from '@b2b-saas-starter-kit/config'
 
 import {LoggerLocator, PinoLogger} from '@b2b-saas-starter-kit/logger'
+import {mapTelemetryConfig, startTelemetry} from '@b2b-saas-starter-kit/telemetry'
 
 import {ApiBuilder, registerProcessErrorHandlers} from '@b2b-saas-starter-kit/nest-http'
 
-import {AppModule} from './app/app.module'
 import {assertAuthBootstrap} from './common/auth/jwt/assert-auth-bootstrap'
 import {ApiEnvSchema} from './common/config/env.schema'
 import {mapApiHttpConfig} from './common/config/map-api-http-config'
@@ -31,6 +32,9 @@ async function bootstrap() {
       'SWAGGER_BASIC_AUTH_PASSWORD',
       'LOG_LEVEL',
       'LOG_PRETTY',
+      'TELEMETRY_ENABLED',
+      'OTEL_EXPORTER_OTLP_ENDPOINT',
+      'OTEL_SERVICE_NAME',
       'JWT_ACCESS_SECRET',
       'JWT_ACCESS_TTL_SECONDS',
       'JWT_ISSUER',
@@ -40,6 +44,8 @@ async function bootstrap() {
 
   assertAuthBootstrap(env.NODE_ENV, env.JWT_ACCESS_SECRET)
 
+  const telemetry = await startTelemetry(mapTelemetryConfig(env))
+
   LoggerLocator.init(
     new PinoLogger({
       level: env.LOG_LEVEL,
@@ -48,6 +54,7 @@ async function bootstrap() {
   )
   registerProcessErrorHandlers()
 
+  const {AppModule} = (await import('./app/app.module.js')) as {AppModule: Type}
   const app = await NestFactory.create(AppModule)
   const httpConfig = mapApiHttpConfig(env)
 
@@ -60,6 +67,13 @@ async function bootstrap() {
     .enableShutdownHooks()
     .setupSwagger()
     .listen()
+
+  const shutdown = () => {
+    void app.close().finally(() => telemetry.shutdown())
+  }
+
+  process.once('SIGINT', shutdown)
+  process.once('SIGTERM', shutdown)
 }
 
 void bootstrap()

@@ -80,6 +80,9 @@
     },
     {
       "path": "./packages/infrastructure/mail"
+    },
+    {
+      "path": "./packages/infrastructure/telemetry"
     }
   ]
 }

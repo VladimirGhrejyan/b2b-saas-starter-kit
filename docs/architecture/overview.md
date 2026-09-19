@@ -21,7 +21,7 @@ This directory is the **source of truth** for the architecture of the B2B multi-
 13. [`boundaries.md`](./boundaries.md) — Nx tags, dependency constraints, enforcement.
 14. [`decisions.md`](./decisions.md) — the decision log (ADRs) with rationale.
 
-Investigation (not source of truth): [`frontend-foundation-investigation.md`](./frontend-foundation-investigation.md) — Web / Electron / Capacitor hosts vs the existing `web` / `admin` audience split.
+Investigation (not source of truth): [`frontend-foundation-investigation.md`](./frontend-foundation-investigation.md) — Web / Electron / Capacitor hosts vs the existing `web` / `admin` audience split. [`observability-options.md`](./observability-options.md) — comparison that led to Combo 4 / [ADR-036](./decisions.md).
 
 ## Architectural goal
 

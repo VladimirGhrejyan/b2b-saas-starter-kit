@@ -86,6 +86,7 @@
     "@b2b-saas-starter-kit/composition": "workspace:*",
     "@b2b-saas-starter-kit/config": "workspace:*",
     "@b2b-saas-starter-kit/logger": "workspace:*",
+    "@b2b-saas-starter-kit/telemetry": "workspace:*",
     "@nestjs/common": "^12.0.3",
     "@nestjs/core": "^12.0.3",
     "reflect-metadata": "^0.2.2",

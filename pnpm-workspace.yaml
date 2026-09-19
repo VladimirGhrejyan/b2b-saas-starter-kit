@@ -47,3 +47,4 @@ allowBuilds:
   '@scarf/scarf': false
   msw: false
   argon2: false
+  protobufjs: false

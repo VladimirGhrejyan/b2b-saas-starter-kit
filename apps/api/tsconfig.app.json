@@ -16,6 +16,9 @@
       "path": "../../packages/shared/utils/tsconfig.lib.json"
     },
     {
+      "path": "../../packages/infrastructure/telemetry/tsconfig.lib.json"
+    },
+    {
       "path": "../../packages/shared/kernel-types/tsconfig.lib.json"
     },
     {

@@ -1,0 +1,7 @@
+export {mapTelemetryConfig} from './lib/config/map-telemetry-config'
+export type {TelemetryConfig} from './lib/config/telemetry-config'
+export type {TelemetryEnv} from './lib/config/telemetry-env.types'
+export type {TelemetryHandle} from './lib/config/telemetry-handle.types'
+export type {ActiveSpanAttributes} from './lib/span/active-span-attributes.types'
+export {applyActiveSpanAttributes} from './lib/span/apply-active-span-attributes'
+export {startTelemetry} from './lib/start-telemetry'

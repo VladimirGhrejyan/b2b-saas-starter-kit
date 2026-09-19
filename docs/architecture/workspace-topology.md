@@ -34,6 +34,7 @@ packages/
   infrastructure/          # layer:infrastructure — adapters (grouping directory)
     postgres/              #   TypeORM entities, mappers, repo impls, DataSource, migrations, tenant base repo
     logger/                #   Pino adapter for the Logger port (no Nest)
+    telemetry/             #   OpenTelemetry SDK (env-gated traces + metrics)
     redis/                 #   Redis adapters for the platform capability ports
     http-client/           #   undici outbound HTTP adapter for HttpClientPort
     security/              #   Argon2 password hasher + SHA-256 token digest
@@ -71,36 +72,37 @@ Rejected alternatives (context-first single project per context; context×layer 
 
 ### Note on `infrastructure/*` realization
 
-`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, `packages/infrastructure/logger`, `packages/infrastructure/redis`, `packages/infrastructure/http-client`, `packages/infrastructure/security`, `packages/infrastructure/node`, later `messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
+`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, `packages/infrastructure/logger`, `packages/infrastructure/telemetry`, `packages/infrastructure/redis`, `packages/infrastructure/http-client`, `packages/infrastructure/security`, `packages/infrastructure/node`, later `messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
 
 - **Disk:** `packages/infrastructure/<concern>/` (mirrors `packages/shared/<leaf>/`).
-- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; `logger` / `@b2b-saas-starter-kit/logger`; `redis` / `@b2b-saas-starter-kit/redis`; `http-client` / `@b2b-saas-starter-kit/http-client`; `security` / `@b2b-saas-starter-kit/security`; `node` / `@b2b-saas-starter-kit/node`; later `messaging`) so a Redis, logger, HTTP-client, or crypto consumer never pulls TypeORM, and a worker never pulls Nest/Swagger. `apps/api` must not import `redis`, `http-client`, `security`, or `node` — composition owns the adapters.
+- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; `logger` / `@b2b-saas-starter-kit/logger`; `telemetry` / `@b2b-saas-starter-kit/telemetry`; `redis` / `@b2b-saas-starter-kit/redis`; `http-client` / `@b2b-saas-starter-kit/http-client`; `security` / `@b2b-saas-starter-kit/security`; `node` / `@b2b-saas-starter-kit/node`; later `messaging`) so a Redis, logger, HTTP-client, or crypto consumer never pulls TypeORM, and a worker never pulls Nest/Swagger. `apps/api` must not import `redis`, `http-client`, `security`, or `node` — composition owns the adapters.
 
 A single `infrastructure` project with subfolders is a valid alternative (fewer projects, coarser `affected`) but is not what this kit ships. The same "grouping dir may be one project or several" principle applies to `frontend/`.
 
 ## Project roles
 
-| Project               | Type | Layer          | Depends on (allowed)                                                             |
-| --------------------- | ---- | -------------- | -------------------------------------------------------------------------------- |
-| `shared-kernel-types` | lib  | shared         | — (leaf; +Zod)                                                                   |
-| `contracts`           | lib  | shared         | `shared-kernel-types`                                                            |
-| `utils`               | lib  | shared         | —                                                                                |
-| `config`              | lib  | shared         | `utils` (+ Zod, js-yaml)                                                         |
-| `domain`              | lib  | domain         | `shared-kernel-types`                                                            |
-| `application`         | lib  | application    | `domain`, `platform`, `shared-kernel-types`, `utils`                             |
-| `platform`            | lib  | platform       | `shared-kernel-types`                                                            |
-| `infrastructure/*`    | lib  | infrastructure | `domain`, `application`, `platform`, shared libs                                 |
-| `logger`              | lib  | infrastructure | `platform` (Pino adapter; no Nest, no domain)                                    |
-| `nest-http`           | lib  | nest-http      | `contracts`, `platform`, shared (`config`/`utils` as needed)                     |
-| `composition`         | lib  | composition    | `domain`, `application`, `infrastructure`, `platform`                            |
-| `frontend/ui-kit`     | lib  | ui             | `utils` (+ React). **Not** Tailwind / Radix / theme.                             |
-| `frontend/core`       | lib  | feature/core   | `contracts`, `shared-kernel-types`, `utils`                                      |
-| `apps/api`            | app  | app            | `nest-http`, `composition`, `contracts`, `config`, `utils`, `logger` (bootstrap) |
-| `apps/worker`         | app  | app            | `composition`, `config`, `utils`, `logger` (bootstrap)                           |
-| `apps/web`            | app  | app            | `frontend/ui-kit`, `frontend/core`, `contracts`, `utils`, `config`               |
-| `apps/admin`          | app  | app            | same as `web`                                                                    |
-| `apps/desktop`        | app  | app            | Electron only; **Nx** `implicitDependencies: ["web"]` (no TS import of `web`)    |
-| `apps/mobile`         | app  | app            | Capacitor config; same implicit `web` artifact edge                              |
+| Project               | Type | Layer          | Depends on (allowed)                                                                           |
+| --------------------- | ---- | -------------- | ---------------------------------------------------------------------------------------------- |
+| `shared-kernel-types` | lib  | shared         | — (leaf; +Zod)                                                                                 |
+| `contracts`           | lib  | shared         | `shared-kernel-types`                                                                          |
+| `utils`               | lib  | shared         | —                                                                                              |
+| `config`              | lib  | shared         | `utils` (+ Zod, js-yaml)                                                                       |
+| `domain`              | lib  | domain         | `shared-kernel-types`                                                                          |
+| `application`         | lib  | application    | `domain`, `platform`, `shared-kernel-types`, `utils`                                           |
+| `platform`            | lib  | platform       | `shared-kernel-types`                                                                          |
+| `infrastructure/*`    | lib  | infrastructure | `domain`, `application`, `platform`, shared libs                                               |
+| `logger`              | lib  | infrastructure | `platform` (Pino adapter; no Nest, no domain)                                                  |
+| `telemetry`           | lib  | infrastructure | OpenTelemetry SDK (no Nest, no domain, no logger)                                              |
+| `nest-http`           | lib  | nest-http      | `contracts`, `platform`, shared (`config`/`utils` as needed)                                   |
+| `composition`         | lib  | composition    | `domain`, `application`, `infrastructure`, `platform`                                          |
+| `frontend/ui-kit`     | lib  | ui             | `utils` (+ React). **Not** Tailwind / Radix / theme.                                           |
+| `frontend/core`       | lib  | feature/core   | `contracts`, `shared-kernel-types`, `utils`                                                    |
+| `apps/api`            | app  | app            | `nest-http`, `composition`, `contracts`, `config`, `utils`, `logger` + `telemetry` (bootstrap) |
+| `apps/worker`         | app  | app            | `composition`, `config`, `utils`, `logger` + `telemetry` (bootstrap)                           |
+| `apps/web`            | app  | app            | `frontend/ui-kit`, `frontend/core`, `contracts`, `utils`, `config`                             |
+| `apps/admin`          | app  | app            | same as `web`                                                                                  |
+| `apps/desktop`        | app  | app            | Electron only; **Nx** `implicitDependencies: ["web"]` (no TS import of `web`)                  |
+| `apps/mobile`         | app  | app            | Capacitor config; same implicit `web` artifact edge                                            |
 
 ## Dependency graph (the DAG)
 
@@ -116,6 +118,7 @@ flowchart TB
   application[application]
   infra["infra postgres/redis/http-client/security/node/messaging"]
   loggerPkg[infrastructure/logger]
+  telemetryPkg[infrastructure/telemetry]
   nestHttp[nest-http]
   composition[composition]
 
@@ -151,9 +154,11 @@ flowchart TB
   api --> contracts
   api --> cfg
   api --> loggerPkg
+  api --> telemetryPkg
   worker --> composition
   worker --> cfg
   worker --> loggerPkg
+  worker --> telemetryPkg
   core --> contracts
   core --> utils
   ui --> utils

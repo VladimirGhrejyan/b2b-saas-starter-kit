@@ -13,6 +13,9 @@
   "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"],
   "references": [
     {
+      "path": "../../packages/infrastructure/telemetry/tsconfig.lib.json"
+    },
+    {
       "path": "../../packages/infrastructure/logger/tsconfig.lib.json"
     },
     {

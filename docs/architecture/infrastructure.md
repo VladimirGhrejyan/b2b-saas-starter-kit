@@ -94,7 +94,14 @@ LoggerLocator.reset(): void
 Bootstrap (`apps/api`, `apps/worker`): `LoggerLocator.init(new PinoLogger({level, isPretty}))`. Tests: `LoggerLocator.init(memoryLogger)` in `beforeEach`.
 
 - **Adapter:** `packages/infrastructure/logger` (`@b2b-saas-starter-kit/logger`). One class wrapping `pino` + `pino.child({context})`. Typed levels. Production default **`info`**. `pino-pretty` only when `isPretty`. `Error` as first argument → `{err}`. Redact `req.headers.authorization` (and similar). No driver registry until a second adapter exists.
-- Structured logs include `requestId`, and `tenantId` / `actorId` when a request scope is active. `RequestContextLocator` (`run` / `get` / `bind`) is a process ALS on `platform`, mixed into Pino automatically. HTTP access logs (`method`, templated `route`, `statusCode`, `durationMs`) are emitted by `nest-http` `HttpRequestInterceptor`. Do not reuse postgres `TenantContext` ALS for correlation.
+- Structured logs include `requestId`, and `tenantId` / `actorId` when a request scope is active. `RequestContextLocator` (`run` / `get` / `bind`) is a process ALS on `platform`, mixed into Pino automatically. When an OpenTelemetry span is active, the same mixin adds `traceId` / `spanId` from `@opentelemetry/api`. HTTP access logs (`method`, templated `route`, `statusCode`, `durationMs`) are emitted by `nest-http` `HttpRequestInterceptor`. Do not reuse postgres `TenantContext` ALS for correlation.
+
+## Metrics and traces
+
+- **Adapter:** `packages/infrastructure/telemetry` (`@b2b-saas-starter-kit/telemetry`). Extra tag `layer:telemetry` so apps can start the SDK without opening `postgres`. See [ADR-036](./decisions.md).
+- **Env gate:** `TELEMETRY_ENABLED` defaults to `'false'`. When `'true'`, `OTEL_EXPORTER_OTLP_ENDPOINT` is required (fail-fast; no localhost default). `OTEL_SERVICE_NAME` defaults to `APP_TYPE`. Do not also use `OTEL_SDK_DISABLED`.
+- Bootstrap (`apps/api`, `apps/worker`) calls `startTelemetry` **before** `LoggerLocator.init` / `NestFactory`, then shuts the handle down with the process. Auto-instrument HTTP, `pg`, ioredis, and undici. Ignore incoming `/live`, `/ready`, `/health`, `/docs`. Tenant identity is a **span attribute** (`applyActiveSpanAttributes` after auth), never a metric label.
+- No Prometheus `GET /metrics`, no Compose collector in this slice, no `MetricsPort`.
 
 ## Configuration
 

@@ -18,6 +18,7 @@ export class FrontendCoreEslintConfig {
             {name: '@b2b-saas-starter-kit/application', message: purityMessage},
             {name: '@b2b-saas-starter-kit/postgres', message: purityMessage},
             {name: '@b2b-saas-starter-kit/logger', message: purityMessage},
+            {name: '@b2b-saas-starter-kit/telemetry', message: purityMessage},
             {name: '@b2b-saas-starter-kit/nest-http', message: purityMessage},
             {name: '@b2b-saas-starter-kit/composition', message: purityMessage},
             {name: 'pino', message: purityMessage},

@@ -1,3 +1,4 @@
+import {isSpanContextValid, trace} from '@opentelemetry/api'
 import type {Logger as PinoInstance, LoggerOptions} from 'pino'
 import pino from 'pino'
 
@@ -53,7 +54,10 @@ export class PinoLogger implements Logger {
       level,
       redact: [...PinoLogger.#redactPaths],
       mixin() {
-        return PinoLogger.#requestContextFields()
+        return {
+          ...PinoLogger.#requestContextFields(),
+          ...PinoLogger.#activeSpanFields(),
+        }
       },
     }
 
@@ -82,6 +86,25 @@ export class PinoLogger implements Logger {
       requestId: context.requestId,
       ...(context.tenantId === undefined ? {} : {tenantId: context.tenantId}),
       ...(context.actorId === undefined ? {} : {actorId: context.actorId}),
+    }
+  }
+
+  static #activeSpanFields(): Record<string, string> {
+    const span = trace.getActiveSpan()
+
+    if (span === undefined) {
+      return {}
+    }
+
+    const spanContext = span.spanContext()
+
+    if (!isSpanContextValid(spanContext)) {
+      return {}
+    }
+
+    return {
+      traceId: spanContext.traceId,
+      spanId: spanContext.spanId,
     }
   }
 

@@ -18,6 +18,7 @@ export class ImportGroups {
     [
       '^@b2b-saas-starter-kit/postgres',
       '^@b2b-saas-starter-kit/logger',
+      '^@b2b-saas-starter-kit/telemetry',
       '^@b2b-saas-starter-kit/redis',
       '^@b2b-saas-starter-kit/http-client',
       '^@b2b-saas-starter-kit/security',

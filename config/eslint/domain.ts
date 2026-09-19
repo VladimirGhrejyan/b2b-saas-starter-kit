@@ -26,6 +26,7 @@ export class DomainEslintConfig {
             {name: '@b2b-saas-starter-kit/platform', message: purityMessage},
             {name: '@b2b-saas-starter-kit/utils', message: purityMessage},
             {name: '@b2b-saas-starter-kit/config', message: purityMessage},
+            {name: '@b2b-saas-starter-kit/telemetry', message: purityMessage},
           ],
           patterns: [
             {

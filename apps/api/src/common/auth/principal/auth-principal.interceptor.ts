@@ -11,6 +11,8 @@ import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {TenantContext} from '@b2b-saas-starter-kit/platform'
 import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
+import {applyActiveSpanAttributes} from '@b2b-saas-starter-kit/telemetry'
+
 import {AssertActiveMembership} from '@b2b-saas-starter-kit/composition'
 
 import {IS_PUBLIC_KEY, RequestContextLocator} from '@b2b-saas-starter-kit/nest-http'
@@ -96,6 +98,7 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
 
       request[DEV_PRINCIPAL_KEY] = {userId} satisfies DevPrincipal
       RequestContextLocator.bind({actorId: userId})
+      this.applySpanAttributes(userId)
 
       return lastValueFrom(next.handle())
     }
@@ -108,8 +111,17 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
 
     request[DEV_PRINCIPAL_KEY] = {userId, tenantId} satisfies DevPrincipal
     RequestContextLocator.bind({actorId: userId, tenantId})
+    this.applySpanAttributes(userId, tenantId)
 
     return this.tenantContext.run({tenantId, actorId: userId}, () => lastValueFrom(next.handle()))
+  }
+
+  private applySpanAttributes(actorId: UserId, tenantId?: TenantId): void {
+    applyActiveSpanAttributes({
+      requestId: RequestContextLocator.get()?.requestId,
+      actorId,
+      tenantId,
+    })
   }
 
   private readBearer(headers: IncomingHttpHeaders): string | undefined {

@@ -211,6 +211,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) Terminus + TypeORM/Redis indicators; (B) platform indicators + nest-http aggregator ✓; (C) a single `/health` that always pings dependencies.
 **Rationale:** Orchestrators need a liveness check that cannot fail because Postgres or Redis is down. Terminus DB helpers would pull TypeORM into `nest-http`/`apps/api`. Adapters cannot depend on `nest-http` (`layer:infrastructure`). `/health` matches [`staging.md`](../infrastructure/staging.md) without a compose app overlay in this slice.
 
+## ADR-036 — OpenTelemetry SDK in `telemetry`; logger stays Pino
+
+**Decision:** Traces and metrics use an env-gated OpenTelemetry Node SDK in `packages/infrastructure/telemetry` (`@b2b-saas-starter-kit/telemetry`, extra tag `layer:telemetry`). `TELEMETRY_ENABLED` defaults to `'false'`; when `'true'`, `OTEL_EXPORTER_OTLP_ENDPOINT` is required. The SDK auto-instruments HTTP, `pg`, ioredis, and undici; ignores `/live` `/ready` `/health` `/docs`; exports OTLP HTTP traces and metrics. Pino stays in `logger` and joins traces via `@opentelemetry/api` (`traceId` / `spanId`). Tenant identity is a span attribute after auth, never a metric label. No Terminus, no Prometheus `/metrics`, no Compose collector in this slice.
+**Options:** (A) Combo 1 — logs + health only; (B) Combo 2 — kit-owned Prometheus scrape; (C) Combo 4 — OTel traces+metrics, OTLP ✓; (D) vendor APM in the app.
+**Rationale:** One kit switch, vendor-neutral export, and no SDK cost in tests/local/e2e unless opted in. Putting the SDK in `logger` would violate ADR-027 and `layer:logger`. See [`observability-options.md`](./observability-options.md) and [`infrastructure.md`](./infrastructure.md).
+
 ---
 
 ## Deferred decisions

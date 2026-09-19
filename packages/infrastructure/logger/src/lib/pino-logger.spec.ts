@@ -1,4 +1,6 @@
-import {describe, expect, it} from 'vitest'
+import type {Span, SpanContext} from '@opentelemetry/api'
+import {trace} from '@opentelemetry/api'
+import {describe, expect, it, vi} from 'vitest'
 
 import {RequestContextLocator} from '@b2b-saas-starter-kit/platform'
 
@@ -123,5 +125,39 @@ describe('PinoLogger', () => {
     expect(record?.requestId).toBeUndefined()
     expect(record?.actorId).toBeUndefined()
     expect(record?.tenantId).toBeUndefined()
+  })
+
+  it('omits trace fields without an active span', () => {
+    const capture = createCapture()
+    const logger = new PinoLogger({destination: capture.destination})
+
+    logger.info('no-span')
+
+    const record = capture.records()[0]
+
+    expect(record?.traceId).toBeUndefined()
+    expect(record?.spanId).toBeUndefined()
+  })
+
+  it('mixes active span ids onto records', () => {
+    const capture = createCapture()
+    const logger = new PinoLogger({destination: capture.destination})
+    const span = {
+      spanContext: (): SpanContext => ({
+        traceId: 'a'.repeat(32),
+        spanId: 'b'.repeat(16),
+        traceFlags: 1,
+      }),
+    } as unknown as Span
+
+    vi.spyOn(trace, 'getActiveSpan').mockReturnValue(span)
+
+    logger.info('with-span')
+
+    const record = capture.records()[0]
+
+    expect(record?.traceId).toBe('a'.repeat(32))
+    expect(record?.spanId).toBe('b'.repeat(16))
+    vi.restoreAllMocks()
   })
 })

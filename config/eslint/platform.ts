@@ -29,6 +29,7 @@ export class PlatformEslintConfig {
             {name: '@b2b-saas-starter-kit/utils', message: purityMessage},
             {name: '@b2b-saas-starter-kit/config', message: purityMessage},
             {name: '@b2b-saas-starter-kit/logger', message: purityMessage},
+            {name: '@b2b-saas-starter-kit/telemetry', message: purityMessage},
             {name: '@b2b-saas-starter-kit/nest-http', message: purityMessage},
           ],
           patterns: [

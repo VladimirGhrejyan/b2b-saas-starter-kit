@@ -19,32 +19,34 @@ Every Nx project carries a **scope** tag and a **layer** tag.
 - `layer:shared-types`, `layer:contracts`, `layer:utils`, `layer:config` (shared leaves)
 - `layer:domain`, `layer:application`, `layer:platform`, `layer:infrastructure`, `layer:nest-http`, `layer:composition` (backend)
 - `layer:logger` — extra tag on the `logger` project so `type:app` can bootstrap Pino without being allowed to import `postgres`
+- `layer:telemetry` — extra tag on the `telemetry` project so `type:app` can start the OpenTelemetry SDK without being allowed to import `postgres`
 - `layer:ui`, `layer:frontend-core`, `layer:feature` (frontend)
 - `type:app` for applications
 
-| Project                      | Tags                                                    |
-| ---------------------------- | ------------------------------------------------------- |
-| `shared-kernel-types`        | `scope:shared`, `layer:shared-types`                    |
-| `contracts`                  | `scope:shared`, `layer:contracts`                       |
-| `utils`                      | `scope:shared`, `layer:utils`                           |
-| `config`                     | `scope:shared`, `layer:config`                          |
-| `domain`                     | `scope:backend`, `layer:domain`                         |
-| `application`                | `scope:backend`, `layer:application`                    |
-| `platform`                   | `scope:backend`, `layer:platform`                       |
-| `postgres`                   | `scope:backend`, `layer:infrastructure`                 |
-| `redis`                      | `scope:backend`, `layer:infrastructure`                 |
-| `http-client`                | `scope:backend`, `layer:infrastructure`                 |
-| `security`                   | `scope:backend`, `layer:infrastructure`                 |
-| `node`                       | `scope:backend`, `layer:infrastructure`                 |
-| `messaging` (later)          | `scope:backend`, `layer:infrastructure`                 |
-| `logger`                     | `scope:backend`, `layer:infrastructure`, `layer:logger` |
-| `nest-http`                  | `scope:backend`, `layer:nest-http`                      |
-| `composition`                | `scope:backend`, `layer:composition`                    |
-| `frontend/ui-kit`            | `scope:frontend`, `layer:ui`                            |
-| `frontend/core`              | `scope:frontend`, `layer:frontend-core`                 |
-| `apps/api`,`apps/worker`     | `scope:backend`, `type:app`                             |
-| `apps/web`,`apps/admin`      | `scope:frontend`, `type:app`                            |
-| `apps/desktop`,`apps/mobile` | `scope:frontend`, `type:app`                            |
+| Project                      | Tags                                                       |
+| ---------------------------- | ---------------------------------------------------------- |
+| `shared-kernel-types`        | `scope:shared`, `layer:shared-types`                       |
+| `contracts`                  | `scope:shared`, `layer:contracts`                          |
+| `utils`                      | `scope:shared`, `layer:utils`                              |
+| `config`                     | `scope:shared`, `layer:config`                             |
+| `domain`                     | `scope:backend`, `layer:domain`                            |
+| `application`                | `scope:backend`, `layer:application`                       |
+| `platform`                   | `scope:backend`, `layer:platform`                          |
+| `postgres`                   | `scope:backend`, `layer:infrastructure`                    |
+| `redis`                      | `scope:backend`, `layer:infrastructure`                    |
+| `http-client`                | `scope:backend`, `layer:infrastructure`                    |
+| `security`                   | `scope:backend`, `layer:infrastructure`                    |
+| `node`                       | `scope:backend`, `layer:infrastructure`                    |
+| `messaging` (later)          | `scope:backend`, `layer:infrastructure`                    |
+| `logger`                     | `scope:backend`, `layer:infrastructure`, `layer:logger`    |
+| `telemetry`                  | `scope:backend`, `layer:infrastructure`, `layer:telemetry` |
+| `nest-http`                  | `scope:backend`, `layer:nest-http`                         |
+| `composition`                | `scope:backend`, `layer:composition`                       |
+| `frontend/ui-kit`            | `scope:frontend`, `layer:ui`                               |
+| `frontend/core`              | `scope:frontend`, `layer:frontend-core`                    |
+| `apps/api`,`apps/worker`     | `scope:backend`, `type:app`                                |
+| `apps/web`,`apps/admin`      | `scope:frontend`, `type:app`                               |
+| `apps/desktop`,`apps/mobile` | `scope:frontend`, `type:app`                               |
 
 ## Dependency constraints (`@nx/enforce-module-boundaries`)
 
@@ -124,6 +126,7 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
         "layer:composition",
         "layer:nest-http",
         "layer:logger",
+        "layer:telemetry",
         "layer:platform",
         "layer:ui",
         "layer:frontend-core",
@@ -146,7 +149,7 @@ Intended constraints (illustrative shape, to be added to ESLint config during im
 - `scope:shared → scope:backend|frontend` — a shared package can never pull framework/infra code.
 - `scope:backend ↔ scope:frontend` — the two never import each other.
 - `type:app → type:app` — apps don't **import** other apps. Runtime hosts (`apps/desktop`, `apps/mobile`) load the `apps/web` **dist** and may declare Nx `implicitDependencies: ["web"]` for graph/build order only.
-- `type:app → postgres/redis/http-client/security/node/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Backend apps may import `layer:platform` (ports, tokens, error classes) for edge concerns such as rate limiting and tenant context. Frontend apps remain blocked by `scope:frontend` (matching Nx constraints AND-combine). Bootstrap may import `logger` (`layer:logger`) without opening `postgres`, `redis`, `http-client`, `security`, or `node`. Composition must not re-export `platform` or infrastructure packages to work around tags — `@nx/enforce-module-boundaries` inspects the import specifier, not the origin of a re-export.
+- `type:app → postgres/redis/http-client/security/node/domain/application` — apps stay thin; delivery helpers live in `nest-http`, wiring in `composition`. Backend apps may import `layer:platform` (ports, tokens, error classes) for edge concerns such as rate limiting and tenant context. Frontend apps remain blocked by `scope:frontend` (matching Nx constraints AND-combine). Bootstrap may import `logger` (`layer:logger`) and `telemetry` (`layer:telemetry`) without opening `postgres`, `redis`, `http-client`, `security`, or `node`. Composition must not re-export `platform` or infrastructure packages to work around tags — `@nx/enforce-module-boundaries` inspects the import specifier, not the origin of a re-export.
 - `nest-http → domain/application/postgres` — the HTTP kit is delivery, not composition.
 
 ## Context isolation (the gap layer-first leaves)
