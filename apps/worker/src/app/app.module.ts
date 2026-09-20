@@ -2,13 +2,30 @@ import {Module} from '@nestjs/common'
 
 import {ConfigLoader} from '@b2b-saas-starter-kit/config'
 
-import {WORKER_OUTBOX_CONFIG, WorkerModule, type WorkerOutboxConfig} from '@b2b-saas-starter-kit/composition'
+import {WorkerModule, type WorkerRuntimeConfig} from '@b2b-saas-starter-kit/composition'
 
 import {type WorkerEnv, WorkerEnvSchema} from '../config/env.schema'
 import {WORKER_ENV} from '../config/worker-env.token'
 
 @Module({
-  imports: [WorkerModule],
+  imports: [
+    WorkerModule.forRootAsync({
+      inject: [WORKER_ENV],
+      useFactory: (env: WorkerEnv): WorkerRuntimeConfig => ({
+        outbox: {
+          pollIntervalMs: env.OUTBOX_POLL_INTERVAL_MS,
+          batchSize: env.OUTBOX_BATCH_SIZE,
+        },
+        maintenance: {
+          refreshSessionsEveryMs: env.PURGE_REFRESH_SESSIONS_EVERY_MS,
+          passwordResetTokensEveryMs: env.PURGE_PASSWORD_RESET_TOKENS_EVERY_MS,
+          staleInvitationsEveryMs: env.PURGE_STALE_INVITATIONS_EVERY_MS,
+          reclaimStaleOutboxEveryMs: env.RECLAIM_STALE_OUTBOX_EVERY_MS,
+          staleProcessingMs: env.OUTBOX_STALE_PROCESSING_MS,
+        },
+      }),
+    }),
+  ],
   providers: [
     {
       provide: WORKER_ENV,
@@ -19,8 +36,15 @@ import {WORKER_ENV} from '../config/worker-env.token'
             'APP_TYPE',
             'NODE_ENV',
             'DATABASE_URL',
+            'REDIS_URL',
+            'BULLMQ_PREFIX',
             'OUTBOX_POLL_INTERVAL_MS',
             'OUTBOX_BATCH_SIZE',
+            'OUTBOX_STALE_PROCESSING_MS',
+            'PURGE_REFRESH_SESSIONS_EVERY_MS',
+            'PURGE_PASSWORD_RESET_TOKENS_EVERY_MS',
+            'PURGE_STALE_INVITATIONS_EVERY_MS',
+            'RECLAIM_STALE_OUTBOX_EVERY_MS',
             'LOG_LEVEL',
             'LOG_PRETTY',
             'TELEMETRY_ENABLED',
@@ -28,14 +52,6 @@ import {WORKER_ENV} from '../config/worker-env.token'
             'OTEL_SERVICE_NAME',
           ],
         }),
-    },
-    {
-      provide: WORKER_OUTBOX_CONFIG,
-      useFactory: (env: WorkerEnv): WorkerOutboxConfig => ({
-        pollIntervalMs: env.OUTBOX_POLL_INTERVAL_MS,
-        batchSize: env.OUTBOX_BATCH_SIZE,
-      }),
-      inject: [WORKER_ENV],
     },
   ],
 })

@@ -33,6 +33,9 @@
       "path": "../infrastructure/node/tsconfig.lib.json"
     },
     {
+      "path": "../infrastructure/messaging/tsconfig.lib.json"
+    },
+    {
       "path": "../infrastructure/mail/tsconfig.lib.json"
     },
     {

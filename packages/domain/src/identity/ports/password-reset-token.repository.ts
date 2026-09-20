@@ -11,4 +11,5 @@ export interface PasswordResetTokenRepository {
   findByTokenHash(tokenHash: string): Promise<PasswordResetToken | null>
   findByUserId(userId: UserId): Promise<PasswordResetToken | null>
   save(token: PasswordResetToken): Promise<void>
+  deleteInactive(before: Date, limit: number): Promise<number>
 }

@@ -19,6 +19,7 @@ export {PostgresHealthIndicator} from './kernel/health/postgres-health.indicator
 export {PostgresIdempotencyStore} from './kernel/idempotency/postgres-idempotency.store'
 export {OutboxSerializer} from './kernel/outbox/outbox.serializer'
 export {OutboxRelay} from './kernel/outbox/outbox-relay'
+export type {ClaimedOutboxRow} from './kernel/outbox/outbox-relay.types'
 export {OutboxStatus} from './kernel/outbox/outbox-status'
 export {PostgresEventPublisher} from './kernel/outbox/postgres-event-publisher'
 export {TenantAwareRepository} from './kernel/persistence/tenant-aware.repository'

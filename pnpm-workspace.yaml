@@ -48,3 +48,4 @@ allowBuilds:
   msw: false
   argon2: false
   protobufjs: false
+  msgpackr-extract: false

@@ -1,77 +1,88 @@
 import {Inject, Injectable} from '@nestjs/common'
 import type {DataSource, EntityManager} from 'typeorm'
 
-import {TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
-import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
+import {UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-import type {DomainEvent} from '@b2b-saas-starter-kit/domain'
-
-import type {EventBus, TenantContext} from '@b2b-saas-starter-kit/platform'
-import {EVENT_BUS, TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
-
+import {SqlCount} from '../persistence/sql-count'
 import {DATA_SOURCE} from '../tokens'
 
-import {OutboxSerializer} from './outbox.serializer'
 import {OutboxEntryEntity} from './outbox-entry.entity'
 import {OutboxPendingRowMapper} from './outbox-pending-row.mapper'
-import type {OutboxRelayOptions} from './outbox-relay.types'
+import type {ClaimedOutboxRow} from './outbox-relay.types'
 import {OutboxStatus} from './outbox-status'
 
 /**
- * Claims pending outbox rows and dispatches them through {@link EventBus}.
+ * Claims pending outbox rows for BullMQ delivery. Completion happens in the worker processor.
  */
 @Injectable()
 export class OutboxRelay {
   static readonly WORKER_ACTOR_ID = UserId.parse('00000000-0000-4000-8000-000000000001')
 
-  constructor(
-    @Inject(DATA_SOURCE) private readonly dataSource: DataSource,
-    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
-    @Inject(TENANT_CONTEXT) private readonly tenantContext: TenantContext,
-  ) {}
+  constructor(@Inject(DATA_SOURCE) private readonly dataSource: DataSource) {}
 
-  async processBatch(options: OutboxRelayOptions): Promise<number> {
+  async claimBatch(batchSize: number): Promise<readonly ClaimedOutboxRow[]> {
     return this.dataSource.transaction(async (manager) => {
-      const claimed = await this.#claimPending(manager, options.batchSize)
+      const claimed = await this.#claimPending(manager, batchSize)
 
-      for (const entry of claimed) {
-        await this.#processEntry(manager, entry)
-      }
-
-      return claimed.length
+      return claimed.map((entry) => ({
+        id: entry.id,
+        eventType: entry.eventType,
+        tenantId: entry.tenantId,
+      }))
     })
   }
 
-  async #processEntry(manager: EntityManager, entry: OutboxEntryEntity): Promise<void> {
-    try {
-      const event = OutboxSerializer.deserialize(entry.payload)
-
-      await this.#dispatchEvent(entry.tenantId, event)
-
-      entry.status = OutboxStatus.parse('processed')
-      entry.processedAt = new Date()
-      await manager.save(OutboxEntryEntity, entry)
-    } catch (error) {
-      entry.status = OutboxStatus.parse('failed')
-      entry.attemptCount += 1
-      await manager.save(OutboxEntryEntity, entry)
-
-      throw error
-    }
+  async findById(id: string): Promise<OutboxEntryEntity | null> {
+    return this.dataSource.manager.findOneBy(OutboxEntryEntity, {id})
   }
 
-  async #dispatchEvent(tenantId: string | null, event: DomainEvent): Promise<void> {
-    const dispatch = async () => this.eventBus.dispatch([event])
+  async complete(id: string): Promise<void> {
+    await this.dataSource.manager.update(
+      OutboxEntryEntity,
+      {id, status: OutboxStatus.parse('processing')},
+      {
+        status: OutboxStatus.parse('processed'),
+        processedAt: new Date(),
+      },
+    )
+  }
 
-    if (TypeScriptUtils.isNil(tenantId)) {
-      await dispatch()
+  async fail(id: string): Promise<void> {
+    await this.dataSource.manager.query(
+      `
+        UPDATE outbox
+        SET status = $2,
+            attempt_count = attempt_count + 1,
+            updated_at = NOW()
+        WHERE id = $1 AND status = $3
+      `,
+      [id, OutboxStatus.parse('failed'), OutboxStatus.parse('processing')],
+    )
+  }
 
-      return
-    }
-
-    await this.tenantContext.run(
-      {tenantId: TenantId.parse(tenantId), actor: userActor(OutboxRelay.WORKER_ACTOR_ID)},
-      dispatch,
+  async reclaimStaleProcessing(olderThan: Date, limit: number): Promise<number> {
+    return SqlCount.parse(
+      await this.dataSource.manager.query(
+        `
+          WITH stale AS (
+            SELECT id
+            FROM outbox
+            WHERE status = $2 AND updated_at < $1
+            ORDER BY updated_at ASC
+            LIMIT $3
+            FOR UPDATE SKIP LOCKED
+          ),
+          reset AS (
+            UPDATE outbox
+            SET status = $4,
+                updated_at = NOW()
+            WHERE id IN (SELECT id FROM stale)
+            RETURNING id
+          )
+          SELECT COUNT(*)::int AS count FROM reset
+        `,
+        [olderThan, OutboxStatus.parse('processing'), limit, OutboxStatus.parse('pending')],
+      ),
     )
   }
 
@@ -99,7 +110,8 @@ export class OutboxRelay {
     await manager.query(
       `
         UPDATE outbox
-        SET status = $2
+        SET status = $2,
+            updated_at = NOW()
         WHERE id = ANY($1::uuid[])
       `,
       [ids, OutboxStatus.parse('processing')],

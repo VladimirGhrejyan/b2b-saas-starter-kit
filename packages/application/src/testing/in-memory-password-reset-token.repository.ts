@@ -30,6 +30,16 @@ export class InMemoryPasswordResetTokenRepository implements PasswordResetTokenR
     return Promise.resolve()
   }
 
+  deleteInactive(before: Date, limit: number): Promise<number> {
+    const stale = [...this.#tokens.values()].filter((token) => !token.isActive(before)).slice(0, limit)
+
+    for (const token of stale) {
+      this.#tokens.delete(token.id)
+    }
+
+    return Promise.resolve(stale.length)
+  }
+
   snapshot(): unknown {
     return new Map(this.#tokens)
   }

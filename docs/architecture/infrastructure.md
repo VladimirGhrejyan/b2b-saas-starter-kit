@@ -51,16 +51,17 @@ Backend-only outbound calls. `nest-http` stays inbound.
 
 ## Messaging & background jobs
 
-- **BullMQ** (Redis-backed) runs asynchronous work; processors live in `apps/worker`.
-- **Transactional outbox** guarantees reliable job/event dispatch: outbox rows are written **in the same database transaction** as the domain change (via the `UnitOfWork`), then an **outbox relay** publishes them to BullMQ.
+- **BullMQ** lives in `packages/infrastructure/messaging` (`@b2b-saas-starter-kit/messaging`) with a dedicated blocking ioredis connection (`maxRetriesPerRequest: null`, no cache `keyPrefix`, prefix `bsk:bull`). Processors and scheduler registration live in composition; `apps/worker` stays thin.
+- **Transactional outbox** stays in Postgres. Use cases write outbox rows in the same `UnitOfWork` as the domain change. The worker relay **claims** `pending` → `processing` and enqueues a BullMQ `outbox` job. The processor dispatches through `EventBus` and **then** marks the row `processed`. Do not mark processed at enqueue time.
+- Redis is ephemeral (see [`../infrastructure/redis.md`](../infrastructure/redis.md)). Lost in-flight BullMQ jobs are recovered by reclaiming stale `processing` rows back to `pending`.
+- **Maintenance** uses BullMQ job schedulers (`maintenance` queue) for idempotent cleanup: expired/revoked refresh sessions, inactive password-reset tokens, stale invitations, and stale-outbox reclaim.
 
 ```
 domain change + outbox row  ── one Postgres transaction (UnitOfWork) ──▶ commit
-outbox relay (worker)       ── polls unpublished rows ──▶ BullMQ
-BullMQ processor (worker)   ── does the work ──▶ marks outbox row processed
+outbox relay (worker)       ── claim pending ──▶ BullMQ outbox queue
+BullMQ processor (worker)   ── EventBus handlers ──▶ mark outbox row processed
+stale processing            ── maintenance reclaim ──▶ pending
 ```
-
-This prevents the classic "saved to DB but the job never fired" (or vice-versa) inconsistency. The outbox implementation lives in `infrastructure/messaging`; the port/contract it satisfies is defined so application code enqueues intent without knowing about BullMQ.
 
 ### Domain events vs. integration/outbox events
 

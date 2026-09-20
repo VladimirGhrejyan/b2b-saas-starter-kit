@@ -72,10 +72,10 @@ Rejected alternatives (context-first single project per context; context×layer 
 
 ### Note on `infrastructure/*` realization
 
-`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, `packages/infrastructure/logger`, `packages/infrastructure/telemetry`, `packages/infrastructure/redis`, `packages/infrastructure/http-client`, `packages/infrastructure/security`, `packages/infrastructure/node`, later `messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
+`infrastructure/` is a **grouping directory** (`packages/infrastructure/postgres`, `packages/infrastructure/logger`, `packages/infrastructure/telemetry`, `packages/infrastructure/redis`, `packages/infrastructure/http-client`, `packages/infrastructure/security`, `packages/infrastructure/node`, `packages/infrastructure/messaging`). Each concern is its own Nx project because they have different dependency footprints and change cadences. That is the default:
 
 - **Disk:** `packages/infrastructure/<concern>/` (mirrors `packages/shared/<leaf>/`).
-- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; `logger` / `@b2b-saas-starter-kit/logger`; `telemetry` / `@b2b-saas-starter-kit/telemetry`; `redis` / `@b2b-saas-starter-kit/redis`; `http-client` / `@b2b-saas-starter-kit/http-client`; `security` / `@b2b-saas-starter-kit/security`; `node` / `@b2b-saas-starter-kit/node`; later `messaging`) so a Redis, logger, HTTP-client, or crypto consumer never pulls TypeORM, and a worker never pulls Nest/Swagger. `apps/api` must not import `redis`, `http-client`, `security`, or `node` — composition owns the adapters.
+- **Nx / npm:** concern name (`postgres` / `@b2b-saas-starter-kit/postgres`; `logger` / `@b2b-saas-starter-kit/logger`; `telemetry` / `@b2b-saas-starter-kit/telemetry`; `redis` / `@b2b-saas-starter-kit/redis`; `http-client` / `@b2b-saas-starter-kit/http-client`; `security` / `@b2b-saas-starter-kit/security`; `node` / `@b2b-saas-starter-kit/node`; `messaging` / `@b2b-saas-starter-kit/messaging`) so a Redis, logger, HTTP-client, or crypto consumer never pulls TypeORM, and a worker never pulls Nest/Swagger. `apps/api` must not import `redis`, `http-client`, `security`, `node`, or `messaging` — composition owns the adapters.
 
 A single `infrastructure` project with subfolders is a valid alternative (fewer projects, coarser `affected`) but is not what this kit ships. The same "grouping dir may be one project or several" principle applies to `frontend/`.
 

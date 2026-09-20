@@ -42,6 +42,16 @@ export class InMemoryInvitationRepository implements InvitationRepository, InMem
     return Promise.resolve()
   }
 
+  deleteStale(before: Date, limit: number): Promise<number> {
+    const stale = [...this.#invitations.values()].filter((invitation) => !invitation.isActive(before)).slice(0, limit)
+
+    for (const invitation of stale) {
+      this.#invitations.delete(invitation.id)
+    }
+
+    return Promise.resolve(stale.length)
+  }
+
   snapshot(): unknown {
     return new Map(this.#invitations)
   }

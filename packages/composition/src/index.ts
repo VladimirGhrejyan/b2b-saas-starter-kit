@@ -2,6 +2,9 @@
 export {CompositionModule} from './composition.module'
 export {AssertActiveMembership} from './principal/assert-active-membership'
 export {WorkerModule} from './worker/worker.module'
+export type {WorkerModuleAsyncOptions, WorkerRuntimeConfig} from './worker/worker.module.types'
+export type {WorkerMaintenanceConfig} from './worker/worker-maintenance-config.token'
+export {WORKER_MAINTENANCE_CONFIG} from './worker/worker-maintenance-config.token'
 export type {WorkerOutboxConfig} from './worker/worker-outbox-config.token'
 export {WORKER_OUTBOX_CONFIG} from './worker/worker-outbox-config.token'
 export {
@@ -23,6 +26,9 @@ export {
   LoggingMailer,
   LoginUseCase,
   LogoutUseCase,
+  PurgePasswordResetTokensUseCase,
+  PurgeRefreshSessionsUseCase,
+  PurgeStaleInvitationsUseCase,
   REFRESH_TTL_MS,
   RegisterUserUseCase,
   ReplaceMembershipRolesUseCase,

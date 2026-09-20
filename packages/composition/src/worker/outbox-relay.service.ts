@@ -4,13 +4,14 @@ import type {EventBus} from '@b2b-saas-starter-kit/platform'
 import {EVENT_BUS} from '@b2b-saas-starter-kit/platform'
 
 import {OutboxRelay} from '@b2b-saas-starter-kit/postgres'
+import {JobScheduler} from '@b2b-saas-starter-kit/messaging'
 
 import {DomainEventLoggingHandler} from './domain-event-logging.handler'
 import {DOMAIN_EVENT_TYPES} from './domain-event-types'
 import {WORKER_OUTBOX_CONFIG, type WorkerOutboxConfig} from './worker-outbox-config.token'
 
 /**
- * Polls the transactional outbox and dispatches claimed events through {@link EventBus}.
+ * Polls the transactional outbox and enqueues claimed rows onto BullMQ.
  */
 @Injectable()
 export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
@@ -18,8 +19,9 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly relay: OutboxRelay,
-    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
+    private readonly scheduler: JobScheduler,
     private readonly loggingHandler: DomainEventLoggingHandler,
+    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
     @Inject(WORKER_OUTBOX_CONFIG) private readonly outboxConfig: WorkerOutboxConfig,
   ) {}
 
@@ -46,10 +48,22 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async drain(): Promise<void> {
-    let processed = await this.relay.processBatch({batchSize: this.outboxConfig.batchSize})
+    let claimed = await this.relay.claimBatch(this.outboxConfig.batchSize)
 
-    while (processed === this.outboxConfig.batchSize) {
-      processed = await this.relay.processBatch({batchSize: this.outboxConfig.batchSize})
+    while (claimed.length > 0) {
+      for (const row of claimed) {
+        await this.scheduler.addOutboxJob({
+          outboxId: row.id,
+          eventType: row.eventType,
+          tenantId: row.tenantId,
+        })
+      }
+
+      if (claimed.length < this.outboxConfig.batchSize) {
+        return
+      }
+
+      claimed = await this.relay.claimBatch(this.outboxConfig.batchSize)
     }
   }
 }

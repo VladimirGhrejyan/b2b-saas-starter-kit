@@ -10,6 +10,10 @@ import {TenancyIndexMembershipRolesRoleId1787745264243} from '../migrations/1787
 import {KernelCreateIdempotencyKeys1787745264244} from '../migrations/1787745264244-kernel-create-idempotency-keys'
 import {IdentityCreateApiKeys1787745264245} from '../migrations/1787745264245-identity-create-api-keys'
 import {AuthorizationBackfillAdminApiKeysManage1787745264246} from '../migrations/1787745264246-authorization-backfill-admin-api-keys-manage'
+import {IdentityIndexRefreshSessionExpiry1787745264247} from '../migrations/1787745264247-identity-index-refresh-session-expiry'
+import {IdentityIndexPasswordResetExpiry1787745264248} from '../migrations/1787745264248-identity-index-password-reset-expiry'
+import {TenancyIndexInvitationExpiry1787745264249} from '../migrations/1787745264249-tenancy-index-invitation-expiry'
+import {KernelIndexOutboxProcessingUpdatedAt1787745264250} from '../migrations/1787745264250-kernel-index-outbox-processing-updated-at'
 
 import type {DataSourceClass} from './create-data-source.types'
 
@@ -29,4 +33,8 @@ export const postgresMigrations: DataSourceClass[] = [
   KernelCreateIdempotencyKeys1787745264244,
   IdentityCreateApiKeys1787745264245,
   AuthorizationBackfillAdminApiKeysManage1787745264246,
+  IdentityIndexRefreshSessionExpiry1787745264247,
+  IdentityIndexPasswordResetExpiry1787745264248,
+  TenancyIndexInvitationExpiry1787745264249,
+  KernelIndexOutboxProcessingUpdatedAt1787745264250,
 ]

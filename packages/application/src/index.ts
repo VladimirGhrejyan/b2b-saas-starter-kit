@@ -48,6 +48,10 @@ export type {LoginCommand, LoginResult} from './identity/login/login.types'
 export {LoginUseCase} from './identity/login/login.use-case'
 export type {LogoutCommand} from './identity/logout/logout.types'
 export {LogoutUseCase} from './identity/logout/logout.use-case'
+export type {PurgePasswordResetTokensResult} from './identity/purge-password-reset-tokens/purge-password-reset-tokens.types'
+export {PurgePasswordResetTokensUseCase} from './identity/purge-password-reset-tokens/purge-password-reset-tokens.use-case'
+export type {PurgeRefreshSessionsResult} from './identity/purge-refresh-sessions/purge-refresh-sessions.types'
+export {PurgeRefreshSessionsUseCase} from './identity/purge-refresh-sessions/purge-refresh-sessions.use-case'
 export type {RegisterUserCommand, RegisterUserResult} from './identity/register-user/register-user.types'
 export {RegisterUserUseCase} from './identity/register-user/register-user.use-case'
 export type {RequestPasswordResetCommand} from './identity/request-password-reset/request-password-reset.types'
@@ -76,6 +80,7 @@ export {InsufficientPermissionError} from './shared/errors/insufficient-permissi
 export {RoleNotFoundError} from './shared/errors/role-not-found.error'
 export type {MembershipRolesPort} from './shared/membership-roles.port'
 export {MEMBERSHIP_ROLES} from './shared/membership-roles.port'
+export {PURGE_BATCH_SIZE} from './shared/purge.constants'
 export type {AcceptInvitationCommand, AcceptInvitationResult} from './tenancy/accept-invitation/accept-invitation.types'
 export {AcceptInvitationUseCase} from './tenancy/accept-invitation/accept-invitation.use-case'
 export type {AttachMemberCommand, AttachMemberResult} from './tenancy/attach-member/attach-member.types'
@@ -103,6 +108,8 @@ export type {
   TenantMemberUser,
 } from './tenancy/list-tenant-members/list-tenant-members.types'
 export {MembershipRolesService} from './tenancy/membership-roles.service'
+export type {PurgeStaleInvitationsResult} from './tenancy/purge-stale-invitations/purge-stale-invitations.types'
+export {PurgeStaleInvitationsUseCase} from './tenancy/purge-stale-invitations/purge-stale-invitations.use-case'
 export type {
   ReplaceMembershipRolesCommand,
   ReplaceMembershipRolesResult,

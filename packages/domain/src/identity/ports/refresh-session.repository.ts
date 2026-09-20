@@ -12,4 +12,5 @@ export interface RefreshSessionRepository {
   save(session: RefreshSession): Promise<void>
   revokeFamily(familyId: RefreshFamilyId, at: Date): Promise<void>
   revokeAllForUser(userId: UserId, at: Date): Promise<void>
+  deleteExpiredOrRevoked(before: Date, limit: number): Promise<number>
 }

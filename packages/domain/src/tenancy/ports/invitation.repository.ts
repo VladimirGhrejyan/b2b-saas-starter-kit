@@ -12,4 +12,5 @@ export interface InvitationRepository {
   findActiveByTenantAndEmail(tenantId: TenantId, email: string): Promise<Invitation | null>
   findByTokenHash(tokenHash: string): Promise<Invitation | null>
   save(invitation: Invitation): Promise<void>
+  deleteStale(before: Date, limit: number): Promise<number>
 }

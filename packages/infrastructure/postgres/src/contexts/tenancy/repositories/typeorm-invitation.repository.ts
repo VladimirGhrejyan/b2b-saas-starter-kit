@@ -9,6 +9,7 @@ import type {TenantContext} from '@b2b-saas-starter-kit/platform'
 import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
 import {ChildCollectionWriter} from '../../../kernel/persistence/child-collection.writer'
+import {SqlCount} from '../../../kernel/persistence/sql-count'
 import {TenantAwareRepository} from '../../../kernel/persistence/tenant-aware.repository'
 import {DATA_SOURCE} from '../../../kernel/tokens'
 import {InvitationEntity} from '../entities/invitation.entity'
@@ -98,6 +99,35 @@ export class TypeOrmInvitationRepository extends TenantAwareRepository implement
             return child
           }),
       },
+    })
+  }
+
+  async deleteStale(before: Date, limit: number): Promise<number> {
+    return this.withoutTenantScope(async () => {
+      return SqlCount.parse(
+        await this.manager.query(
+          `
+            WITH stale AS (
+              SELECT id
+              FROM invitations
+              WHERE consumed_at IS NOT NULL OR expires_at < $1
+              ORDER BY expires_at ASC
+              LIMIT $2
+            ),
+            deleted_roles AS (
+              DELETE FROM invitation_roles
+              WHERE invitation_id IN (SELECT id FROM stale)
+            ),
+            deleted AS (
+              DELETE FROM invitations
+              WHERE id IN (SELECT id FROM stale)
+              RETURNING id
+            )
+            SELECT COUNT(*)::int AS count FROM deleted
+          `,
+          [before, limit],
+        ),
+      )
     })
   }
 }

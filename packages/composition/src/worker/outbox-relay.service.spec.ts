@@ -3,16 +3,21 @@ import {describe, expect, it, vi} from 'vitest'
 import type {EventBus} from '@b2b-saas-starter-kit/platform'
 
 import type {OutboxRelay} from '@b2b-saas-starter-kit/postgres'
+import type {JobScheduler} from '@b2b-saas-starter-kit/messaging'
 
 import {DomainEventLoggingHandler} from './domain-event-logging.handler'
 import {OutboxRelayService} from './outbox-relay.service'
 import type {WorkerOutboxConfig} from './worker-outbox-config.token'
 
 describe('OutboxRelayService', () => {
-  it('registers handlers and drains the relay on init', async () => {
+  it('registers handlers, claims a batch, and enqueues outbox jobs', async () => {
     const relay = {
-      processBatch: vi.fn(async () => 0),
-    } satisfies Pick<OutboxRelay, 'processBatch'>
+      claimBatch: vi.fn(async () => [{id: 'outbox-1', eventType: 'UserCreated', tenantId: null}]),
+    } satisfies Pick<OutboxRelay, 'claimBatch'>
+
+    const scheduler = {
+      addOutboxJob: vi.fn(async () => undefined),
+    } satisfies Pick<JobScheduler, 'addOutboxJob'>
 
     const eventBus = {
       register: vi.fn(),
@@ -26,6 +31,7 @@ describe('OutboxRelayService', () => {
 
     const service = new OutboxRelayService(
       relay as unknown as OutboxRelay,
+      scheduler as unknown as JobScheduler,
       eventBus,
       new DomainEventLoggingHandler(),
       outboxConfig,
@@ -34,7 +40,15 @@ describe('OutboxRelayService', () => {
     service.onModuleInit()
 
     expect(eventBus.register).toHaveBeenCalled()
-    expect(relay.processBatch).toHaveBeenCalledWith({batchSize: 25})
+    expect(relay.claimBatch).toHaveBeenCalledWith(25)
+
+    await vi.waitFor(() => {
+      expect(scheduler.addOutboxJob).toHaveBeenCalledWith({
+        outboxId: 'outbox-1',
+        eventType: 'UserCreated',
+        tenantId: null,
+      })
+    })
 
     service.onModuleDestroy()
   })

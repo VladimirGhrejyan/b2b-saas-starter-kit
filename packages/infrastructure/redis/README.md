@@ -10,7 +10,7 @@ Architecture: [`docs/architecture/infrastructure.md`](../../../docs/architecture
 
 ## Layout
 
-Capability folders share one **command** client in `kernel/` (`maxRetriesPerRequest: 1`, bounded reconnect, TLS from `rediss://`). Capabilities must not import each other. A blocking client is not created until a queue needs it.
+Capability folders share one **command** client in `kernel/` (`maxRetriesPerRequest: 1`, bounded reconnect, TLS from `rediss://`). Capabilities must not import each other. The blocking BullMQ connection lives in `@b2b-saas-starter-kit/messaging`.
 
 ```
 src/

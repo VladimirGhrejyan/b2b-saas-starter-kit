@@ -83,6 +83,9 @@
     },
     {
       "path": "./packages/infrastructure/telemetry"
+    },
+    {
+      "path": "./packages/infrastructure/messaging"
     }
   ]
 }

@@ -2,6 +2,12 @@ export type OutboxRelayOptions = {
   readonly batchSize: number
 }
 
+export type ClaimedOutboxRow = {
+  readonly id: string
+  readonly eventType: string
+  readonly tenantId: string | null
+}
+
 export type OutboxPendingRow = {
   readonly id: string
   readonly event_type: string

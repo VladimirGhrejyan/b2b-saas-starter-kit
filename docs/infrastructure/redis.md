@@ -51,5 +51,5 @@ Only `REDIS_URL` changes when moving to managed Redis; no app code changes.
 
 This process uses one **command** client (`maxRetriesPerRequest: 1`, bounded `retryStrategy`,
 `connectTimeout` 5s, `enableOfflineQueue: false`). `rediss://` enables TLS. The pub/sub subscriber
-is an ioredis `duplicate()` of that client. A **blocking** client (`maxRetriesPerRequest: null`) is
-added only when a queue or worker needs blocking commands.
+is an ioredis `duplicate()` of that client. The **blocking** BullMQ client (`maxRetriesPerRequest: null`)
+lives in `@b2b-saas-starter-kit/messaging` and does not share this command connection.

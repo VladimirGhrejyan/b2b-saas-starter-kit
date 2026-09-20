@@ -5,6 +5,7 @@ import type {UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {PasswordResetToken, PasswordResetTokenRepository} from '@b2b-saas-starter-kit/domain'
 
+import {SqlCount} from '../../../kernel/persistence/sql-count'
 import {transactionAls} from '../../../kernel/persistence/transaction-als'
 import {DATA_SOURCE} from '../../../kernel/tokens'
 import {PasswordResetTokenEntity} from '../entities/password-reset-token.entity'
@@ -31,6 +32,29 @@ export class TypeOrmPasswordResetTokenRepository implements PasswordResetTokenRe
 
   async save(token: PasswordResetToken): Promise<void> {
     await this.#manager.save(PasswordResetTokenEntity, PasswordResetTokenMapper.toEntity(token))
+  }
+
+  async deleteInactive(before: Date, limit: number): Promise<number> {
+    return SqlCount.parse(
+      await this.#manager.query(
+        `
+          WITH stale AS (
+            SELECT user_id
+            FROM password_reset_tokens
+            WHERE expires_at < $1 OR consumed_at IS NOT NULL
+            ORDER BY expires_at ASC
+            LIMIT $2
+          ),
+          deleted AS (
+            DELETE FROM password_reset_tokens
+            WHERE user_id IN (SELECT user_id FROM stale)
+            RETURNING user_id
+          )
+          SELECT COUNT(*)::int AS count FROM deleted
+        `,
+        [before, limit],
+      ),
+    )
   }
 
   get #manager(): EntityManager {

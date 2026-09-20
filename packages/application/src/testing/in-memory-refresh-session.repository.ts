@@ -46,6 +46,16 @@ export class InMemoryRefreshSessionRepository implements RefreshSessionRepositor
     return Promise.resolve()
   }
 
+  deleteExpiredOrRevoked(before: Date, limit: number): Promise<number> {
+    const stale = [...this.#sessions.values()].filter((session) => !session.isActive(before)).slice(0, limit)
+
+    for (const session of stale) {
+      this.#sessions.delete(session.id)
+    }
+
+    return Promise.resolve(stale.length)
+  }
+
   snapshot(): unknown {
     return new Map(this.#sessions)
   }

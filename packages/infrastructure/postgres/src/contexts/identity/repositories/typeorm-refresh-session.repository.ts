@@ -5,6 +5,7 @@ import type {RefreshFamilyId, UserId} from '@b2b-saas-starter-kit/shared-kernel-
 
 import type {RefreshSession, RefreshSessionRepository} from '@b2b-saas-starter-kit/domain'
 
+import {SqlCount} from '../../../kernel/persistence/sql-count'
 import {transactionAls} from '../../../kernel/persistence/transaction-als'
 import {DATA_SOURCE} from '../../../kernel/tokens'
 import {RefreshSessionEntity} from '../entities/refresh-session.entity'
@@ -45,6 +46,29 @@ export class TypeOrmRefreshSessionRepository implements RefreshSessionRepository
       .where('userId = :userId', {userId})
       .andWhere('revokedAt IS NULL')
       .execute()
+  }
+
+  async deleteExpiredOrRevoked(before: Date, limit: number): Promise<number> {
+    return SqlCount.parse(
+      await this.#manager.query(
+        `
+          WITH stale AS (
+            SELECT id
+            FROM refresh_sessions
+            WHERE expires_at < $1 OR revoked_at IS NOT NULL
+            ORDER BY expires_at ASC
+            LIMIT $2
+          ),
+          deleted AS (
+            DELETE FROM refresh_sessions
+            WHERE id IN (SELECT id FROM stale)
+            RETURNING id
+          )
+          SELECT COUNT(*)::int AS count FROM deleted
+        `,
+        [before, limit],
+      ),
+    )
   }
 
   get #manager(): EntityManager {

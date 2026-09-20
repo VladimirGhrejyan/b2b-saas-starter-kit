@@ -223,6 +223,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) impersonate the creating user; (B) honest `TenantActor` + Bearer `bsk_` ✓; (C) OAuth2 client-credentials / JWT-for-keys.
 **Rationale:** User-only routes (`/me`, password, select-tenant) must fail closed. Impersonation would let a leaked key act as a human and inherit membership. nest-http cannot import identity/postgres (`layer:nest-http`) — the same reason JWT verify already lives in `apps/api`. See [`authorization.md`](./authorization.md).
 
+## ADR-038 — BullMQ in `messaging`; outbox stays the system of record
+
+**Decision:** Background work uses BullMQ in `packages/infrastructure/messaging` with its own blocking Redis connection. `apps/worker` imports composition only. Repeatable **maintenance** jobs purge expired/revoked refresh sessions, inactive password-reset tokens, and stale invitations. The existing Postgres outbox relay **claims** rows and enqueues `outbox` jobs; the processor runs `EventBus` handlers and marks the row `processed`. Redis remains ephemeral, so enqueue must not complete the outbox row. A maintenance reclaim returns stale `processing` rows to `pending`.
+**Options:** (A) `LockPort` + `setInterval` in the worker; (B) BullMQ schedulers + outbox-over-BullMQ with Postgres as SoR ✓; (C) mark outbox processed at enqueue.
+**Rationale:** Architecture already named BullMQ and `infrastructure/messaging`. Cleanup is idempotent, so occasional overlap is harmless. Completing the outbox at enqueue would lose events on Redis flush. See [`infrastructure.md`](./infrastructure.md) and [`../infrastructure/redis.md`](../infrastructure/redis.md).
+
 ---
 
 ## Deferred decisions

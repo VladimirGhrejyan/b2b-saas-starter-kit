@@ -88,4 +88,70 @@ describe('TypeOrmInvitationRepository', () => {
     expect(found?.roleIds).toEqual([roleId])
     expect(pending?.id).toBe(invitationId)
   })
+
+  it('deleteStale removes expired and consumed invitations including role rows', async () => {
+    const expiredId = InvitationId.parse('77777777-7777-4777-8777-777777777777')
+    const consumedId = InvitationId.parse('66666666-6666-4666-8666-666666666666')
+    const activeId = InvitationId.parse('55555555-5555-4555-8555-555555555555')
+
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
+      runInUnitOfWork(ctx.dataSource, async () => {
+        await repo.save(
+          Invitation.create(
+            activeId,
+            tenantA,
+            'ada@example.com',
+            [roleId],
+            'active-hash',
+            new Date('2026-03-01T00:00:00.000Z'),
+            actorA,
+            occurredAt,
+          ),
+        )
+        await repo.save(
+          Invitation.create(
+            expiredId,
+            tenantA,
+            'mel@example.com',
+            [roleId],
+            'expired-hash',
+            new Date('2025-12-01T00:00:00.000Z'),
+            actorA,
+            occurredAt,
+          ),
+        )
+
+        const consumed = Invitation.create(
+          consumedId,
+          tenantA,
+          'eve@example.com',
+          [roleId],
+          'consumed-hash',
+          new Date('2026-03-01T00:00:00.000Z'),
+          actorA,
+          occurredAt,
+        )
+
+        consumed.consume(occurredAt)
+        await repo.save(consumed)
+      }),
+    )
+
+    let deleted = 0
+
+    await runInUnitOfWork(ctx.dataSource, async () => {
+      deleted = await repo.deleteStale(occurredAt, 500)
+    })
+
+    expect(deleted).toBe(2)
+    await expect(
+      tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => repo.findById(activeId)),
+    ).resolves.toMatchObject({id: activeId})
+    await expect(repo.findByTokenHash('expired-hash')).resolves.toBeNull()
+    await expect(repo.findByTokenHash('consumed-hash')).resolves.toBeNull()
+
+    const roleRows = await ctx.dataSource.query<{invitation_id: string}[]>('SELECT invitation_id FROM invitation_roles')
+
+    expect(roleRows).toEqual([{invitation_id: activeId}])
+  })
 })

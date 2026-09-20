@@ -1,0 +1,4 @@
+export const MESSAGING_CONFIG = Symbol('MESSAGING_CONFIG')
+export const BULLMQ_CONNECTION = Symbol('BULLMQ_CONNECTION')
+export const MAINTENANCE_QUEUE = Symbol('MAINTENANCE_QUEUE')
+export const OUTBOX_QUEUE = Symbol('OUTBOX_QUEUE')
