@@ -1,6 +1,6 @@
 import {Injectable} from '@nestjs/common'
 
-import type {MembershipId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {MembershipId, TenantActor, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {
   AttachMemberUseCase,
@@ -25,14 +25,14 @@ export class MembersService {
     private readonly replaceMembershipRoles: ReplaceMembershipRolesUseCase,
   ) {}
 
-  async list(tenantId: TenantId, actorId: UserId): Promise<TenantMembersOutputDto> {
-    const result = await this.listTenantMembers.execute(TenantMembersMapper.toQuery(tenantId, actorId))
+  async list(tenantId: TenantId, actor: TenantActor): Promise<TenantMembersOutputDto> {
+    const result = await this.listTenantMembers.execute(TenantMembersMapper.toQuery(tenantId, actor))
 
     return TenantMembersMapper.toOutput(result)
   }
 
-  async attach(tenantId: TenantId, actorId: UserId, input: AttachMemberInputDto): Promise<AttachMemberOutputDto> {
-    const result = await this.attachMember.execute(AttachMemberMapper.toCommand(tenantId, actorId, input))
+  async attach(tenantId: TenantId, actor: TenantActor, input: AttachMemberInputDto): Promise<AttachMemberOutputDto> {
+    const result = await this.attachMember.execute(AttachMemberMapper.toCommand(tenantId, actor, input))
 
     return AttachMemberMapper.toOutput(result)
   }
@@ -40,11 +40,11 @@ export class MembersService {
   async replaceRoles(
     tenantId: TenantId,
     membershipId: MembershipId,
-    actorId: UserId,
+    actor: TenantActor,
     input: ReplaceMembershipRolesInputDto,
   ): Promise<ReplaceMembershipRolesOutputDto> {
     const result = await this.replaceMembershipRoles.execute(
-      ReplaceMembershipRolesMapper.toCommand(tenantId, membershipId, actorId, input),
+      ReplaceMembershipRolesMapper.toCommand(tenantId, membershipId, actor, input),
     )
 
     return ReplaceMembershipRolesMapper.toOutput(result)

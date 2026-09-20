@@ -39,6 +39,7 @@ export const ownerMe = meOutputSchema.parse({
     PermissionName.authorizationRolesRead,
     PermissionName.authorizationRolesManage,
     PermissionName.identityUsersRead,
+    PermissionName.identityApiKeysManage,
   ],
 })
 

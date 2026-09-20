@@ -1,6 +1,7 @@
 import {describe, expect, it} from 'vitest'
 
 import {MembershipStatus} from './membership-status'
+import {TenantActorKind} from './tenant-actor-kind'
 import {TenantStatus} from './tenant-status'
 import {UserStatus} from './user-status'
 
@@ -21,6 +22,11 @@ describe('status enums', () => {
     for (const value of MembershipStatus.values) {
       expect(MembershipStatus.parse(value)).toBe(value)
     }
+  })
+
+  it('exposes TenantActorKind members', () => {
+    expect(TenantActorKind.user).toBe('user')
+    expect(TenantActorKind.apiKey).toBe('api_key')
   })
 
   it('rejects unknown strings', () => {

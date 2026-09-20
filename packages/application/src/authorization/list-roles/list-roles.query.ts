@@ -19,7 +19,7 @@ export class ListRolesQuery {
   ) {}
 
   async execute(query: ListRolesQueryInput): Promise<ListRolesResult> {
-    await this.authz.require(query.actorId, PermissionCatalog.authorizationRolesRead, {tenantId: query.tenantId})
+    await this.authz.require(query.actor, PermissionCatalog.authorizationRolesRead, {tenantId: query.tenantId})
 
     const roles = await this.roles.findByTenant(query.tenantId)
 

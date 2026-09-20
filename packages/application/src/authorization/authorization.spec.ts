@@ -1,11 +1,20 @@
 import {describe, expect, it} from 'vitest'
 
-import {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {
+  apiKeyActor,
+  ApiKeyId,
+  MembershipId,
+  RoleId,
+  TenantId,
+  userActor,
+  UserId,
+} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Membership, PermissionCatalog, Role} from '@b2b-saas-starter-kit/domain'
 
 import {InsufficientPermissionError} from '../shared/errors/insufficient-permission.error'
 import type {MembershipRolesPort} from '../shared/membership-roles.port'
+import {emptyApiKeyPermissions} from '../testing/empty-api-key-permissions'
 import {InMemoryCache} from '../testing/in-memory-cache'
 import {InMemoryMembershipRepository} from '../testing/in-memory-membership.repository'
 import {InMemoryRoleRepository} from '../testing/in-memory-role.repository'
@@ -40,7 +49,13 @@ function createAuthz() {
   const roles = new InMemoryRoleRepository()
   const memberships = new InMemoryMembershipRepository()
   const cache = new InMemoryCache()
-  const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache, memberships)
+  const authz = new AuthorizationService(
+    roles,
+    membershipRolesFrom(memberships),
+    cache,
+    memberships,
+    emptyApiKeyPermissions,
+  )
 
   return {roles, memberships, cache, authz}
 }
@@ -98,7 +113,7 @@ describe('AuthorizationService', () => {
     await memberships.save(Membership.create(MEMBERSHIP_A, TENANT_A, USER_ID, [memberRole.id], OCCURRED_AT))
 
     await expect(
-      authz.require(USER_ID, PermissionCatalog.tenancyMembersRead, {tenantId: TENANT_A}),
+      authz.require(userActor(USER_ID), PermissionCatalog.tenancyMembersRead, {tenantId: TENANT_A}),
     ).rejects.toBeInstanceOf(InsufficientPermissionError)
   })
 
@@ -119,7 +134,7 @@ describe('AuthorizationService', () => {
 
     await expect(authz.getEffectivePermissions(USER_ID, TENANT_A)).resolves.toEqual([])
     await expect(
-      authz.require(USER_ID, PermissionCatalog.tenancyMembersRead, {tenantId: TENANT_A}),
+      authz.require(userActor(USER_ID), PermissionCatalog.tenancyMembersRead, {tenantId: TENANT_A}),
     ).rejects.toBeInstanceOf(InsufficientPermissionError)
   })
 
@@ -135,7 +150,7 @@ describe('AuthorizationService', () => {
         return membershipRolesFrom(memberships).roleIdsFor(userId, tenantId)
       },
     }
-    const authz = new AuthorizationService(roles, membershipRoles, cache, memberships)
+    const authz = new AuthorizationService(roles, membershipRoles, cache, memberships, emptyApiKeyPermissions)
     const ownerRole = Role.createSystemRole(OWNER_ROLE_A, TENANT_A, 'Owner', OCCURRED_AT)
 
     await roles.save(ownerRole)
@@ -153,7 +168,13 @@ describe('AuthorizationService', () => {
     const roles = new CountingRoleRepository()
     const memberships = new InMemoryMembershipRepository()
     const cache = new InMemoryCache()
-    const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache, memberships)
+    const authz = new AuthorizationService(
+      roles,
+      membershipRolesFrom(memberships),
+      cache,
+      memberships,
+      emptyApiKeyPermissions,
+    )
     const ownerRole = Role.createSystemRole(OWNER_ROLE_A, TENANT_A, 'Owner', OCCURRED_AT)
     const memberRole = Role.createSystemRole(MEMBER_ROLE_A, TENANT_A, 'Member', OCCURRED_AT)
 
@@ -211,5 +232,24 @@ describe('AuthorizationService', () => {
 
     await expect(cache.get(effectivePermissionsCacheKey(TENANT_A, USER_ID))).resolves.not.toBeNull()
     await expect(cache.get(effectivePermissionsCacheKey(TENANT_A, otherUser))).resolves.toBeNull()
+  })
+
+  it('requires an API key against key permissions only', async () => {
+    const roles = new InMemoryRoleRepository()
+    const memberships = new InMemoryMembershipRepository()
+    const cache = new InMemoryCache()
+    const apiKeyId = ApiKeyId.parse('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+    const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache, memberships, {
+      async permissionsFor(id) {
+        return id === apiKeyId ? [PermissionCatalog.tenancyTenantRead] : []
+      },
+    })
+
+    await expect(
+      authz.require(apiKeyActor(apiKeyId), PermissionCatalog.tenancyTenantRead, {tenantId: TENANT_A}),
+    ).resolves.toBeUndefined()
+    await expect(
+      authz.require(apiKeyActor(apiKeyId), PermissionCatalog.tenancyMembersInvite, {tenantId: TENANT_A}),
+    ).rejects.toBeInstanceOf(InsufficientPermissionError)
   })
 })

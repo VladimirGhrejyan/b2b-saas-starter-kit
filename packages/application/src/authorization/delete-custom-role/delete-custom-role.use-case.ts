@@ -31,7 +31,7 @@ export class DeleteCustomRoleUseCase {
   ) {}
 
   async execute(command: DeleteCustomRoleCommand): Promise<void> {
-    await this.authz.require(command.actorId, PermissionCatalog.authorizationRolesManage, {tenantId: command.tenantId})
+    await this.authz.require(command.actor, PermissionCatalog.authorizationRolesManage, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
       const role = await this.roles.findById(command.roleId)

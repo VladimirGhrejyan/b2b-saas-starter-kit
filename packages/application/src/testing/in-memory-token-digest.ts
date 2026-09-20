@@ -7,4 +7,8 @@ export class InMemoryTokenDigest implements TokenDigest {
   digest(value: string): string {
     return `test-digest:${value}`
   }
+
+  matches(value: string, digestHex: string): boolean {
+    return this.digest(value) === digestHex
+  }
 }

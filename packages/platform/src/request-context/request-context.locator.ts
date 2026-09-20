@@ -17,7 +17,7 @@ export class RequestContextLocator {
     return requestContextAls.getStore()
   }
 
-  static bind(patch: Pick<RequestContext, 'tenantId' | 'actorId'>): void {
+  static bind(patch: Pick<RequestContext, 'tenantId' | 'actorId' | 'actorKind'>): void {
     const store = requestContextAls.getStore()
 
     if (store === undefined) {
@@ -30,6 +30,10 @@ export class RequestContextLocator {
 
     if (patch.actorId !== undefined) {
       store.actorId = patch.actorId
+    }
+
+    if (patch.actorKind !== undefined) {
+      store.actorKind = patch.actorKind
     }
   }
 }

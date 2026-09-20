@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {MembershipId, RoleId, TenantActorKind, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Membership, PermissionCatalog, User} from '@b2b-saas-starter-kit/domain'
 
@@ -24,10 +24,16 @@ function authzWith(permissions: AuthorizationPort['getEffectivePermissions']): A
       return undefined
     },
     getEffectivePermissions: permissions,
+    async getPermissions(actor, tenantId) {
+      return actor.kind === TenantActorKind.user ? permissions(actor.id, tenantId) : []
+    },
     async invalidate() {
       return undefined
     },
     async invalidateHoldersOf() {
+      return undefined
+    },
+    async invalidateApiKey() {
       return undefined
     },
   }

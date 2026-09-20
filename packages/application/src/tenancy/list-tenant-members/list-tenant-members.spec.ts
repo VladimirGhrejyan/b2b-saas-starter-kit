@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {MembershipId, RoleId, TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Membership, PermissionCatalog, User} from '@b2b-saas-starter-kit/domain'
 
@@ -25,10 +25,16 @@ function allowingAuthz(): AuthorizationPort {
     async getEffectivePermissions() {
       return []
     },
+    async getPermissions() {
+      return []
+    },
     async invalidate() {
       return undefined
     },
     async invalidateHoldersOf() {
+      return undefined
+    },
+    async invalidateApiKey() {
       return undefined
     },
   }
@@ -36,16 +42,22 @@ function allowingAuthz(): AuthorizationPort {
 
 function denyingAuthz(): AuthorizationPort {
   return {
-    async require(_actorId, permission) {
+    async require(_actor, permission) {
       throw new InsufficientPermissionError(permission)
     },
     async getEffectivePermissions() {
+      return []
+    },
+    async getPermissions() {
       return []
     },
     async invalidate() {
       return undefined
     },
     async invalidateHoldersOf() {
+      return undefined
+    },
+    async invalidateApiKey() {
       return undefined
     },
   }
@@ -58,7 +70,7 @@ describe('ListTenantMembersQuery', () => {
     await memberships.save(Membership.createOwner(MEMBERSHIP_ID, TENANT_ID, ACTOR_ID, ROLE_ID, OCCURRED_AT))
 
     const query = new ListTenantMembersQuery(allowingAuthz(), memberships, new InMemoryUserRepository())
-    const result = await query.execute({tenantId: TENANT_ID, actorId: ACTOR_ID})
+    const result = await query.execute({tenantId: TENANT_ID, actor: userActor(ACTOR_ID)})
 
     expect(result.members).toEqual([
       {
@@ -77,7 +89,7 @@ describe('ListTenantMembersQuery', () => {
 
     const query = new ListTenantMembersQuery(denyingAuthz(), memberships, new InMemoryUserRepository())
 
-    await expect(query.execute({tenantId: TENANT_ID, actorId: ACTOR_ID})).rejects.toBeInstanceOf(
+    await expect(query.execute({tenantId: TENANT_ID, actor: userActor(ACTOR_ID)})).rejects.toBeInstanceOf(
       InsufficientPermissionError,
     )
   })
@@ -94,9 +106,12 @@ describe('ListTenantMembersQuery', () => {
       async getEffectivePermissions() {
         return [PermissionCatalog.identityUsersRead]
       },
+      async getPermissions() {
+        return [PermissionCatalog.identityUsersRead]
+      },
     }
     const query = new ListTenantMembersQuery(authz, memberships, users)
-    const result = await query.execute({tenantId: TENANT_ID, actorId: ACTOR_ID})
+    const result = await query.execute({tenantId: TENANT_ID, actor: userActor(ACTOR_ID)})
 
     expect(result.members[0]?.user).toEqual({email: 'ada@example.com', displayName: 'Ada'})
   })

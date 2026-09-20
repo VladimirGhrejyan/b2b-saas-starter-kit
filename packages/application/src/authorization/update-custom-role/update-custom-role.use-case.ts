@@ -28,7 +28,7 @@ export class UpdateCustomRoleUseCase {
   ) {}
 
   async execute(command: UpdateCustomRoleCommand): Promise<UpdateCustomRoleResult> {
-    await this.authz.require(command.actorId, PermissionCatalog.authorizationRolesManage, {tenantId: command.tenantId})
+    await this.authz.require(command.actor, PermissionCatalog.authorizationRolesManage, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
       const collector = new DomainEventCollector()

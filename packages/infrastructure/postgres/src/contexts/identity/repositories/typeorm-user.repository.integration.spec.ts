@@ -1,6 +1,6 @@
 import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest'
 
-import {TenantId, UserId, UserStatus} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {TenantId, userActor, UserId, UserStatus} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {User} from '@b2b-saas-starter-kit/domain'
 
@@ -95,7 +95,7 @@ describe('TypeOrmUserRepository', () => {
     const found = await tenantContext.run(
       {
         tenantId: TenantId.parse('11111111-1111-4111-8111-111111111111'),
-        actorId: adaId,
+        actor: userActor(adaId),
       },
       async () => repo.findByEmail('ada@example.com'),
     )

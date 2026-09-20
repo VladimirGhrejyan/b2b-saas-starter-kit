@@ -1,8 +1,15 @@
-import type {MembershipId, MembershipStatus, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {
+  MembershipId,
+  MembershipStatus,
+  RoleId,
+  TenantActor,
+  TenantId,
+  UserId,
+} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 export type ListTenantMembersQueryInput = {
   readonly tenantId: TenantId
-  readonly actorId: UserId
+  readonly actor: TenantActor
 }
 
 export type TenantMemberUser = {

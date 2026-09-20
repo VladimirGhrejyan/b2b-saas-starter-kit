@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {MembershipId, RoleId, TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Membership, PermissionCatalog, Role, User} from '@b2b-saas-starter-kit/domain'
 
@@ -11,6 +11,7 @@ import {UpdateCustomRoleUseCase} from '../authorization/update-custom-role/updat
 import {InsufficientPermissionError} from '../shared/errors/insufficient-permission.error'
 import type {MembershipRolesPort} from '../shared/membership-roles.port'
 
+import {emptyApiKeyPermissions} from './empty-api-key-permissions'
 import {FixedClock} from './fixed-clock'
 import {InMemoryCache} from './in-memory-cache'
 import {InMemoryMembershipRepository} from './in-memory-membership.repository'
@@ -49,7 +50,13 @@ async function createHarness() {
   const cache = new InMemoryCache()
   const ids = new SequentialIdGenerator()
   const uow = new InMemoryUnitOfWork(users, memberships, roles)
-  const authz = new AuthorizationService(roles, membershipRolesFrom(memberships), cache, memberships)
+  const authz = new AuthorizationService(
+    roles,
+    membershipRolesFrom(memberships),
+    cache,
+    memberships,
+    emptyApiKeyPermissions,
+  )
   const events = new RecordingEventPublisher()
   const createRole = new CreateCustomRoleUseCase(uow, new FixedClock(OCCURRED_AT), ids, authz, roles, events)
   const updateRole = new UpdateCustomRoleUseCase(uow, new FixedClock(OCCURRED_AT), authz, roles, events)
@@ -85,7 +92,7 @@ describe('custom roles', () => {
     const {users, memberships, cache, authz, createRole, updateRole} = await createHarness()
 
     const created = await createRole.execute({
-      actorId: OWNER_ID,
+      actor: userActor(OWNER_ID),
       tenantId: TENANT_ID,
       name: 'Reviewer',
       permissions: [PermissionCatalog.tenancyTenantRead],
@@ -104,7 +111,7 @@ describe('custom roles', () => {
     await authz.getEffectivePermissions(CUSTOM_HOLDER, TENANT_ID)
 
     await updateRole.execute({
-      actorId: OWNER_ID,
+      actor: userActor(OWNER_ID),
       tenantId: TENANT_ID,
       roleId: created.roleId,
       permissions: [PermissionCatalog.tenancyMembersRead],
@@ -121,7 +128,7 @@ describe('custom roles', () => {
 
     await expect(
       createRole.execute({
-        actorId: ADMIN_ID,
+        actor: userActor(ADMIN_ID),
         tenantId: TENANT_ID,
         name: 'Reviewer',
         permissions: [PermissionCatalog.tenancyTenantRead],

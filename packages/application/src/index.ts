@@ -15,7 +15,11 @@ export type {
   UpdateCustomRoleResult,
 } from './authorization/update-custom-role/update-custom-role.types'
 export {UpdateCustomRoleUseCase} from './authorization/update-custom-role/update-custom-role.use-case'
+export {ApiKeyPermissionsService} from './identity/api-key-permissions.service'
+export {ApiKeyToken} from './identity/api-key-token'
 export {MIN_PASSWORD_LENGTH, PASSWORD_RESET_TTL_MS, REFRESH_TTL_MS} from './identity/authentication.constants'
+export type {CreateApiKeyCommand, CreateApiKeyResult} from './identity/create-api-key/create-api-key.types'
+export {CreateApiKeyUseCase} from './identity/create-api-key/create-api-key.use-case'
 export type {CreateUserCommand, CreateUserResult} from './identity/create-user/create-user.types'
 export {CreateUserUseCase} from './identity/create-user/create-user.use-case'
 export {ActiveMembershipRequiredError} from './identity/errors/active-membership-required.error'
@@ -33,6 +37,12 @@ export type {
   GetMyProfileQueryInput,
   GetMyProfileResult,
 } from './identity/get-my-profile/get-my-profile.types'
+export {ListApiKeysQuery} from './identity/list-api-keys/list-api-keys.query'
+export type {
+  ApiKeyListItem,
+  ListApiKeysQueryInput,
+  ListApiKeysResult,
+} from './identity/list-api-keys/list-api-keys.types'
 export {LoggingMailer} from './identity/logging-mailer'
 export type {LoginCommand, LoginResult} from './identity/login/login.types'
 export {LoginUseCase} from './identity/login/login.use-case'
@@ -44,14 +54,24 @@ export type {RequestPasswordResetCommand} from './identity/request-password-rese
 export {RequestPasswordResetUseCase} from './identity/request-password-reset/request-password-reset.use-case'
 export type {ResetPasswordCommand} from './identity/reset-password/reset-password.types'
 export {ResetPasswordUseCase} from './identity/reset-password/reset-password.use-case'
+export {ResolveApiKeyQuery} from './identity/resolve-api-key/resolve-api-key.query'
+export type {ResolveApiKeyResult} from './identity/resolve-api-key/resolve-api-key.types'
+export type {RevokeApiKeyCommand} from './identity/revoke-api-key/revoke-api-key.types'
+export {RevokeApiKeyUseCase} from './identity/revoke-api-key/revoke-api-key.use-case'
 export type {RotateRefreshCommand, RotateRefreshResult} from './identity/rotate-refresh/rotate-refresh.types'
 export {RotateRefreshUseCase} from './identity/rotate-refresh/rotate-refresh.use-case'
 export type {SelectTenantCommand, SelectTenantResult} from './identity/select-tenant/select-tenant.types'
 export {SelectTenantUseCase} from './identity/select-tenant/select-tenant.use-case'
 export type {SetOrChangePasswordCommand} from './identity/set-or-change-password/set-or-change-password.types'
 export {SetOrChangePasswordUseCase} from './identity/set-or-change-password/set-or-change-password.use-case'
+export {TouchApiKeyLastUsed} from './identity/touch-api-key-last-used/touch-api-key-last-used'
+export type {UpdateApiKeyCommand, UpdateApiKeyResult} from './identity/update-api-key/update-api-key.types'
+export {UpdateApiKeyUseCase} from './identity/update-api-key/update-api-key.use-case'
+export type {ApiKeyPermissionsPort} from './shared/api-key-permissions.port'
+export {API_KEY_PERMISSIONS} from './shared/api-key-permissions.port'
 export type {AuthorizationPort} from './shared/authorization.port'
 export {AUTHORIZATION} from './shared/authorization.port'
+export {ApiKeyNotFoundError} from './shared/errors/api-key-not-found.error'
 export {InsufficientPermissionError} from './shared/errors/insufficient-permission.error'
 export {RoleNotFoundError} from './shared/errors/role-not-found.error'
 export type {MembershipRolesPort} from './shared/membership-roles.port'

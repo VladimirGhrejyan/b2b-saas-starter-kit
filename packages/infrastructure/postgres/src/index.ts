@@ -1,4 +1,5 @@
 export {TypeOrmRoleRepository} from './contexts/authorization/repositories/typeorm-role.repository'
+export {TypeOrmApiKeyRepository} from './contexts/identity/repositories/typeorm-api-key.repository'
 export {TypeOrmLocalPasswordRepository} from './contexts/identity/repositories/typeorm-local-password.repository'
 export {TypeOrmPasswordResetTokenRepository} from './contexts/identity/repositories/typeorm-password-reset-token.repository'
 export {TypeOrmRefreshSessionRepository} from './contexts/identity/repositories/typeorm-refresh-session.repository'

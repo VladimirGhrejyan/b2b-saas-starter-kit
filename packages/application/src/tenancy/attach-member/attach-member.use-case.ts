@@ -40,7 +40,7 @@ export class AttachMemberUseCase {
   ) {}
 
   async execute(command: AttachMemberCommand): Promise<AttachMemberResult> {
-    await this.authz.require(command.actorId, PermissionCatalog.tenancyMembersManage, {tenantId: command.tenantId})
+    await this.authz.require(command.actor, PermissionCatalog.tenancyMembersManage, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
       const collector = new DomainEventCollector()

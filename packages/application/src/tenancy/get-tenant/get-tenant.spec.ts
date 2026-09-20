@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Tenant} from '@b2b-saas-starter-kit/domain'
 
@@ -26,7 +26,13 @@ function allowingAuthz(): AuthorizationPort {
     async invalidate() {
       return undefined
     },
+    async getPermissions() {
+      return []
+    },
     async invalidateHoldersOf() {
+      return undefined
+    },
+    async invalidateApiKey() {
       return undefined
     },
   }
@@ -34,16 +40,22 @@ function allowingAuthz(): AuthorizationPort {
 
 function denyingAuthz(): AuthorizationPort {
   return {
-    async require(_actorId, permission) {
+    async require(_actor, permission) {
       throw new InsufficientPermissionError(permission)
     },
     async getEffectivePermissions() {
+      return []
+    },
+    async getPermissions() {
       return []
     },
     async invalidate() {
       return undefined
     },
     async invalidateHoldersOf() {
+      return undefined
+    },
+    async invalidateApiKey() {
       return undefined
     },
   }
@@ -57,7 +69,7 @@ describe('GetTenantQuery', () => {
 
     const result = await new GetTenantQuery(allowingAuthz(), tenants).execute({
       tenantId: TENANT_ID,
-      actorId: ACTOR_ID,
+      actor: userActor(ACTOR_ID),
     })
 
     expect(result).toEqual({id: TENANT_ID, name: 'Acme'})
@@ -67,7 +79,7 @@ describe('GetTenantQuery', () => {
     await expect(
       new GetTenantQuery(allowingAuthz(), new InMemoryTenantRepository()).execute({
         tenantId: TENANT_ID,
-        actorId: ACTOR_ID,
+        actor: userActor(ACTOR_ID),
       }),
     ).rejects.toBeInstanceOf(TenantNotFoundError)
   })
@@ -78,7 +90,7 @@ describe('GetTenantQuery', () => {
     await tenants.save(Tenant.create(TENANT_ID, 'Acme', OCCURRED_AT))
 
     await expect(
-      new GetTenantQuery(denyingAuthz(), tenants).execute({tenantId: TENANT_ID, actorId: ACTOR_ID}),
+      new GetTenantQuery(denyingAuthz(), tenants).execute({tenantId: TENANT_ID, actor: userActor(ACTOR_ID)}),
     ).rejects.toBeInstanceOf(InsufficientPermissionError)
   })
 })

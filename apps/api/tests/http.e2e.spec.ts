@@ -101,9 +101,10 @@ describe('HTTP e2e', () => {
         PermissionName.authorizationRolesRead,
         PermissionName.authorizationRolesManage,
         PermissionName.identityUsersRead,
+        PermissionName.identityApiKeysManage,
       ]),
     )
-    expect(me.body.effectivePermissions).toHaveLength(7)
+    expect(me.body.effectivePermissions).toHaveLength(8)
 
     const members = await request(app.getHttpServer())
       .get(`/v1/tenants/${tenantId}/members`)
@@ -590,5 +591,135 @@ describe('HTTP e2e', () => {
       .expect(409)
 
     expect(response.body.code).toBe('IDEMPOTENCY_KEY_REUSED')
+  })
+
+  it('lets Owner mint an API key that authenticates as itself', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'keys-owner@example.com', displayName: 'Keys Owner'})
+      .expect(201)
+    const ownerId = UserId.parse(owner.body.id)
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
+      .send({name: 'Acme'})
+      .expect(201)
+    const tenantId = TenantId.parse(createdTenant.body.id)
+    const memberRoleId = RoleId.parse(createdTenant.body.roleIds.member)
+
+    const created = await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/api-keys`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .set('Idempotency-Key', randomUUID())
+      .send({name: 'CI', permissions: [PermissionName.tenancyTenantRead]})
+      .expect(201)
+
+    expect(created.body.token).toEqual(expect.stringMatching(/^bsk_[a-z0-9]{12}_.+$/i))
+
+    const listed = await request(app.getHttpServer())
+      .get(`/v1/tenants/${tenantId}/api-keys`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .expect(200)
+
+    expect(listed.body.apiKeys).toHaveLength(1)
+    expect(listed.body.apiKeys[0].prefix).toEqual(expect.stringMatching(/^bsk_[a-z0-9]{12}$/i))
+    expect(listed.body.apiKeys[0].token).toBeUndefined()
+    expect(listed.body.apiKeys[0].secretHash).toBeUndefined()
+
+    const asKey = await request(app.getHttpServer())
+      .get(`/v1/tenants/${tenantId}`)
+      .set('Authorization', `Bearer ${created.body.token}`)
+      .expect(200)
+
+    expect(asKey.body.id).toBe(tenantId)
+
+    const invite = await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/invitations`)
+      .set('Authorization', `Bearer ${created.body.token}`)
+      .send({email: 'new@example.com', roleIds: [memberRoleId]})
+      .expect(403)
+
+    expect(invite.body.code).toBe('INSUFFICIENT_PERMISSION')
+
+    await request(app.getHttpServer()).get('/v1/me').set('Authorization', `Bearer ${created.body.token}`).expect(403)
+
+    await request(app.getHttpServer())
+      .delete(`/v1/tenants/${tenantId}/api-keys/${created.body.id}`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .expect(204)
+
+    await request(app.getHttpServer())
+      .get(`/v1/tenants/${tenantId}`)
+      .set('Authorization', `Bearer ${created.body.token}`)
+      .expect(401)
+  })
+
+  it('denies a Member on POST api-keys', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'keys-owner-member@example.com', displayName: 'Owner'})
+      .expect(201)
+    const member = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'keys-member@example.com', displayName: 'Member'})
+      .expect(201)
+    const ownerId = UserId.parse(owner.body.id)
+    const memberId = UserId.parse(member.body.id)
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
+      .send({name: 'Acme'})
+      .expect(201)
+    const tenantId = TenantId.parse(createdTenant.body.id)
+    const memberRoleId = RoleId.parse(createdTenant.body.roleIds.member)
+
+    await seedActiveMembership(app, {userId: memberId, tenantId, roleId: memberRoleId})
+
+    const response = await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/api-keys`)
+      .set('x-user-id', memberId)
+      .set('x-tenant-id', tenantId)
+      .set('Idempotency-Key', randomUUID())
+      .send({name: 'CI', permissions: [PermissionName.tenancyTenantRead]})
+      .expect(403)
+
+    expect(response.body.code).toBe('INSUFFICIENT_PERMISSION')
+  })
+
+  it('rejects an expired API key with 401', async () => {
+    const owner = await request(app.getHttpServer())
+      .post('/v1/users')
+      .send({email: 'keys-expired@example.com', displayName: 'Owner'})
+      .expect(201)
+    const ownerId = UserId.parse(owner.body.id)
+    const createdTenant = await request(app.getHttpServer())
+      .post('/v1/tenants')
+      .set('x-user-id', ownerId)
+      .set('Idempotency-Key', randomUUID())
+      .send({name: 'Acme'})
+      .expect(201)
+    const tenantId = TenantId.parse(createdTenant.body.id)
+
+    const created = await request(app.getHttpServer())
+      .post(`/v1/tenants/${tenantId}/api-keys`)
+      .set('x-user-id', ownerId)
+      .set('x-tenant-id', tenantId)
+      .set('Idempotency-Key', randomUUID())
+      .send({
+        name: 'Expired',
+        permissions: [PermissionName.tenancyTenantRead],
+        expiresAt: new Date(Date.now() - 1000).toISOString(),
+      })
+      .expect(201)
+
+    await request(app.getHttpServer())
+      .get(`/v1/tenants/${tenantId}`)
+      .set('Authorization', `Bearer ${created.body.token}`)
+      .expect(401)
   })
 })

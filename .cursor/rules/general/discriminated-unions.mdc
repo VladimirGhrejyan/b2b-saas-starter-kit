@@ -1,0 +1,45 @@
+---
+description: Discriminated-union kind fields use an enum, not a string-literal type
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: false
+---
+
+# Discriminated unions
+
+A union discriminant (`kind`, `type`, `status`, …) is an **enum**, not an inline string-literal type.
+
+In this repo that means a const-object enum (and `StringEnum` when the value is parsed from input). Do not introduce TypeScript `enum` syntax.
+
+```typescript
+// ✅
+export const TenantActorKind = {
+  user: 'user',
+  apiKey: 'api_key',
+} as const
+
+export type TenantActorKind = (typeof TenantActorKind)[keyof typeof TenantActorKind]
+export type UserActorKind = typeof TenantActorKind.user
+export type ApiKeyActorKind = typeof TenantActorKind.apiKey
+
+export type TenantActor =
+  | {readonly kind: UserActorKind; readonly id: UserId}
+  | {readonly kind: ApiKeyActorKind; readonly id: ApiKeyId}
+
+if (actor.kind === TenantActorKind.user) {
+  // actor.id is UserId
+}
+
+// ❌
+export type TenantActorKind = 'user' | 'api_key'
+
+export type TenantActor =
+  | {readonly kind: 'user'; readonly id: UserId}
+  | {readonly kind: 'api_key'; readonly id: ApiKeyId}
+
+if (actor.kind === 'user') {
+}
+```
+
+Construct and compare with the enum member (`TenantActorKind.user`), never a raw string.

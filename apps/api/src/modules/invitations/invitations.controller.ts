@@ -6,7 +6,8 @@ import {ApiErrorResponses, ApiRoute, Idempotent, Public, Response} from '@b2b-sa
 
 import {RequirePermission} from '../../common/auth/permission/require-permission.decorator'
 import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
-import type {DevPrincipal} from '../../common/auth/principal/dev-principal.types'
+import type {AuthPrincipal} from '../../common/auth/principal/dev-principal.types'
+import {toTenantActor} from '../../common/auth/principal/to-tenant-actor'
 
 import {AcceptInvitationInputDto} from './dto/accept-invitation.input'
 import {AcceptInvitationOutputDto} from './dto/accept-invitation.output'
@@ -37,9 +38,9 @@ export class InvitationsController {
   invite(
     @Param() params: TenantIdParamDto,
     @Body() body: InviteMemberInputDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<InviteMemberOutputDto> {
-    return this.invitations.invite(params.tenantId, principal.userId, body)
+    return this.invitations.invite(params.tenantId, toTenantActor(principal), body)
   }
 
   @Public()

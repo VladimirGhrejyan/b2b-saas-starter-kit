@@ -6,6 +6,7 @@ import {createHttpProviders, HealthModule, HttpRequestModule} from '@b2b-saas-st
 
 import {CommonModule} from '../common/common.module'
 import {codedErrorHttpStatuses} from '../common/http/coded-error-http-statuses'
+import {ApiKeysModule} from '../modules/api-keys/api-keys.module'
 import {AuthModule} from '../modules/auth/auth.module'
 import {InvitationsModule} from '../modules/invitations/invitations.module'
 import {MeModule} from '../modules/me/me.module'
@@ -26,6 +27,7 @@ import {UsersModule} from '../modules/users/users.module'
     MembersModule,
     InvitationsModule,
     RolesModule,
+    ApiKeysModule,
     MeModule,
   ],
   providers: [...createHttpProviders({codedErrorHttpStatuses})],

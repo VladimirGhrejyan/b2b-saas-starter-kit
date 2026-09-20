@@ -1,7 +1,7 @@
 import {Inject, Injectable} from '@nestjs/common'
 import type {DataSource, EntityManager} from 'typeorm'
 
-import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 
 import type {DomainEvent} from '@b2b-saas-starter-kit/domain'
@@ -69,7 +69,10 @@ export class OutboxRelay {
       return
     }
 
-    await this.tenantContext.run({tenantId: TenantId.parse(tenantId), actorId: OutboxRelay.WORKER_ACTOR_ID}, dispatch)
+    await this.tenantContext.run(
+      {tenantId: TenantId.parse(tenantId), actor: userActor(OutboxRelay.WORKER_ACTOR_ID)},
+      dispatch,
+    )
   }
 
   async #claimPending(manager: EntityManager, batchSize: number): Promise<OutboxEntryEntity[]> {

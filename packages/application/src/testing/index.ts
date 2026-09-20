@@ -1,4 +1,6 @@
+export {emptyApiKeyPermissions} from './empty-api-key-permissions'
 export {FixedClock} from './fixed-clock'
+export {InMemoryApiKeyRepository} from './in-memory-api-key.repository'
 export {InMemoryCache} from './in-memory-cache'
 export {InMemoryHttpClient} from './in-memory-http-client'
 export {InMemoryInvitationRepository} from './in-memory-invitation.repository'

@@ -2,6 +2,7 @@ import 'reflect-metadata'
 
 import {RoleEntity} from '../../contexts/authorization/entities/role.entity'
 import {RolePermissionEntity} from '../../contexts/authorization/entities/role-permission.entity'
+import {ApiKeyEntity} from '../../contexts/identity/entities/api-key.entity'
 import {LocalPasswordEntity} from '../../contexts/identity/entities/local-password.entity'
 import {PasswordResetTokenEntity} from '../../contexts/identity/entities/password-reset-token.entity'
 import {RefreshSessionEntity} from '../../contexts/identity/entities/refresh-session.entity'
@@ -16,6 +17,7 @@ import {OutboxEntryEntity} from '../outbox/outbox-entry.entity'
 
 export const postgresEntities = [
   UserEntity,
+  ApiKeyEntity,
   LocalPasswordEntity,
   RefreshSessionEntity,
   PasswordResetTokenEntity,

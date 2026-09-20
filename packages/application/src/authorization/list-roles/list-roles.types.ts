@@ -1,8 +1,8 @@
-import type {Permission, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {Permission, RoleId, TenantActor, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 export type ListRolesQueryInput = {
   readonly tenantId: TenantId
-  readonly actorId: UserId
+  readonly actor: TenantActor
 }
 
 export type RoleListItem = {

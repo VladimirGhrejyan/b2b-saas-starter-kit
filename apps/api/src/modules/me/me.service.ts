@@ -1,4 +1,6 @@
-import {Inject, Injectable} from '@nestjs/common'
+import {ForbiddenException, Inject, Injectable} from '@nestjs/common'
+
+import {TenantActorKind} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {TenantContext} from '@b2b-saas-starter-kit/platform'
 import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
@@ -16,9 +18,13 @@ export class MeService {
   ) {}
 
   async get(): Promise<MeOutputDto> {
-    const result = await this.getMyProfile.execute(
-      MeMapper.toQuery(this.tenantContext.getActorId(), this.tenantContext.getTenantId()),
-    )
+    const actor = this.tenantContext.getActor()
+
+    if (actor.kind !== TenantActorKind.user) {
+      throw new ForbiddenException('user principal is required')
+    }
+
+    const result = await this.getMyProfile.execute(MeMapper.toQuery(actor.id, this.tenantContext.getTenantId()))
 
     return MeMapper.toOutput(result)
   }

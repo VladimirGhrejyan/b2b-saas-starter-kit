@@ -47,7 +47,7 @@ export class RequirePermissionInterceptor implements NestInterceptor {
   }
 
   private async requirePermission(permission: ApiPermission, next: CallHandler): Promise<unknown> {
-    await this.authorization.require(this.tenantContext.getActorId(), Permission.parse(permission), {
+    await this.authorization.require(this.tenantContext.getActor(), Permission.parse(permission), {
       tenantId: this.tenantContext.getTenantId(),
     })
 

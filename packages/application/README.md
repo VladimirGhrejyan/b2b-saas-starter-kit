@@ -39,18 +39,18 @@ src/shared/
 src/testing/          # in-memory fakes + multi-use-case flow specs; not a bounded context
 ```
 
-Commands use `actorId` (matches `TenantScope`). Writes run inside `UnitOfWork.run`. IDs come from `IdGenerator` and are branded in this layer; timestamps come from `Clock.now()`.
+Tenant-scoped commands use `actor: TenantActor` (matches `TenantScope`). User-only commands (`GetMyProfile`, `SetOrChangePassword`) keep `actorId: UserId`. Writes run inside `UnitOfWork.run`. IDs come from `IdGenerator` and are branded in this layer; timestamps come from `Clock.now()`.
 
 ## Use cases
 
-| Use case / port          | Command                               | Auth                                               |
-| ------------------------ | ------------------------------------- | -------------------------------------------------- |
-| `CreateUserUseCase`      | `{email, displayName}`                | none (onboarding)                                  |
-| `CreateTenantUseCase`    | `{name, ownerUserId}`                 | none — seeds Owner/Admin/Member + owner membership |
-| `ListTenantMembersQuery` | `{tenantId, actorId}`                 | `tenancy.members.read`                             |
-| `GetMyProfileQuery`      | `{actorId, tenantId}`                 | self-read                                          |
-| `AuthorizationPort`      | `require` / `getEffectivePermissions` | composes `RoleRepository` + `MembershipRolesPort`  |
-| `MembershipRolesPort`    | `roleIdsFor`                          | active membership only                             |
+| Use case / port          | Command                      | Auth                                               |
+| ------------------------ | ---------------------------- | -------------------------------------------------- |
+| `CreateUserUseCase`      | `{email, displayName}`       | none (onboarding)                                  |
+| `CreateTenantUseCase`    | `{name, ownerUserId}`        | none — seeds Owner/Admin/Member + owner membership |
+| `ListTenantMembersQuery` | `{tenantId, actor}`          | `tenancy.members.read`                             |
+| `GetMyProfileQuery`      | `{actorId, tenantId}`        | self-read                                          |
+| `AuthorizationPort`      | `require` / `getPermissions` | user: roles; API key: `ApiKeyPermissionsPort`      |
+| `MembershipRolesPort`    | `roleIdsFor`                 | active membership only                             |
 
 `CreateTenant` is the ≥1 Owner post-condition (seed owner in one transaction). Removal/role-change last-owner checks are deferred.
 

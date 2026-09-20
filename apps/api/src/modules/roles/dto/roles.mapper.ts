@@ -1,4 +1,4 @@
-import {Permission, type RoleId, type TenantId, type UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {Permission, type RoleId, type TenantActor, type TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import {
   type CreateRoleInput,
   permissionSchema,
@@ -15,17 +15,17 @@ import type {
 } from '@b2b-saas-starter-kit/composition'
 
 export class RolesMapper {
-  static toListQuery(tenantId: TenantId, actorId: UserId): Parameters<ListRolesQuery['execute']>[0] {
-    return {tenantId, actorId}
+  static toListQuery(tenantId: TenantId, actor: TenantActor): Parameters<ListRolesQuery['execute']>[0] {
+    return {tenantId, actor}
   }
 
   static toCreateCommand(
     tenantId: TenantId,
-    actorId: UserId,
+    actor: TenantActor,
     input: CreateRoleInput,
   ): Parameters<CreateCustomRoleUseCase['execute']>[0] {
     return {
-      actorId,
+      actor,
       tenantId,
       name: input.name,
       permissions: input.permissions.map((permission) => Permission.parse(permission)),
@@ -35,11 +35,11 @@ export class RolesMapper {
   static toUpdateCommand(
     tenantId: TenantId,
     roleId: RoleId,
-    actorId: UserId,
+    actor: TenantActor,
     input: UpdateRoleInput,
   ): Parameters<UpdateCustomRoleUseCase['execute']>[0] {
     return {
-      actorId,
+      actor,
       tenantId,
       roleId,
       name: input.name,
@@ -50,9 +50,9 @@ export class RolesMapper {
   static toDeleteCommand(
     tenantId: TenantId,
     roleId: RoleId,
-    actorId: UserId,
+    actor: TenantActor,
   ): Parameters<DeleteCustomRoleUseCase['execute']>[0] {
-    return {actorId, tenantId, roleId}
+    return {actor, tenantId, roleId}
   }
 
   static toRoleOutput(result: {

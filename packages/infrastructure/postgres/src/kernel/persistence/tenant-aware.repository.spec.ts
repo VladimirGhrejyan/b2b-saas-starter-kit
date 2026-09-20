@@ -1,7 +1,7 @@
 import type {DataSource} from 'typeorm'
 import {describe, expect, it} from 'vitest'
 
-import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {TenantContextNotEstablishedError} from '@b2b-saas-starter-kit/platform'
 
@@ -31,13 +31,13 @@ describe('TenantAwareRepository.stampTenantId', () => {
   })
 
   it('stamps the ambient tenant when a run scope is active', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       expect(repo.stamp({})).toEqual({tenantId: tenantA})
     })
   })
 
   it('throws TenantContextMismatchError when the row disagrees with ambient', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       expect(() => {
         repo.stamp({tenantId: tenantB})
       }).toThrow(TenantContextMismatchError)

@@ -22,11 +22,11 @@ export class ListTenantMembersQuery {
   ) {}
 
   async execute(query: ListTenantMembersQueryInput): Promise<ListTenantMembersResult> {
-    await this.authz.require(query.actorId, PermissionCatalog.tenancyMembersRead, {tenantId: query.tenantId})
+    await this.authz.require(query.actor, PermissionCatalog.tenancyMembersRead, {tenantId: query.tenantId})
 
     const [memberships, permissions] = await Promise.all([
       this.memberships.findByTenant(query.tenantId),
-      this.authz.getEffectivePermissions(query.actorId, query.tenantId),
+      this.authz.getPermissions(query.actor, query.tenantId),
     ])
     const includeUser = permissions.includes(PermissionCatalog.identityUsersRead)
 

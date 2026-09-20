@@ -1,4 +1,4 @@
-import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {TenantActor, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {InviteMemberInput, InviteMemberOutput} from '@b2b-saas-starter-kit/contracts'
 
 import type {InviteMemberUseCase} from '@b2b-saas-starter-kit/composition'
@@ -6,11 +6,11 @@ import type {InviteMemberUseCase} from '@b2b-saas-starter-kit/composition'
 export class InviteMemberMapper {
   static toCommand(
     tenantId: TenantId,
-    actorId: UserId,
+    actor: TenantActor,
     input: InviteMemberInput,
   ): Parameters<InviteMemberUseCase['execute']>[0] {
     return {
-      actorId,
+      actor,
       tenantId,
       email: input.email,
       roleIds: input.roleIds,

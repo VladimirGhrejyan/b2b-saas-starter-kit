@@ -22,6 +22,8 @@ export class PermissionCatalog {
 
   static readonly identityUsersRead = Permission.parse('identity.users.read')
 
+  static readonly identityApiKeysManage = Permission.parse('identity.api_keys.manage')
+
   static readonly all: readonly Permission[] = [
     PermissionCatalog.tenancyMembersRead,
     PermissionCatalog.tenancyMembersInvite,
@@ -30,6 +32,7 @@ export class PermissionCatalog {
     PermissionCatalog.authorizationRolesRead,
     PermissionCatalog.authorizationRolesManage,
     PermissionCatalog.identityUsersRead,
+    PermissionCatalog.identityApiKeysManage,
   ]
 
   /**

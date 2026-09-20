@@ -16,6 +16,10 @@ All packages use full strict mode (already in `tsconfig.base.json`):
 - `noUncheckedIndexedAccess: true`
 - Prefer `unknown` over `any`
 
+## Discriminated unions
+
+Discriminant fields (`kind`, `type`, `status`, …) use a const-object enum, not an inline string-literal type. See `general/discriminated-unions.mdc`.
+
 ## Type Imports
 
 Always use `import type` for type-only imports:

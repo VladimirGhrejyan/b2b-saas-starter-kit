@@ -6,21 +6,28 @@ import {Reflector} from '@nestjs/core'
 import type {Observable} from 'rxjs'
 import {from, lastValueFrom} from 'rxjs'
 
-import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {ApiKeyId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {
+  apiKeyActor,
+  TenantActorKind,
+  TenantId as TenantIdBrand,
+  userActor,
+  UserId as UserIdBrand,
+} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {TenantContext} from '@b2b-saas-starter-kit/platform'
 import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
 import {applyActiveSpanAttributes} from '@b2b-saas-starter-kit/telemetry'
 
-import {AssertActiveMembership} from '@b2b-saas-starter-kit/composition'
+import {AssertActiveMembership, ResolveApiKeyQuery, TouchApiKeyLastUsed} from '@b2b-saas-starter-kit/composition'
 
 import {IS_PUBLIC_KEY, RequestContextLocator} from '@b2b-saas-starter-kit/nest-http'
 
 import {readHeader} from '../../http/read-header'
 import {JwtAccessService} from '../jwt/jwt-access.service'
 
-import type {DevPrincipal} from './dev-principal.types'
+import type {AuthPrincipal} from './dev-principal.types'
 import {DEV_PRINCIPAL_KEY} from './dev-principal-key'
 import {TENANT_OPTIONAL_KEY} from './tenant-optional-key'
 
@@ -30,6 +37,8 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
     private readonly reflector: Reflector,
     private readonly jwt: JwtAccessService,
     private readonly assertActiveMembership: AssertActiveMembership,
+    private readonly resolveApiKey: ResolveApiKeyQuery,
+    private readonly touchApiKeyLastUsed: TouchApiKeyLastUsed,
     @Inject(TENANT_CONTEXT) private readonly tenantContext: TenantContext,
   ) {}
 
@@ -54,10 +63,14 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
     ])
     const bearer = this.readBearer(request.headers)
 
+    if (bearer !== undefined && bearer.startsWith('bsk_')) {
+      return this.authenticateApiKey(request, next, bearer)
+    }
+
     if (bearer !== undefined) {
       const claims = await this.jwt.verify(bearer)
 
-      return this.bindPrincipal(request, next, claims.userId, claims.tenantId, tenantOptional)
+      return this.bindUserPrincipal(request, next, claims.userId, claims.tenantId, tenantOptional)
     }
 
     if (this.jwt.nodeEnv === 'development' || this.jwt.nodeEnv === 'test') {
@@ -65,6 +78,38 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
     }
 
     throw new UnauthorizedException('Authorization bearer token is required')
+  }
+
+  private async authenticateApiKey(
+    request: Record<string, unknown>,
+    next: CallHandler,
+    token: string,
+  ): Promise<unknown> {
+    const resolved = await this.resolveApiKey.execute(token)
+
+    if (resolved === null) {
+      throw new UnauthorizedException('API key is invalid')
+    }
+
+    await this.touchApiKeyLastUsed.execute(resolved.apiKeyId)
+
+    const principal = {
+      kind: TenantActorKind.apiKey,
+      apiKeyId: resolved.apiKeyId,
+      tenantId: resolved.tenantId,
+    } satisfies AuthPrincipal
+
+    request[DEV_PRINCIPAL_KEY] = principal
+    RequestContextLocator.bind({
+      actorId: resolved.apiKeyId,
+      actorKind: TenantActorKind.apiKey,
+      tenantId: resolved.tenantId,
+    })
+    this.applySpanAttributes(resolved.apiKeyId, resolved.tenantId)
+
+    return this.tenantContext.run({tenantId: resolved.tenantId, actor: apiKeyActor(resolved.apiKeyId)}, () =>
+      lastValueFrom(next.handle()),
+    )
   }
 
   private async authenticateFromHeaders(
@@ -79,12 +124,12 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
     }
 
     const tenantIdRaw = readHeader(request.headers, 'x-tenant-id')
-    const tenantId = tenantIdRaw === undefined ? undefined : TenantId.parse(tenantIdRaw)
+    const tenantId = tenantIdRaw === undefined ? undefined : TenantIdBrand.parse(tenantIdRaw)
 
-    return this.bindPrincipal(request, next, UserId.parse(userIdRaw), tenantId, tenantOptional)
+    return this.bindUserPrincipal(request, next, UserIdBrand.parse(userIdRaw), tenantId, tenantOptional)
   }
 
-  private async bindPrincipal(
+  private async bindUserPrincipal(
     request: Record<string, unknown>,
     next: CallHandler,
     userId: UserId,
@@ -96,8 +141,8 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
         throw new UnauthorizedException('tenant is required')
       }
 
-      request[DEV_PRINCIPAL_KEY] = {userId} satisfies DevPrincipal
-      RequestContextLocator.bind({actorId: userId})
+      request[DEV_PRINCIPAL_KEY] = {kind: TenantActorKind.user, userId} satisfies AuthPrincipal
+      RequestContextLocator.bind({actorId: userId, actorKind: TenantActorKind.user})
       this.applySpanAttributes(userId)
 
       return lastValueFrom(next.handle())
@@ -109,14 +154,14 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
       throw new ForbiddenException('active membership is required')
     }
 
-    request[DEV_PRINCIPAL_KEY] = {userId, tenantId} satisfies DevPrincipal
-    RequestContextLocator.bind({actorId: userId, tenantId})
+    request[DEV_PRINCIPAL_KEY] = {kind: TenantActorKind.user, userId, tenantId} satisfies AuthPrincipal
+    RequestContextLocator.bind({actorId: userId, actorKind: TenantActorKind.user, tenantId})
     this.applySpanAttributes(userId, tenantId)
 
-    return this.tenantContext.run({tenantId, actorId: userId}, () => lastValueFrom(next.handle()))
+    return this.tenantContext.run({tenantId, actor: userActor(userId)}, () => lastValueFrom(next.handle()))
   }
 
-  private applySpanAttributes(actorId: UserId, tenantId?: TenantId): void {
+  private applySpanAttributes(actorId: UserId | ApiKeyId, tenantId?: TenantId): void {
     applyActiveSpanAttributes({
       requestId: RequestContextLocator.get()?.requestId,
       actorId,

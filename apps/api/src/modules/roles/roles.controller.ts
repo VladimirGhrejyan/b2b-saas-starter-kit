@@ -6,7 +6,8 @@ import {ApiErrorResponses, ApiRoute, Idempotent, Response} from '@b2b-saas-start
 
 import {RequirePermission} from '../../common/auth/permission/require-permission.decorator'
 import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
-import type {DevPrincipal} from '../../common/auth/principal/dev-principal.types'
+import type {AuthPrincipal} from '../../common/auth/principal/dev-principal.types'
+import {toTenantActor} from '../../common/auth/principal/to-tenant-actor'
 
 import {CreateRoleInputDto} from './dto/create-role.input'
 import {RoleOutputDto} from './dto/role.output'
@@ -33,8 +34,8 @@ export class RolesController {
     {status: HttpStatus.UNAUTHORIZED, description: 'x-user-id or x-tenant-id is missing or invalid'},
     {status: HttpStatus.FORBIDDEN, description: 'Missing authorization.roles.read or no active membership'},
   ])
-  list(@Param() params: TenantIdParamDto, @CurrentPrincipal() principal: DevPrincipal): Promise<TenantRolesOutputDto> {
-    return this.roles.list(params.tenantId, principal.userId)
+  list(@Param() params: TenantIdParamDto, @CurrentPrincipal() principal: AuthPrincipal): Promise<TenantRolesOutputDto> {
+    return this.roles.list(params.tenantId, toTenantActor(principal))
   }
 
   @RequirePermission(PermissionName.authorizationRolesManage)
@@ -54,9 +55,9 @@ export class RolesController {
   create(
     @Param() params: TenantIdParamDto,
     @Body() body: CreateRoleInputDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<RoleOutputDto> {
-    return this.roles.create(params.tenantId, principal.userId, body)
+    return this.roles.create(params.tenantId, toTenantActor(principal), body)
   }
 
   @RequirePermission(PermissionName.authorizationRolesManage)
@@ -76,9 +77,9 @@ export class RolesController {
   update(
     @Param() params: RoleIdParamDto,
     @Body() body: UpdateRoleInputDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<RoleOutputDto> {
-    return this.roles.update(params.tenantId, params.roleId, principal.userId, body)
+    return this.roles.update(params.tenantId, params.roleId, toTenantActor(principal), body)
   }
 
   @RequirePermission(PermissionName.authorizationRolesManage)
@@ -91,7 +92,7 @@ export class RolesController {
     {status: HttpStatus.NOT_FOUND, description: 'Role was not found'},
     {status: HttpStatus.CONFLICT, description: 'Role is still assigned to a membership'},
   ])
-  delete(@Param() params: RoleIdParamDto, @CurrentPrincipal() principal: DevPrincipal): Promise<void> {
-    return this.roles.delete(params.tenantId, params.roleId, principal.userId)
+  delete(@Param() params: RoleIdParamDto, @CurrentPrincipal() principal: AuthPrincipal): Promise<void> {
+    return this.roles.delete(params.tenantId, params.roleId, toTenantActor(principal))
   }
 }

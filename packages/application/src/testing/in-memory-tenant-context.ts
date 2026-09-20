@@ -1,4 +1,4 @@
-import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {TenantActor, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {TenantContext, TenantScope} from '@b2b-saas-starter-kit/platform'
 import {TenantContextNotEstablishedError} from '@b2b-saas-starter-kit/platform'
@@ -27,8 +27,8 @@ export class InMemoryTenantContext implements TenantContext {
     return this.#requireScope().tenantId
   }
 
-  getActorId(): UserId {
-    return this.#requireScope().actorId
+  getActor(): TenantActor {
+    return this.#requireScope().actor
   }
 
   #requireScope(): TenantScope {

@@ -6,8 +6,10 @@ import {ApiErrorResponses, ApiRoute, Idempotent, Response} from '@b2b-saas-start
 
 import {RequirePermission} from '../../common/auth/permission/require-permission.decorator'
 import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
-import type {DevPrincipal} from '../../common/auth/principal/dev-principal.types'
+import type {AuthPrincipal} from '../../common/auth/principal/dev-principal.types'
+import {requireUserPrincipal} from '../../common/auth/principal/require-user-principal'
 import {TenantOptional} from '../../common/auth/principal/tenant-optional.decorator'
+import {toTenantActor} from '../../common/auth/principal/to-tenant-actor'
 
 import {CreateTenantInputDto} from './dto/create-tenant.input'
 import {CreateTenantOutputDto} from './dto/create-tenant.output'
@@ -36,9 +38,9 @@ export class TenantsController {
   ])
   create(
     @Body() body: CreateTenantInputDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<CreateTenantOutputDto> {
-    return this.tenants.create(body, principal.userId)
+    return this.tenants.create(body, requireUserPrincipal(principal))
   }
 
   @RequirePermission(PermissionName.tenancyTenantRead)
@@ -54,7 +56,7 @@ export class TenantsController {
     {status: HttpStatus.FORBIDDEN, description: 'Missing tenancy.tenant.read or no active membership'},
     {status: HttpStatus.NOT_FOUND, description: 'Tenant was not found'},
   ])
-  get(@Param() params: TenantIdParamDto, @CurrentPrincipal() principal: DevPrincipal): Promise<GetTenantOutputDto> {
-    return this.tenants.get(params.tenantId, principal.userId)
+  get(@Param() params: TenantIdParamDto, @CurrentPrincipal() principal: AuthPrincipal): Promise<GetTenantOutputDto> {
+    return this.tenants.get(params.tenantId, toTenantActor(principal))
   }
 }

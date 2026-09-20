@@ -1,6 +1,6 @@
 import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest'
 
-import {TenantId, TenantStatus, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {TenantId, TenantStatus, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Tenant} from '@b2b-saas-starter-kit/domain'
 
@@ -44,7 +44,9 @@ describe('TypeOrmTenantRepository', () => {
       )
     })
 
-    const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(tenantA))
+    const found = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
+      repo.findById(tenantA),
+    )
 
     expect(found).toMatchObject({id: tenantA, name: 'Acme', status: 'active'})
   })
@@ -55,13 +57,15 @@ describe('TypeOrmTenantRepository', () => {
       await repo.save(Tenant.reconstitute({id: tenantB, name: 'Beta', status: TenantStatus.parse('active')}))
     })
 
-    const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(tenantB))
+    const found = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
+      repo.findById(tenantB),
+    )
 
     expect(found).toBeNull()
   })
 
   it('throws TenantContextMismatchError when ambient tenant disagrees with the aggregate', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await expect(
         repo.save(Tenant.reconstitute({id: tenantB, name: 'Beta', status: TenantStatus.parse('active')})),
       ).rejects.toBeInstanceOf(TenantContextMismatchError)

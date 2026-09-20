@@ -1,6 +1,13 @@
 import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest'
 
-import {InvitationId, RoleId, TenantId, TenantStatus, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {
+  InvitationId,
+  RoleId,
+  TenantId,
+  TenantStatus,
+  userActor,
+  UserId,
+} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Invitation, Tenant} from '@b2b-saas-starter-kit/domain'
 
@@ -57,7 +64,7 @@ describe('TypeOrmInvitationRepository', () => {
       occurredAt,
     )
 
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
       runInUnitOfWork(ctx.dataSource, async () => {
         await repo.save(invitation)
       }),
@@ -73,7 +80,7 @@ describe('TypeOrmInvitationRepository', () => {
     expect(JSON.stringify(rows)).not.toContain(rawToken)
 
     const found = await repo.findByTokenHash(tokenHash)
-    const pending = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+    const pending = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
       repo.findActiveByTenantAndEmail(tenantA, 'ada@example.com'),
     )
 

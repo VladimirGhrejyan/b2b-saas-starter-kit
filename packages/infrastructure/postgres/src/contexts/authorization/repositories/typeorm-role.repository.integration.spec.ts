@@ -1,6 +1,6 @@
 import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest'
 
-import {Permission, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {Permission, RoleId, TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {PermissionCatalog, Role} from '@b2b-saas-starter-kit/domain'
 
@@ -61,8 +61,10 @@ describe('TypeOrmRoleRepository', () => {
       })
     })
 
-    const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(ownerA))
-    const byTenant = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+    const found = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
+      repo.findById(ownerA),
+    )
+    const byTenant = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
       repo.findByTenant(tenantA),
     )
 
@@ -106,10 +108,10 @@ describe('TypeOrmRoleRepository', () => {
       })
     })
 
-    const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+    const found = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
       repo.findByIds([ownerA, memberA, ownerB, missing]),
     )
-    const empty = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findByIds([]))
+    const empty = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => repo.findByIds([]))
 
     expect(found.map((role) => role.id).sort()).toEqual([ownerA, memberA].sort())
     expect(empty).toEqual([])
@@ -130,17 +132,19 @@ describe('TypeOrmRoleRepository', () => {
       })
     })
 
-    const byId = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(ownerB))
+    const byId = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
+      repo.findById(ownerB),
+    )
 
     await expect(
-      tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findByTenant(tenantB)),
+      tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => repo.findByTenant(tenantB)),
     ).rejects.toBeInstanceOf(TenantContextMismatchError)
 
     expect(byId).toBeNull()
   })
 
   it('throws TenantContextMismatchError when ambient tenant disagrees with the aggregate', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await expect(
         runInUnitOfWork(ctx.dataSource, async () => {
           await repo.save(

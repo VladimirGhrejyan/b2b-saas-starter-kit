@@ -6,9 +6,9 @@ import {UnknownPermissionError} from './errors/unknown-permission.error'
 import {PermissionCatalog} from './permission-catalog'
 
 describe('PermissionCatalog', () => {
-  it('contains seven unique branded permissions', () => {
-    expect(PermissionCatalog.all).toHaveLength(7)
-    expect(new Set(PermissionCatalog.all).size).toBe(7)
+  it('contains eight unique branded permissions', () => {
+    expect(PermissionCatalog.all).toHaveLength(8)
+    expect(new Set(PermissionCatalog.all).size).toBe(8)
 
     for (const permission of PermissionCatalog.all) {
       expect(Permission.parse(permission)).toBe(permission)

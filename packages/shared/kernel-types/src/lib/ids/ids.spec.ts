@@ -1,5 +1,6 @@
 import {describe, expect, expectTypeOf, it} from 'vitest'
 
+import {ApiKeyId} from './api-key-id'
 import {InvitationId} from './invitation-id'
 import {MembershipId} from './membership-id'
 import {RefreshFamilyId} from './refresh-family-id'
@@ -13,6 +14,7 @@ const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000'
 describe('branded IDs', () => {
   it('round-trips a UUID through each ID parse helper', () => {
     expect(UserId.parse(VALID_UUID)).toBe(VALID_UUID)
+    expect(ApiKeyId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(TenantId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(MembershipId.parse(VALID_UUID)).toBe(VALID_UUID)
     expect(InvitationId.parse(VALID_UUID)).toBe(VALID_UUID)
@@ -30,6 +32,7 @@ describe('branded IDs', () => {
 
   it('does not treat different ID brands as the same type', () => {
     expectTypeOf<UserId>().not.toEqualTypeOf<TenantId>()
+    expectTypeOf<UserId>().not.toEqualTypeOf<ApiKeyId>()
     expectTypeOf<UserId>().not.toEqualTypeOf<MembershipId>()
     expectTypeOf<UserId>().not.toEqualTypeOf<InvitationId>()
     expectTypeOf<UserId>().not.toEqualTypeOf<RoleId>()

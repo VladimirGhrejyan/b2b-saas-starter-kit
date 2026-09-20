@@ -3,7 +3,7 @@ import type {DataSource} from 'typeorm'
 import {v7 as uuidv7} from 'uuid'
 import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest'
 
-import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {TenantContextNotEstablishedError} from '@b2b-saas-starter-kit/platform'
 
@@ -98,35 +98,35 @@ describe('postgres (compose)', () => {
   })
 
   it('filters reads and stamps writes to the ambient tenant', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await repo.insert('alpha')
     })
-    await tenantContext.run({tenantId: tenantB, actorId: actorB}, async () => {
+    await tenantContext.run({tenantId: tenantB, actor: userActor(actorB)}, async () => {
       await repo.insert('beta')
     })
 
-    const fromA = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findNames())
-    const fromB = await tenantContext.run({tenantId: tenantB, actorId: actorB}, async () => repo.findNames())
+    const fromA = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => repo.findNames())
+    const fromB = await tenantContext.run({tenantId: tenantB, actor: userActor(actorB)}, async () => repo.findNames())
 
     expect(fromA).toEqual(['alpha'])
     expect(fromB).toEqual(['beta'])
   })
 
   it('reads both tenants through withoutTenantScope', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await repo.insert('alpha')
     })
-    await tenantContext.run({tenantId: tenantB, actorId: actorB}, async () => {
+    await tenantContext.run({tenantId: tenantB, actor: userActor(actorB)}, async () => {
       await repo.insert('beta')
     })
 
-    const all = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findAllNames())
+    const all = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => repo.findAllNames())
 
     expect(all).toEqual(['alpha', 'beta'])
   })
 
   it('throws TenantContextMismatchError when assertTenant disagrees with ambient scope', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       expect(() => {
         repo.rejectIfMismatch(tenantB)
       }).toThrow(TenantContextMismatchError)
@@ -134,14 +134,14 @@ describe('postgres (compose)', () => {
   })
 
   it('does not let a caller :tenantId bind overwrite the ambient scoped filter', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await repo.insert('alpha')
     })
-    await tenantContext.run({tenantId: tenantB, actorId: actorB}, async () => {
+    await tenantContext.run({tenantId: tenantB, actor: userActor(actorB)}, async () => {
       await repo.insert('beta')
     })
 
-    const names = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+    const names = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
       repo.findNamesByExplicitTenant(tenantB),
     )
 
@@ -149,7 +149,7 @@ describe('postgres (compose)', () => {
   })
 
   it('rolls back both inserts when UnitOfWork work throws', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await expect(
         uow.run(async () => {
           await repo.insert('one')
@@ -159,13 +159,13 @@ describe('postgres (compose)', () => {
       ).rejects.toThrow('boom')
     })
 
-    const names = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findNames())
+    const names = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => repo.findNames())
 
     expect(names).toEqual([])
   })
 
   it('joins a nested UnitOfWork onto the same transaction', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await uow.run(async (outer) => {
         await repo.insert('outer')
 
@@ -176,7 +176,7 @@ describe('postgres (compose)', () => {
       })
     })
 
-    const names = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findNames())
+    const names = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => repo.findNames())
 
     expect(names).toEqual(['inner', 'outer'])
   })
@@ -212,7 +212,7 @@ describe('postgres (compose)', () => {
   })
 
   it('throws TenantContextMismatchError when a write stamps a different tenant than ambient', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await expect(repo.insertWithTenant('x', tenantB)).rejects.toBeInstanceOf(TenantContextMismatchError)
     })
   })

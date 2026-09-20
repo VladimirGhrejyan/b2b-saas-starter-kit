@@ -1,14 +1,17 @@
 import {Inject, Injectable} from '@nestjs/common'
 
-import {InvitationId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {TenantActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {InvitationId, TenantActorKind} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {
+  ApiKeyRepository,
   InvitationRepository,
   MembershipRepository,
   RoleRepository,
   UserRepository,
 } from '@b2b-saas-starter-kit/domain'
 import {
+  API_KEY_REPOSITORY,
   Invitation,
   INVITATION_REPOSITORY,
   MEMBERSHIP_REPOSITORY,
@@ -30,6 +33,7 @@ import {CLOCK, EVENT_PUBLISHER, ID_GENERATOR, MAILER, TOKEN_DIGEST, UNIT_OF_WORK
 import type {AuthorizationPort} from '../../shared/authorization.port'
 import {AUTHORIZATION} from '../../shared/authorization.port'
 import {DomainEventCollector} from '../../shared/domain-events/domain-event-collector'
+import {InsufficientPermissionError} from '../../shared/errors/insufficient-permission.error'
 import {InvitationAlreadyPendingError} from '../errors/invitation-already-pending.error'
 import {MembershipAlreadyExistsError} from '../errors/membership-already-exists.error'
 import {INVITATION_TTL_MS} from '../invitation.constants'
@@ -53,11 +57,12 @@ export class InviteMemberUseCase {
     @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
     @Inject(ROLE_REPOSITORY) private readonly roles: RoleRepository,
     @Inject(INVITATION_REPOSITORY) private readonly invitations: InvitationRepository,
+    @Inject(API_KEY_REPOSITORY) private readonly apiKeys: ApiKeyRepository,
     @Inject(EVENT_PUBLISHER) private readonly events: EventPublisher,
   ) {}
 
   async execute(command: InviteMemberCommand): Promise<InviteMemberResult> {
-    await this.authz.require(command.actorId, PermissionCatalog.tenancyMembersInvite, {tenantId: command.tenantId})
+    await this.authz.require(command.actor, PermissionCatalog.tenancyMembersInvite, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
       const collector = new DomainEventCollector()
@@ -95,7 +100,7 @@ export class InviteMemberUseCase {
         command.roleIds,
         this.digest.digest(rawToken),
         new Date(now.getTime() + INVITATION_TTL_MS),
-        command.actorId,
+        await this.invitedByUserId(command.actor),
         now,
       )
 
@@ -110,5 +115,19 @@ export class InviteMemberUseCase {
 
       return {invitationId: invitation.id}
     })
+  }
+
+  private async invitedByUserId(actor: TenantActor): Promise<UserId> {
+    if (actor.kind === TenantActorKind.user) {
+      return actor.id
+    }
+
+    const apiKey = await this.apiKeys.findById(actor.id)
+
+    if (apiKey === null) {
+      throw new InsufficientPermissionError(PermissionCatalog.tenancyMembersInvite)
+    }
+
+    return apiKey.createdByUserId
   }
 }

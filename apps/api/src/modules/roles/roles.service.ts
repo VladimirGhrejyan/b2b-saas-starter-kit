@@ -1,6 +1,6 @@
 import {Injectable} from '@nestjs/common'
 
-import type {RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {RoleId, TenantActor, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {
   CreateCustomRoleUseCase,
@@ -24,25 +24,30 @@ export class RolesService {
     private readonly deleteCustomRole: DeleteCustomRoleUseCase,
   ) {}
 
-  async list(tenantId: TenantId, actorId: UserId): Promise<TenantRolesOutputDto> {
-    const result = await this.listRoles.execute(RolesMapper.toListQuery(tenantId, actorId))
+  async list(tenantId: TenantId, actor: TenantActor): Promise<TenantRolesOutputDto> {
+    const result = await this.listRoles.execute(RolesMapper.toListQuery(tenantId, actor))
 
     return RolesMapper.toListOutput(result)
   }
 
-  async create(tenantId: TenantId, actorId: UserId, input: CreateRoleInputDto): Promise<RoleOutputDto> {
-    const result = await this.createCustomRole.execute(RolesMapper.toCreateCommand(tenantId, actorId, input))
+  async create(tenantId: TenantId, actor: TenantActor, input: CreateRoleInputDto): Promise<RoleOutputDto> {
+    const result = await this.createCustomRole.execute(RolesMapper.toCreateCommand(tenantId, actor, input))
 
     return RolesMapper.toRoleOutput(result)
   }
 
-  async update(tenantId: TenantId, roleId: RoleId, actorId: UserId, input: UpdateRoleInputDto): Promise<RoleOutputDto> {
-    const result = await this.updateCustomRole.execute(RolesMapper.toUpdateCommand(tenantId, roleId, actorId, input))
+  async update(
+    tenantId: TenantId,
+    roleId: RoleId,
+    actor: TenantActor,
+    input: UpdateRoleInputDto,
+  ): Promise<RoleOutputDto> {
+    const result = await this.updateCustomRole.execute(RolesMapper.toUpdateCommand(tenantId, roleId, actor, input))
 
     return RolesMapper.toRoleOutput(result)
   }
 
-  async delete(tenantId: TenantId, roleId: RoleId, actorId: UserId): Promise<void> {
-    await this.deleteCustomRole.execute(RolesMapper.toDeleteCommand(tenantId, roleId, actorId))
+  async delete(tenantId: TenantId, roleId: RoleId, actor: TenantActor): Promise<void> {
+    await this.deleteCustomRole.execute(RolesMapper.toDeleteCommand(tenantId, roleId, actor))
   }
 }

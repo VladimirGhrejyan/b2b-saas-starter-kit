@@ -1,4 +1,4 @@
-import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {TenantActor, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 /**
  * Active tenant + actor for the current async scope.
@@ -9,12 +9,12 @@ import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
  */
 export type TenantScope = {
   readonly tenantId: TenantId
-  readonly actorId: UserId
+  readonly actor: TenantActor
 }
 
 export interface TenantContext {
   run<T>(scope: TenantScope, work: () => Promise<T>): Promise<T>
   withoutTenantScope<T>(work: () => Promise<T>): Promise<T>
   getTenantId(): TenantId
-  getActorId(): UserId
+  getActor(): TenantActor
 }

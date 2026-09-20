@@ -6,7 +6,7 @@ import type {SystemRoleName} from './system-roles.types'
 /**
  * Permission bundles for the three seeded system roles.
  *
- * Owner = entire catalog. Admin = members + tenant + users (no roles.read / roles.manage).
+ * Owner = entire catalog. Admin = members + tenant + users + api keys (no roles.read / roles.manage).
  * Member = tenant read only.
  */
 export class SystemRoles {
@@ -26,6 +26,7 @@ export class SystemRoles {
           PermissionCatalog.tenancyMembersManage,
           PermissionCatalog.tenancyTenantRead,
           PermissionCatalog.identityUsersRead,
+          PermissionCatalog.identityApiKeysManage,
         ]
       }
 

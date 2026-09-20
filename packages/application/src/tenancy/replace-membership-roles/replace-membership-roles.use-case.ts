@@ -30,7 +30,7 @@ export class ReplaceMembershipRolesUseCase {
   ) {}
 
   async execute(command: ReplaceMembershipRolesCommand): Promise<ReplaceMembershipRolesResult> {
-    await this.authz.require(command.actorId, PermissionCatalog.tenancyMembersManage, {tenantId: command.tenantId})
+    await this.authz.require(command.actor, PermissionCatalog.tenancyMembersManage, {tenantId: command.tenantId})
 
     return this.uow.run(async () => {
       const collector = new DomainEventCollector()

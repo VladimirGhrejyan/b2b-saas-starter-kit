@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {MembershipId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {MembershipId, TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Membership, PermissionCatalog, User} from '@b2b-saas-starter-kit/domain'
 
@@ -12,6 +12,7 @@ import {CreateTenantUseCase} from '../tenancy/create-tenant/create-tenant.use-ca
 import {ListTenantMembersQuery} from '../tenancy/list-tenant-members/list-tenant-members.query'
 import {MembershipRolesService} from '../tenancy/membership-roles.service'
 
+import {emptyApiKeyPermissions} from './empty-api-key-permissions'
 import {FixedClock} from './fixed-clock'
 import {InMemoryCache} from './in-memory-cache'
 import {InMemoryMembershipRepository} from './in-memory-membership.repository'
@@ -40,6 +41,7 @@ function createFlow() {
     new MembershipRolesService(memberships),
     new InMemoryCache(),
     memberships,
+    emptyApiKeyPermissions,
   )
   const events = new RecordingEventPublisher()
   const createUser = new CreateUserUseCase(uow, clock, ids, users, events)
@@ -61,7 +63,7 @@ describe('application flows', () => {
       Membership.create(MEMBER_MEMBERSHIP, tenant.tenantId, MEMBER_USER, [tenant.roleIds.member], OCCURRED_AT),
     )
 
-    const asOwner = await listMembers.execute({tenantId: tenant.tenantId, actorId: owner.userId})
+    const asOwner = await listMembers.execute({tenantId: tenant.tenantId, actor: userActor(owner.userId)})
 
     expect(asOwner.members).toHaveLength(2)
 
@@ -82,20 +84,20 @@ describe('application flows', () => {
     await users.save(adminUser)
     await memberships.save(adminMembership)
 
-    const asAdmin = await listMembers.execute({tenantId: tenant.tenantId, actorId: adminUser.id})
+    const asAdmin = await listMembers.execute({tenantId: tenant.tenantId, actor: userActor(adminUser.id)})
 
     expect(asAdmin.members).toHaveLength(3)
 
-    await expect(listMembers.execute({tenantId: tenant.tenantId, actorId: MEMBER_USER})).rejects.toBeInstanceOf(
-      InsufficientPermissionError,
-    )
+    await expect(
+      listMembers.execute({tenantId: tenant.tenantId, actor: userActor(MEMBER_USER)}),
+    ).rejects.toBeInstanceOf(InsufficientPermissionError)
     await expect(
       listMembers.execute({
         tenantId: tenant.tenantId,
-        actorId: UserId.parse('cccccccc-cccc-4ccc-8ccc-cccccccccccc'),
+        actor: userActor(UserId.parse('cccccccc-cccc-4ccc-8ccc-cccccccccccc')),
       }),
     ).rejects.toBeInstanceOf(InsufficientPermissionError)
-    await expect(listMembers.execute({tenantId: OTHER_TENANT, actorId: owner.userId})).rejects.toBeInstanceOf(
+    await expect(listMembers.execute({tenantId: OTHER_TENANT, actor: userActor(owner.userId)})).rejects.toBeInstanceOf(
       InsufficientPermissionError,
     )
   })

@@ -1,6 +1,6 @@
 import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest'
 
-import {MembershipId, MembershipStatus, UserId, UserStatus} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {MembershipId, MembershipStatus, userActor, UserId, UserStatus} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Membership, PermissionCatalog, User} from '@b2b-saas-starter-kit/domain'
 
@@ -10,7 +10,7 @@ import {
   CreateUserUseCase,
   MembershipRolesService,
 } from '@b2b-saas-starter-kit/application'
-import {InMemoryCache} from '@b2b-saas-starter-kit/application/testing'
+import {emptyApiKeyPermissions, InMemoryCache} from '@b2b-saas-starter-kit/application/testing'
 
 import {SystemClock, UuidV7IdGenerator} from '@b2b-saas-starter-kit/node'
 
@@ -52,7 +52,13 @@ describe('AuthorizationService through TypeORM repositories', () => {
 
     createUser = new CreateUserUseCase(uow, clock, ids, users, events)
     createTenant = new CreateTenantUseCase(uow, clock, ids, users, tenants, roles, memberships, events)
-    authz = new AuthorizationService(roles, new MembershipRolesService(memberships), new InMemoryCache(), memberships)
+    authz = new AuthorizationService(
+      roles,
+      new MembershipRolesService(memberships),
+      new InMemoryCache(),
+      memberships,
+      emptyApiKeyPermissions,
+    )
   })
 
   afterAll(async () => {
@@ -79,7 +85,7 @@ describe('AuthorizationService through TypeORM repositories', () => {
     )
     const uow = new TypeormUnitOfWork(ctx.dataSource)
 
-    await tenantContext.run({tenantId: tenant.tenantId, actorId: owner.userId}, async () => {
+    await tenantContext.run({tenantId: tenant.tenantId, actor: userActor(owner.userId)}, async () => {
       await uow.run(async () => {
         await memberships.save(
           Membership.reconstitute({
@@ -93,11 +99,13 @@ describe('AuthorizationService through TypeORM repositories', () => {
       })
     })
 
-    const ownerPermissions = await tenantContext.run({tenantId: tenant.tenantId, actorId: owner.userId}, async () =>
-      authz.getEffectivePermissions(owner.userId, tenant.tenantId),
+    const ownerPermissions = await tenantContext.run(
+      {tenantId: tenant.tenantId, actor: userActor(owner.userId)},
+      async () => authz.getEffectivePermissions(owner.userId, tenant.tenantId),
     )
-    const memberPermissions = await tenantContext.run({tenantId: tenant.tenantId, actorId: MEMBER_USER}, async () =>
-      authz.getEffectivePermissions(MEMBER_USER, tenant.tenantId),
+    const memberPermissions = await tenantContext.run(
+      {tenantId: tenant.tenantId, actor: userActor(MEMBER_USER)},
+      async () => authz.getEffectivePermissions(MEMBER_USER, tenant.tenantId),
     )
 
     expect(ownerPermissions).toContain(PermissionCatalog.tenancyMembersRead)

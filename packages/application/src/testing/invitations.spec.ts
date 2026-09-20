@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {MembershipId, RoleId, TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {Membership, PermissionCatalog, Role, User} from '@b2b-saas-starter-kit/domain'
 
@@ -16,7 +16,9 @@ import {InviteMemberUseCase} from '../tenancy/invite-member/invite-member.use-ca
 import {MembershipRolesService} from '../tenancy/membership-roles.service'
 import {ReplaceMembershipRolesUseCase} from '../tenancy/replace-membership-roles/replace-membership-roles.use-case'
 
+import {emptyApiKeyPermissions} from './empty-api-key-permissions'
 import {FixedClock} from './fixed-clock'
+import {InMemoryApiKeyRepository} from './in-memory-api-key.repository'
 import {InMemoryCache} from './in-memory-cache'
 import {InMemoryInvitationRepository} from './in-memory-invitation.repository'
 import {InMemoryLocalPasswordRepository} from './in-memory-local-password.repository'
@@ -49,13 +51,20 @@ async function createHarness() {
   const memberships = new InMemoryMembershipRepository()
   const roles = new InMemoryRoleRepository()
   const invitations = new InMemoryInvitationRepository()
+  const apiKeys = new InMemoryApiKeyRepository()
   const cache = new InMemoryCache()
   const mailer = new InMemoryMailer()
   const digest = new InMemoryTokenDigest()
   const hasher = new InMemoryPasswordHasher()
   const ids = new SequentialIdGenerator()
-  const uow = new InMemoryUnitOfWork(users, passwords, memberships, roles, invitations)
-  const authz = new AuthorizationService(roles, new MembershipRolesService(memberships), cache, memberships)
+  const uow = new InMemoryUnitOfWork(users, passwords, memberships, roles, invitations, apiKeys)
+  const authz = new AuthorizationService(
+    roles,
+    new MembershipRolesService(memberships),
+    cache,
+    memberships,
+    emptyApiKeyPermissions,
+  )
   const events = new RecordingEventPublisher()
   const invite = new InviteMemberUseCase(
     uow,
@@ -68,6 +77,7 @@ async function createHarness() {
     memberships,
     roles,
     invitations,
+    apiKeys,
     events,
   )
   const accept = new AcceptInvitationUseCase(
@@ -117,7 +127,7 @@ describe('invitations and membership writes', () => {
 
     await authz.getEffectivePermissions(OWNER_ID, TENANT_ID)
     const invited = await invite.execute({
-      actorId: OWNER_ID,
+      actor: userActor(OWNER_ID),
       tenantId: TENANT_ID,
       email: 'new@example.com',
       roleIds: [MEMBER_ROLE_ID],
@@ -146,7 +156,7 @@ describe('invitations and membership writes', () => {
     await authz.getEffectivePermissions(MEMBER_ID, TENANT_ID)
 
     const attached = await attach.execute({
-      actorId: OWNER_ID,
+      actor: userActor(OWNER_ID),
       tenantId: TENANT_ID,
       userId: MEMBER_ID,
       roleIds: [ADMIN_ROLE_ID],
@@ -165,7 +175,7 @@ describe('invitations and membership writes', () => {
 
     await expect(
       invite.execute({
-        actorId: OWNER_ID,
+        actor: userActor(OWNER_ID),
         tenantId: TENANT_ID,
         email: 'new@example.com',
         roleIds: [OWNER_ROLE_ID],
@@ -173,7 +183,7 @@ describe('invitations and membership writes', () => {
     ).rejects.toBeInstanceOf(CannotAssignOwnerRoleError)
 
     await invite.execute({
-      actorId: OWNER_ID,
+      actor: userActor(OWNER_ID),
       tenantId: TENANT_ID,
       email: 'new@example.com',
       roleIds: [MEMBER_ROLE_ID],
@@ -181,7 +191,7 @@ describe('invitations and membership writes', () => {
 
     await expect(
       invite.execute({
-        actorId: OWNER_ID,
+        actor: userActor(OWNER_ID),
         tenantId: TENANT_ID,
         email: 'new@example.com',
         roleIds: [MEMBER_ROLE_ID],
@@ -194,7 +204,7 @@ describe('invitations and membership writes', () => {
 
     await expect(
       replaceRoles.execute({
-        actorId: OWNER_ID,
+        actor: userActor(OWNER_ID),
         tenantId: TENANT_ID,
         membershipId: OWNER_MEMBERSHIP,
         roleIds: [MEMBER_ROLE_ID],
@@ -211,7 +221,7 @@ describe('invitations and membership writes', () => {
 
     await expect(
       invite.execute({
-        actorId: MEMBER_ID,
+        actor: userActor(MEMBER_ID),
         tenantId: TENANT_ID,
         email: 'new@example.com',
         roleIds: [MEMBER_ROLE_ID],

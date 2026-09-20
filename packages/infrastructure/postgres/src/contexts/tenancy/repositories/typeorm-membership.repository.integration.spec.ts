@@ -6,6 +6,7 @@ import {
   RoleId,
   TenantId,
   TenantStatus,
+  userActor,
   UserId,
 } from '@b2b-saas-starter-kit/shared-kernel-types'
 
@@ -70,11 +71,13 @@ describe('TypeOrmMembershipRepository', () => {
       })
     })
 
-    const found = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(membershipA))
-    const byUser = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+    const found = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
+      repo.findById(membershipA),
+    )
+    const byUser = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
       repo.findByUserAndTenant(actorA, tenantA),
     )
-    const byTenant = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+    const byTenant = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
       repo.findByTenant(tenantA),
     )
 
@@ -118,10 +121,12 @@ describe('TypeOrmMembershipRepository', () => {
       })
     })
 
-    const byId = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findById(membershipB))
+    const byId = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
+      repo.findById(membershipB),
+    )
 
     await expect(
-      tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findByTenant(tenantB)),
+      tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => repo.findByTenant(tenantB)),
     ).rejects.toBeInstanceOf(TenantContextMismatchError)
 
     expect(byId).toBeNull()
@@ -151,7 +156,7 @@ describe('TypeOrmMembershipRepository', () => {
       })
     })
 
-    const holders = await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () =>
+    const holders = await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
       repo.findByTenantAndRole(tenantA, roleC),
     )
 
@@ -161,12 +166,14 @@ describe('TypeOrmMembershipRepository', () => {
     expect(holders[0]?.roleIds).toHaveLength(2)
 
     await expect(
-      tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => repo.findByTenantAndRole(tenantB, roleC)),
+      tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () =>
+        repo.findByTenantAndRole(tenantB, roleC),
+      ),
     ).rejects.toBeInstanceOf(TenantContextMismatchError)
   })
 
   it('throws TenantContextMismatchError when ambient tenant disagrees with the aggregate', async () => {
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await expect(
         runInUnitOfWork(ctx.dataSource, async () => {
           await repo.save(

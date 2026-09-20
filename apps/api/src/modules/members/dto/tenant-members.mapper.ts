@@ -1,11 +1,11 @@
-import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {TenantActor, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 import type {TenantMembersOutput} from '@b2b-saas-starter-kit/contracts'
 
 import type {ListTenantMembersQuery} from '@b2b-saas-starter-kit/composition'
 
 export class TenantMembersMapper {
-  static toQuery(tenantId: TenantId, actorId: UserId): Parameters<ListTenantMembersQuery['execute']>[0] {
-    return {tenantId, actorId}
+  static toQuery(tenantId: TenantId, actor: TenantActor): Parameters<ListTenantMembersQuery['execute']>[0] {
+    return {tenantId, actor}
   }
 
   static toOutput(result: Awaited<ReturnType<ListTenantMembersQuery['execute']>>): TenantMembersOutput {

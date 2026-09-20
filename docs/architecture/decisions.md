@@ -217,6 +217,12 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 **Options:** (A) Combo 1 — logs + health only; (B) Combo 2 — kit-owned Prometheus scrape; (C) Combo 4 — OTel traces+metrics, OTLP ✓; (D) vendor APM in the app.
 **Rationale:** One kit switch, vendor-neutral export, and no SDK cost in tests/local/e2e unless opted in. Putting the SDK in `logger` would violate ADR-027 and `layer:logger`. See [`observability-options.md`](./observability-options.md) and [`infrastructure.md`](./infrastructure.md).
 
+## ADR-037 — Tenant API keys as a second principal
+
+**Decision:** Machine clients authenticate with `Authorization: Bearer bsk_…`. Resolution lives in `apps/api` (`AuthPrincipalInterceptor`) plus identity/application — not a `nest-http` DB guard. The principal is an honest `TenantActor` (`kind: TenantActorKind.user | TenantActorKind.apiKey`), not an impersonated user. `AuthorizationPort.require` takes `TenantActor`: users still resolve through membership → roles; keys use `ApiKeyPermissionsPort` (a minted catalog subset). Keys cannot hold `identity.api_keys.manage`. The raw token is SHA-256 digested (`TokenDigest.matches` + `timingSafeEqual`) and shown once on create. No web UI.
+**Options:** (A) impersonate the creating user; (B) honest `TenantActor` + Bearer `bsk_` ✓; (C) OAuth2 client-credentials / JWT-for-keys.
+**Rationale:** User-only routes (`/me`, password, select-tenant) must fail closed. Impersonation would let a leaked key act as a human and inherit membership. nest-http cannot import identity/postgres (`layer:nest-http`) — the same reason JWT verify already lives in `apps/api`. See [`authorization.md`](./authorization.md).
+
 ---
 
 ## Deferred decisions
@@ -227,5 +233,6 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 - **Mapper boilerplate reduction** — standard convention now; possible codegen/Cursor skill later.
 - **Extension contexts** (billing, files, webhooks, feature-flags) — follow existing rules when added.
 - **Auth token strategy specifics** (storage, refresh rotation) — **done (ADR-032 / Phase 20).** Web login + Bearer `prepareHeaders` are shipped. Logout UI, select-tenant UI, SSO, passkeys, email verification, and MFA remain deferred.
+- **Machine API keys** — **done (ADR-037).** Honest `TenantActor`, Bearer `bsk_`, SHA-256 + `matches`. Web/admin key screens, OAuth2 client-credentials, and per-key authenticated-route rate limits remain deferred.
 - **UI component / CSS stack** (Tailwind, Radix, shadcn, tokens, `ThemeProvider`) — package boundary is `ui-kit`; technology is TBD (ADR-030).
 - **CI/CD pipeline** — out of scope for this phase.

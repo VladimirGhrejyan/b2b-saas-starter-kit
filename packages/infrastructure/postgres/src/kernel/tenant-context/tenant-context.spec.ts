@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 
-import {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {TenantId, userActor, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import {TenantContextNotEstablishedError} from '@b2b-saas-starter-kit/platform'
 
@@ -19,16 +19,16 @@ describe('AlsTenantContext', () => {
       tenantContext.getTenantId()
     }).toThrow(TenantContextNotEstablishedError)
     expect(() => {
-      tenantContext.getActorId()
+      tenantContext.getActor()
     }).toThrow(TenantContextNotEstablishedError)
   })
 
   it('exposes the scope established by run', async () => {
     const tenantContext = new AlsTenantContext()
 
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       expect(tenantContext.getTenantId()).toBe(tenantA)
-      expect(tenantContext.getActorId()).toBe(actorA)
+      expect(tenantContext.getActor()).toEqual(userActor(actorA))
     })
   })
 
@@ -37,11 +37,11 @@ describe('AlsTenantContext', () => {
     const seen: string[] = []
 
     await Promise.all([
-      tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+      tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
         await delay(30)
         seen.push(tenantContext.getTenantId())
       }),
-      tenantContext.run({tenantId: tenantB, actorId: actorB}, async () => {
+      tenantContext.run({tenantId: tenantB, actor: userActor(actorB)}, async () => {
         seen.push(tenantContext.getTenantId())
       }),
     ])
@@ -52,8 +52,8 @@ describe('AlsTenantContext', () => {
   it('restores the outer scope after a nested run', async () => {
     const tenantContext = new AlsTenantContext()
 
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
-      await tenantContext.run({tenantId: tenantB, actorId: actorB}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
+      await tenantContext.run({tenantId: tenantB, actor: userActor(actorB)}, async () => {
         expect(tenantContext.getTenantId()).toBe(tenantB)
       })
 
@@ -64,7 +64,7 @@ describe('AlsTenantContext', () => {
   it('withoutTenantScope still exposes an outer run scope', async () => {
     const tenantContext = new AlsTenantContext()
 
-    await tenantContext.run({tenantId: tenantA, actorId: actorA}, async () => {
+    await tenantContext.run({tenantId: tenantA, actor: userActor(actorA)}, async () => {
       await tenantContext.withoutTenantScope(async () => {
         expect(tenantContext.getTenantId()).toBe(tenantA)
       })

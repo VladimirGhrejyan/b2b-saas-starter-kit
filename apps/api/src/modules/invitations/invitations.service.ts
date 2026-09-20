@@ -1,6 +1,6 @@
 import {Inject, Injectable} from '@nestjs/common'
 
-import type {TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import type {TenantActor, TenantId} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {TenantContext} from '@b2b-saas-starter-kit/platform'
 import {TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
@@ -22,8 +22,8 @@ export class InvitationsService {
     @Inject(TENANT_CONTEXT) private readonly tenantContext: TenantContext,
   ) {}
 
-  async invite(tenantId: TenantId, actorId: UserId, input: InviteMemberInputDto): Promise<InviteMemberOutputDto> {
-    const result = await this.inviteMember.execute(InviteMemberMapper.toCommand(tenantId, actorId, input))
+  async invite(tenantId: TenantId, actor: TenantActor, input: InviteMemberInputDto): Promise<InviteMemberOutputDto> {
+    const result = await this.inviteMember.execute(InviteMemberMapper.toCommand(tenantId, actor, input))
 
     return InviteMemberMapper.toOutput(result)
   }

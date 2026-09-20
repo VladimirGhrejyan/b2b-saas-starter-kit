@@ -8,6 +8,8 @@ import {KernelCreateOutbox1787745264241} from '../migrations/1787745264241-kerne
 import {KernelAddAuditAndVersionColumns1787745264242} from '../migrations/1787745264242-kernel-add-audit-and-version-columns'
 import {TenancyIndexMembershipRolesRoleId1787745264243} from '../migrations/1787745264243-tenancy-index-membership-roles-role-id'
 import {KernelCreateIdempotencyKeys1787745264244} from '../migrations/1787745264244-kernel-create-idempotency-keys'
+import {IdentityCreateApiKeys1787745264245} from '../migrations/1787745264245-identity-create-api-keys'
+import {AuthorizationBackfillAdminApiKeysManage1787745264246} from '../migrations/1787745264246-authorization-backfill-admin-api-keys-manage'
 
 import type {DataSourceClass} from './create-data-source.types'
 
@@ -25,4 +27,6 @@ export const postgresMigrations: DataSourceClass[] = [
   KernelAddAuditAndVersionColumns1787745264242,
   TenancyIndexMembershipRolesRoleId1787745264243,
   KernelCreateIdempotencyKeys1787745264244,
+  IdentityCreateApiKeys1787745264245,
+  AuthorizationBackfillAdminApiKeysManage1787745264246,
 ]

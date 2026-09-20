@@ -20,7 +20,7 @@ export class GetTenantQuery {
   ) {}
 
   async execute(query: GetTenantQueryInput): Promise<GetTenantResult> {
-    await this.authz.require(query.actorId, PermissionCatalog.tenancyTenantRead, {tenantId: query.tenantId})
+    await this.authz.require(query.actor, PermissionCatalog.tenancyTenantRead, {tenantId: query.tenantId})
 
     const tenant = await this.tenants.findById(query.tenantId)
 

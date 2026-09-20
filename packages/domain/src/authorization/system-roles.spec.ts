@@ -21,6 +21,7 @@ describe('SystemRoles', () => {
     expect(admin).toContain(PermissionCatalog.tenancyMembersRead)
     expect(admin).toContain(PermissionCatalog.tenancyMembersInvite)
     expect(admin).toContain(PermissionCatalog.tenancyMembersManage)
+    expect(admin).toContain(PermissionCatalog.identityApiKeysManage)
     expect(admin).not.toContain(PermissionCatalog.authorizationRolesRead)
     expect(admin).not.toContain(PermissionCatalog.authorizationRolesManage)
   })

@@ -49,7 +49,7 @@ export abstract class TenantAwareRepository {
         throw new TenantContextMismatchError()
       }
 
-      return {...row, tenantId: row.tenantId}
+      return row as T & {tenantId: string}
     }
 
     const ambientTenantId = this.tenantContext.getTenantId()
@@ -58,7 +58,9 @@ export abstract class TenantAwareRepository {
       throw new TenantContextMismatchError()
     }
 
-    return {...row, tenantId: ambientTenantId}
+    row.tenantId = ambientTenantId
+
+    return row as T & {tenantId: string}
   }
 
   protected assertTenant(tenantId: TenantId): void {

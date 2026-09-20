@@ -6,7 +6,8 @@ import {ApiErrorResponses, ApiRoute, Idempotent, Response} from '@b2b-saas-start
 
 import {RequirePermission} from '../../common/auth/permission/require-permission.decorator'
 import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
-import type {DevPrincipal} from '../../common/auth/principal/dev-principal.types'
+import type {AuthPrincipal} from '../../common/auth/principal/dev-principal.types'
+import {toTenantActor} from '../../common/auth/principal/to-tenant-actor'
 
 import {AttachMemberInputDto} from './dto/attach-member.input'
 import {AttachMemberOutputDto} from './dto/attach-member.output'
@@ -36,9 +37,9 @@ export class MembersController {
   ])
   list(
     @Param() params: TenantIdParamDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<TenantMembersOutputDto> {
-    return this.members.list(params.tenantId, principal.userId)
+    return this.members.list(params.tenantId, toTenantActor(principal))
   }
 
   @RequirePermission(PermissionName.tenancyMembersManage)
@@ -59,9 +60,9 @@ export class MembersController {
   attach(
     @Param() params: TenantIdParamDto,
     @Body() body: AttachMemberInputDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<AttachMemberOutputDto> {
-    return this.members.attach(params.tenantId, principal.userId, body)
+    return this.members.attach(params.tenantId, toTenantActor(principal), body)
   }
 
   @RequirePermission(PermissionName.tenancyMembersManage)
@@ -81,8 +82,8 @@ export class MembersController {
   replaceRoles(
     @Param() params: MembershipIdParamDto,
     @Body() body: ReplaceMembershipRolesInputDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<ReplaceMembershipRolesOutputDto> {
-    return this.members.replaceRoles(params.tenantId, params.membershipId, principal.userId, body)
+    return this.members.replaceRoles(params.tenantId, params.membershipId, toTenantActor(principal), body)
   }
 }

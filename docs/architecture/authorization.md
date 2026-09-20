@@ -19,10 +19,13 @@ Related: [`multi-tenancy.md`](./multi-tenancy.md), [`backend.md`](./backend.md),
 - **Policies** handle rules that pure RBAC cannot express — ownership and attribute checks like "may edit _this_ record" or "may act only within _this_ tenant". Policies are evaluated where the relevant data is loaded (application/domain).
 
 ```
-principal → memberships → roles → permissions      (coarse: "can they invite members?")
+user     → memberships → roles → permissions      (coarse: "can they invite members?")
+api_key  → minted permission subset               (no membership)
                                      +
 policy(resource, principal, context)                (fine: "can they edit THIS resource?")
 ```
+
+A tenant request is a **`TenantActor`**: `{kind: TenantActorKind.user, id: UserId}` or `{kind: TenantActorKind.apiKey, id: ApiKeyId}`. Both ids are UUIDs at runtime, so **kind travels with the id**. API keys are tenant-owned credentials (ADR-037), not fake users. They authenticate with `Authorization: Bearer bsk_…` and never go through membership. User-only routes (`GET /me`, password, select-tenant) reject `kind === TenantActorKind.apiKey` (403).
 
 ## Where authorization logic belongs
 
@@ -55,16 +58,17 @@ export class InviteMemberUseCase {
 }
 ```
 
-The `AuthorizationPort` is defined so the application asks _questions_ ("does this actor have this permission in this tenant?") without depending on how roles/permissions are stored. Its implementation (in `infrastructure`, backed by the authorization context's repositories + cache) resolves effective permissions, tenant-scoped.
+The `AuthorizationPort` is defined so the application asks _questions_ ("does this actor have this permission in this tenant?") without depending on how roles/permissions are stored. `require` / `getPermissions` take `TenantActor`. The user path is unchanged (membership → roles → cache). The API-key path uses `ApiKeyPermissionsPort` (identity implements it; `AuthorizationService` does not inject `ApiKeyRepository`). Invalidate stays user/role-based; key permission edits delete a small key-scoped cache entry.
 
 ## How permissions are represented
 
 - A permission is a namespaced string constant, grouped by context/resource/action. The canonical list is owned by the **authorization** context; cross-cutting permission _identifiers_ that the frontend also needs are surfaced through `contracts` (as enums/types), so backend and frontend agree on the vocabulary without the frontend importing backend internals.
-- **Effective permissions** for a principal in a tenant = union of permissions across their roles in that membership. Resolution loads those roles in one `RoleRepository.findByIds` and is cached (tenant-prefixed Redis key, 60s TTL). `AuthorizationPort.invalidate` deletes the user+tenant key. `invalidateHoldersOf` loads only memberships that hold that role (`MembershipRepository.findByTenantAndRole`) and deletes their keys.
+- **Effective permissions** for a **user** in a tenant = union of permissions across their roles in that membership. Resolution loads those roles in one `RoleRepository.findByIds` and is cached (tenant-prefixed Redis key, 60s TTL). `AuthorizationPort.invalidate` deletes the user+tenant key. `invalidateHoldersOf` loads only memberships that hold that role (`MembershipRepository.findByTenantAndRole`) and deletes their keys.
+- **API-key permissions** are a minted catalog subset stored on the key. They cannot include `identity.api_keys.manage` (a leaked key cannot mint more keys). The creator must hold `identity.api_keys.manage` **and** every requested permission. Owner gets the permission via `PermissionCatalog.all`; Admin is backfilled explicitly (same class of ops as `tenancy.members.manage`). Member: no.
 
 ## Tenant-scoped authorization
 
-Every authorization question includes the tenant: a user who is `Admin` in Tenant A has no elevated rights in Tenant B. The `AuthorizationPort` always resolves permissions for the **(user, active tenant)** pair, and the ambient `TenantContext` guarantees the scope. See [`multi-tenancy.md`](./multi-tenancy.md).
+Every authorization question includes the tenant: a user who is `Admin` in Tenant A has no elevated rights in Tenant B. The `AuthorizationPort` always resolves permissions for the **(actor, active tenant)** pair, and the ambient `TenantContext` (`{tenantId, actor}`) guarantees the scope. See [`multi-tenancy.md`](./multi-tenancy.md).
 
 ## Frontend representation — effective permissions + `can()`
 

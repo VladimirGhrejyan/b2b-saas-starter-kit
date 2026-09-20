@@ -6,6 +6,7 @@ describe('permissionSchema', () => {
   it('parses catalog permissions', () => {
     expect(permissionSchema.parse(PermissionName.tenancyMembersRead)).toBe('tenancy.members.read')
     expect(permissionSchema.parse(PermissionName.identityUsersRead)).toBe('identity.users.read')
+    expect(permissionSchema.parse(PermissionName.identityApiKeysManage)).toBe('identity.api_keys.manage')
   })
 
   it('rejects an unknown permission', () => {

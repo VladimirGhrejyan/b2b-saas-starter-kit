@@ -43,16 +43,16 @@ Domain never imports this package.
 ## Semantics
 
 - **`UnitOfWork.run`** opens a transaction and passes an opaque `TxContext` (`{id}`). Use cases typically ignore `ctx`. Repositories join the **ambient** transaction inside the adapter — they do not take `EntityManager` or `TxContext` on domain port signatures.
-- **`TenantContext`** is fail-closed: `getTenantId()` / `getActorId()` throw `TenantContextNotEstablishedError` when no `run` scope is active. First-tenant and admin paths call `withoutTenantScope(work)` (writes still require `tenantId` on the row).
+- **`TenantContext`** is fail-closed: `getTenantId()` / `getActor()` throw `TenantContextNotEstablishedError` when no `run` scope is active. First-tenant and admin paths call `withoutTenantScope(work)` (writes still require `tenantId` on the row). `actor` is a `TenantActor` (`TenantActorKind.user` or `TenantActorKind.apiKey`).
 - **`Clock.now()`** is a UTC instant.
 - **`IdGenerator.generate()`** returns a raw string. Branding happens in application.
 - **`Logger`** is a process locator, not Nest DI: `LoggerLocator.init(impl)` at bootstrap, `LoggerLocator.get()` at call sites, `LoggerLocator.reset()` in tests. `LoggerLocator.get()` throws `LoggerNotInitializedError` when unset (no silent no-op). Domain does not log.
 
 ```typescript
 import type {Clock, IdGenerator, TenantContext, UnitOfWork} from '@b2b-saas-starter-kit/platform'
-import {UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
+import {UserId, userActor} from '@b2b-saas-starter-kit/shared-kernel-types'
 
-await tenantContext.run({tenantId, actorId}, async () => {
+await tenantContext.run({tenantId, actor: userActor(userId)}, async () => {
   return uow.run(async () => {
     const id = UserId.parse(ids.generate())
     const occurredAt = clock.now()
@@ -68,7 +68,7 @@ await tenantContext.run({tenantId, actorId}, async () => {
 | `UnitOfWork`                       | `run(work)` transaction boundary                                      |
 | `TxContext`                        | Opaque `{id}` — no persistence types                                  |
 | `TenantContext`                    | `run(scope, work)` + `withoutTenantScope(work)` + fail-closed getters |
-| `TenantScope`                      | `{tenantId, actorId}`                                                 |
+| `TenantScope`                      | `{tenantId, actor}` (`user` or `api_key`)                             |
 | `TenantContextNotEstablishedError` | Thrown when getters are called outside a scope                        |
 | `Clock`                            | `now(): Date` (UTC)                                                   |
 | `IdGenerator`                      | `generate(): string`                                                  |

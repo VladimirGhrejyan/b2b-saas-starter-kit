@@ -8,6 +8,7 @@ export const PermissionName = {
   authorizationRolesRead: 'authorization.roles.read',
   authorizationRolesManage: 'authorization.roles.manage',
   identityUsersRead: 'identity.users.read',
+  identityApiKeysManage: 'identity.api_keys.manage',
 } as const
 
 export const permissionSchema = z
@@ -19,6 +20,7 @@ export const permissionSchema = z
     PermissionName.authorizationRolesRead,
     PermissionName.authorizationRolesManage,
     PermissionName.identityUsersRead,
+    PermissionName.identityApiKeysManage,
   ])
   .meta({
     id: 'Permission',

@@ -5,7 +5,8 @@ import {HttpStatus} from '@b2b-saas-starter-kit/contracts'
 import {ApiErrorResponses, ApiRoute, Public, Response} from '@b2b-saas-starter-kit/nest-http'
 
 import {CurrentPrincipal} from '../../common/auth/principal/current-principal.decorator'
-import type {DevPrincipal} from '../../common/auth/principal/dev-principal.types'
+import type {AuthPrincipal} from '../../common/auth/principal/dev-principal.types'
+import {requireUserPrincipal} from '../../common/auth/principal/require-user-principal'
 import {TenantOptional} from '../../common/auth/principal/tenant-optional.decorator'
 import {AuthRateLimits} from '../../common/auth/rate-limit/auth-rate-limits'
 import {RateLimit} from '../../common/auth/rate-limit/rate-limit.decorator'
@@ -189,9 +190,9 @@ export class AuthController {
   ])
   selectTenant(
     @Body() body: SelectTenantInputDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<AuthSessionOutputDto> {
-    return this.auth.chooseTenant(principal.userId, body)
+    return this.auth.chooseTenant(requireUserPrincipal(principal), body)
   }
 
   @Public()
@@ -249,9 +250,9 @@ export class AuthController {
   ])
   async setOrChangePassword(
     @Body() body: SetOrChangePasswordInputDto,
-    @CurrentPrincipal() principal: DevPrincipal,
+    @CurrentPrincipal() principal: AuthPrincipal,
   ): Promise<AuthOkOutputDto> {
-    await this.auth.updatePassword(principal.userId, body)
+    await this.auth.updatePassword(requireUserPrincipal(principal), body)
 
     return {ok: true}
   }
