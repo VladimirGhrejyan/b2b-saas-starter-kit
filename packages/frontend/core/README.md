@@ -23,7 +23,7 @@ src/
     redux/          # createStore
     api/            # empty RTK Query api
     react/          # typed hooks used across the package
-  testing/          # createTestStore (@b2b-saas-starter-kit/frontend-core/testing)
+  testing/          # createTestStore, FrontendMsw (@b2b-saas-starter-kit/frontend-core/testing)
 ```
 
 Public API is `@b2b-saas-starter-kit/frontend-core` only (no deep imports). Test helpers are `@b2b-saas-starter-kit/frontend-core/testing`.
@@ -81,4 +81,4 @@ pnpm nx run frontend-core:test
 - [x] `configureFrontendCore` + `createStore` + empty RTK `api`
 - [x] Session slice, `can()` / `useCan` / `<Can>`, web ports
 - [x] Contracts error-envelope mapping; Bearer `prepareHeaders` + cookie refresh
-- [x] `./testing` (`createTestStore`)
+- [x] `./testing` (`createTestStore`, contract-parsed `FrontendMsw`)

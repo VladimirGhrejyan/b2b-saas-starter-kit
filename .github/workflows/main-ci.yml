@@ -70,7 +70,15 @@ jobs:
       - name: Typecheck, test, and build
         run: |
           if [ "${{ steps.setSHAs.outputs.noPreviousBuild }}" = "true" ]; then
-            pnpm nx run-many -t typecheck,test,build
+            pnpm nx run-many -t typecheck,test,build,build-storybook
           else
-            pnpm nx affected -t typecheck,test,build --base="$NX_BASE" --head="$NX_HEAD"
+            pnpm nx affected -t typecheck,test,build,build-storybook --base="$NX_BASE" --head="$NX_HEAD"
           fi
+
+      - name: Upload ui-kit Storybook
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-kit-storybook
+          path: packages/frontend/ui-kit/storybook-static
+          if-no-files-found: ignore
+          retention-days: 14

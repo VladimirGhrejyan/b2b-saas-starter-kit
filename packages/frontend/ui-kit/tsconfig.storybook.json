@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.browser.json",
+  "compilerOptions": {
+    "outDir": "out-tsc/storybook",
+    "forceConsistentCasingInFileNames": true
+  },
+  "exclude": ["src/**/*.spec.ts", "src/**/*.spec.tsx", "src/**/*.test.ts", "src/**/*.test.tsx"],
+  "include": ["src/**/*.stories.ts", "src/**/*.stories.tsx", ".storybook/*.ts"],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ]
+}

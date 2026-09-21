@@ -1,3 +1,4 @@
+import pg from 'pg'
 import {DataSource} from 'typeorm'
 
 import 'reflect-metadata'
@@ -12,10 +13,12 @@ import {postgresMigrations} from './postgres-migrations'
  * Builds a vanilla TypeORM {@link DataSource}. Does not connect; callers must `initialize()`.
  *
  * Extra `entities` are merged with the foundation set so tests can register probe tables.
+ * `driver` is passed explicitly so webpack-served apps resolve `pg` without a dynamic `require`.
  */
 export function createDataSource(config: PostgresConfig, options: CreateDataSourceOptions = {}): DataSource {
   return new DataSource({
     type: 'postgres',
+    driver: pg,
     url: config.DATABASE_URL,
     entities: [...postgresEntities, ...(options.entities ?? [])],
     migrations: options.migrations ?? postgresMigrations,

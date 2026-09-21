@@ -19,7 +19,10 @@ function nodeNativeExternals(_ctx, callback) {
 
 /** Ignore optional platform packages probed by `@node-rs/argon2` at runtime. */
 function createNodeNativeIgnorePlugins() {
-  return [new webpack.IgnorePlugin({resourceRegExp: /^@node-rs\/argon2-/})]
+  return [
+    new webpack.IgnorePlugin({resourceRegExp: /^@node-rs\/argon2-/}),
+    new webpack.IgnorePlugin({resourceRegExp: /^pg-native$/}),
+  ]
 }
 
 module.exports = {

@@ -12,7 +12,7 @@ Architecture: [`docs/architecture/design-system.md`](../../../docs/architecture/
 
 A real importable package so apps do not invent local buttons. The foundation surface is a native HTML `Button`. No Tailwind, Radix, shadcn, design tokens, or `ThemeProvider`.
 
-Each primitive lives in its own folder (`src/<name>/`) with a colocated spec and a folder `index.ts`. The package entry re-exports public components only.
+Each primitive lives in its own folder (`src/<name>/`) with a colocated spec, optional `*.stories.tsx`, and a folder `index.ts`. The package entry re-exports public components only.
 
 ## Usage
 
@@ -38,6 +38,8 @@ Never import RTK, `contracts`, Nest, postgres, Tailwind, or Radix.
 pnpm nx run ui-kit:lint
 pnpm nx run ui-kit:typecheck
 pnpm nx run ui-kit:test
+pnpm nx run ui-kit:storybook
+pnpm nx run ui-kit:build-storybook
 ```
 
 ## Phase 12 Definition of Done

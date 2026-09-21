@@ -1,0 +1,25 @@
+{
+  "name": "@b2b-saas-starter-kit/web-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "nx": {
+    "name": "web-e2e",
+    "tags": [
+      "scope:frontend",
+      "type:e2e"
+    ],
+    "implicitDependencies": [
+      "web",
+      "api"
+    ]
+  },
+  "dependencies": {
+    "@b2b-saas-starter-kit/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@nx/devkit": "^23.2.1",
+    "@nx/playwright": "^23.2.1",
+    "@playwright/test": "^1.63.0"
+  }
+}

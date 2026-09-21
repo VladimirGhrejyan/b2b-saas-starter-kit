@@ -6,7 +6,8 @@ import {
   tenantMembersOutputSchema,
 } from '@b2b-saas-starter-kit/contracts'
 import {MembershipId, RoleId, TenantId, UserId} from '@b2b-saas-starter-kit/shared-kernel-types'
-import type {SessionState} from '@b2b-saas-starter-kit/frontend-core'
+
+import type {SessionState} from '../../session'
 
 export const fixtureIds = {
   ownerUserId: UserId.parse('11111111-1111-4111-8111-111111111111'),

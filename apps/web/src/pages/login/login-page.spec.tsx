@@ -1,25 +1,28 @@
 import {fireEvent, screen} from '@testing-library/react'
 
+import {FrontendMsw, ownerSession} from '@b2b-saas-starter-kit/frontend-core/testing'
+
 import {webRoutes} from '@/pages/shell/web-routes'
 import {paths} from '@/shared/router'
-import {ownerSession, WebMsw} from '@/shared/testing/msw'
 import {renderWithProviders} from '@/shared/testing/render-with-providers'
 
 describe('LoginPage', () => {
+  const msw = new FrontendMsw()
+
   beforeAll(() => {
-    WebMsw.listen()
+    msw.listen()
   })
 
   afterEach(() => {
-    WebMsw.reset()
+    msw.reset()
   })
 
   afterAll(() => {
-    WebMsw.close()
+    msw.close()
   })
 
   it('signs in and lands on home', async () => {
-    WebMsw.useOwner()
+    msw.useOwner()
 
     await renderWithProviders(null, {
       routes: webRoutes,
@@ -34,7 +37,7 @@ describe('LoginPage', () => {
   })
 
   it('surfaces INVALID_CREDENTIALS from the envelope', async () => {
-    WebMsw.useInvalidLogin()
+    msw.useInvalidLogin()
 
     await renderWithProviders(null, {
       routes: webRoutes,
@@ -50,7 +53,7 @@ describe('LoginPage', () => {
   })
 
   it('redirects home when a session already exists', async () => {
-    WebMsw.useOwner()
+    msw.useOwner()
 
     await renderWithProviders(null, {
       routes: webRoutes,

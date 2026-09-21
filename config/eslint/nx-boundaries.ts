@@ -89,5 +89,9 @@ export class NxBoundaries {
         'layer:config',
       ],
     },
+    {
+      sourceTag: 'type:e2e',
+      onlyDependOnLibsWithTags: ['layer:contracts', 'layer:shared-types', 'layer:utils', 'layer:config'],
+    },
   ]
 }

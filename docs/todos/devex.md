@@ -8,10 +8,21 @@ Local quality gates are already in place (ESLint/Prettier, Husky, Commitlint, br
 
 - GitHub Actions: [`.github/workflows/main-ci.yml`](../../.github/workflows/main-ci.yml)
 - Always: `format:check`, `lint` (`eslint .`), `nx sync:check`, ESLint plugin tests, `check:node-version`
-- Graph: `pnpm nx affected -t typecheck,test,build` (full `run-many` when there is no previous successful CI run)
+- Graph: `pnpm nx affected -t typecheck,test,build,build-storybook` (full `run-many` when there is no previous successful CI run)
 - Compose Postgres/Redis via `pnpm infra:up` so integration specs can run
 - `pnpm nx sync:check` fails the job when TypeScript project references drift
 - Nx Cloud is **not** used (`monitor-ci` stays unused)
+
+### Storybook on `ui-kit`
+
+- Vite + Storybook 10 on `packages/frontend/ui-kit` (`pnpm nx run ui-kit:storybook` / `build-storybook`)
+- CI (`main-ci.yml`) runs `build-storybook` on affected and uploads `storybook-static` as an artifact
+- Hosting (GitHub Pages, Chromatic) is still deferred
+
+### Playwright `web-e2e`
+
+- Chromium smokes in `apps/web-e2e` against `api` + `web` (`pnpm nx run web-e2e:e2e` after `pnpm infra:up`)
+- GitHub Actions: [`.github/workflows/web-e2e.yml`](../../.github/workflows/web-e2e.yml) on `main` and `workflow_dispatch` (not a PR required check)
 
 ## Do next (highest leverage)
 
@@ -63,8 +74,6 @@ Local quality gates are already in place (ESLint/Prettier, Husky, Commitlint, br
 
 | Tool                            | When                                        |
 | ------------------------------- | ------------------------------------------- |
-| Playwright                      | E2E against running apps                    |
-| Storybook                       | Design-system / UI library work             |
 | Changesets / release automation | Publishing versioned packages               |
 | OpenAPI codegen                 | Stable API contracts between Nest and React |
 | Docker image build pipelines    | Deployable artifacts                        |

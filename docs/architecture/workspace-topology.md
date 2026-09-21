@@ -57,6 +57,7 @@ apps/
   admin/                   # React + Vite — back-office audience app
   desktop/                 # Electron main + preload; loads `apps/web` dist (no product FSD)
   mobile/                  # Capacitor config; `webDir` = `apps/web` dist (no product FSD)
+  web-e2e/                 # Playwright Chromium smokes against `web` + `api` (Compose Postgres/Redis)
 ```
 
 ### Why layer-first (and what we gave up)

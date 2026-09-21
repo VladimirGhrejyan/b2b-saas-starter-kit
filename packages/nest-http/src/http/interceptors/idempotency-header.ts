@@ -6,14 +6,14 @@ import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
  * Reads and validates the `Idempotency-Key` header.
  */
 export class IdempotencyHeader {
-  static readonly name = 'idempotency-key'
+  static readonly header = 'idempotency-key'
 
   static readonly maxLength = 255
 
   static readonly ttlHours = 24
 
   static read(headers: IncomingHttpHeaders): string | undefined {
-    const value = headers[IdempotencyHeader.name]
+    const value = headers[IdempotencyHeader.header]
 
     if (TypeScriptUtils.isNonEmptyString(value)) {
       return value

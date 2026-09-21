@@ -1,25 +1,28 @@
 import {screen} from '@testing-library/react'
 
+import {fixtureIds, FrontendMsw, memberSession, ownerSession} from '@b2b-saas-starter-kit/frontend-core/testing'
+
 import {webRoutes} from '@/pages/shell/web-routes'
 import {buildPath, paths} from '@/shared/router'
-import {fixtureIds, memberSession, ownerSession, WebMsw} from '@/shared/testing/msw'
 import {renderWithProviders} from '@/shared/testing/render-with-providers'
 
 describe('MembersPage', () => {
+  const msw = new FrontendMsw()
+
   beforeAll(() => {
-    WebMsw.listen()
+    msw.listen()
   })
 
   afterEach(() => {
-    WebMsw.reset()
+    msw.reset()
   })
 
   afterAll(() => {
-    WebMsw.close()
+    msw.close()
   })
 
   it('shows the members list for an Owner', async () => {
-    WebMsw.useOwner()
+    msw.useOwner()
 
     await renderWithProviders(null, {
       routes: webRoutes,
@@ -32,7 +35,7 @@ describe('MembersPage', () => {
   })
 
   it('hides the members list for a Member', async () => {
-    WebMsw.useMember()
+    msw.useMember()
 
     await renderWithProviders(null, {
       routes: webRoutes,
@@ -45,7 +48,7 @@ describe('MembersPage', () => {
   })
 
   it('surfaces the 403 envelope code and message', async () => {
-    WebMsw.useForbiddenMembers()
+    msw.useForbiddenMembers()
 
     await renderWithProviders(null, {
       routes: webRoutes,

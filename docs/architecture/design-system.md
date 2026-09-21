@@ -26,6 +26,8 @@ export function Button(props: ButtonHTMLAttributes<HTMLButtonElement>) {
 
 No class libraries, no CSS framework, no theme wrapper.
 
+Stories live next to components (`*.stories.tsx`). Serve with `pnpm nx run ui-kit:storybook`; static output is `pnpm nx run ui-kit:build-storybook`. CI uploads that artifact. Hosting (Pages/Chromatic) is deferred.
+
 ## Deferred (product goals, not current implementation)
 
 Per-tenant white-labeling (brand color, light/dark, runtime tokens) remains a **later** design-system concern. It is **not** implemented until UI technology is chosen. Do not add a `ThemeProvider` or token layer as a placeholder.

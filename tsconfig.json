@@ -86,6 +86,9 @@
     },
     {
       "path": "./packages/infrastructure/messaging"
+    },
+    {
+      "path": "./apps/web-e2e"
     }
   ]
 }

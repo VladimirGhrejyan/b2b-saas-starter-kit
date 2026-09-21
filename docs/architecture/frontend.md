@@ -106,3 +106,9 @@ Both apps share a shell pattern (from `frontend/core` + `frontend/ui-kit`): prov
 - `ui-kit` contains **no** data-fetching or business logic (presentation only).
 - `core` contains **no** presentational components (state/data only).
 - Features compose `ui-kit` + `core` + `contracts`.
+
+## Testing
+
+- **Vitest + RTL** in `apps/web` (and later `admin`) for page behavior. Handlers and contract-parsed fixtures live in `@b2b-saas-starter-kit/frontend-core/testing` (`FrontendMsw`). `renderWithProviders` stays app-local.
+- **Storybook** on `packages/frontend/ui-kit` (`pnpm nx run ui-kit:storybook` / `build-storybook`). CI uploads the static artifact. Page stories and hosting are deferred.
+- **Playwright** in `apps/web-e2e` — Chromium smokes against a running `api` + `web` (Compose Postgres/Redis). Run locally after `pnpm infra:up` with `pnpm nx run web-e2e:e2e`. CI is a separate `web-e2e.yml` workflow on `main`, not a PR required check.

@@ -16,7 +16,7 @@ export class DevSeeder implements OnModuleInit {
     }
 
     try {
-      await this.createUser.execute({email: 'dev@localhost', displayName: 'Dev'})
+      await this.createUser.execute({email: 'dev@example.com', displayName: 'Dev'})
     } catch (error) {
       if (this.isEmailTaken(error)) {
         return

@@ -1,27 +1,29 @@
 import {screen} from '@testing-library/react'
 
 import {PermissionName} from '@b2b-saas-starter-kit/contracts'
+import {FrontendMsw, memberSession, ownerSession} from '@b2b-saas-starter-kit/frontend-core/testing'
 
 import {webRoutes} from '@/pages/shell/web-routes'
 import {paths} from '@/shared/router'
-import {memberSession, ownerSession, WebMsw} from '@/shared/testing/msw'
 import {renderWithProviders} from '@/shared/testing/render-with-providers'
 
 describe('MePage', () => {
+  const msw = new FrontendMsw()
+
   beforeAll(() => {
-    WebMsw.listen()
+    msw.listen()
   })
 
   afterEach(() => {
-    WebMsw.reset()
+    msw.reset()
   })
 
   afterAll(() => {
-    WebMsw.close()
+    msw.close()
   })
 
   it('hydrates an Owner so members read is allowed', async () => {
-    WebMsw.useOwner()
+    msw.useOwner()
 
     await renderWithProviders(null, {
       routes: webRoutes,
@@ -35,7 +37,7 @@ describe('MePage', () => {
   })
 
   it('hydrates a Member so members read is denied', async () => {
-    WebMsw.useMember()
+    msw.useMember()
 
     await renderWithProviders(null, {
       routes: webRoutes,
@@ -49,7 +51,7 @@ describe('MePage', () => {
   })
 
   it('redirects to login after a failed refresh on UNAUTHORIZED', async () => {
-    WebMsw.useUnauthorized()
+    msw.useUnauthorized()
 
     await renderWithProviders(null, {
       routes: webRoutes,
