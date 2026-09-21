@@ -2,9 +2,11 @@ import type {DynamicModule} from '@nestjs/common'
 import {Module} from '@nestjs/common'
 import {Queue} from 'bullmq'
 
+import {DefaultJobOptions} from '../jobs/default-job-options'
 import {JobScheduler} from '../jobs/job-scheduler'
 import {QueueWorkerFactory} from '../jobs/queue-worker.factory'
 
+import type {MessagingConfig} from './config/messaging-config'
 import {BullMqClientManager} from './connection/bullmq-client.manager'
 import {BullMqQueueManager} from './connection/bullmq-queue.manager'
 import type {MessagingInfrastructureModuleAsyncOptions} from './messaging-infrastructure.module.types'
@@ -34,23 +36,21 @@ export class MessagingInfrastructureModule {
         },
         {
           provide: MAINTENANCE_QUEUE,
-          useFactory: (manager: BullMqClientManager, config: {BULLMQ_PREFIX: string}) =>
+          useFactory: (manager: BullMqClientManager, config: MessagingConfig) =>
             new Queue(QueueName.maintenance, {
               connection: manager.get(),
               prefix: config.BULLMQ_PREFIX,
+              defaultJobOptions: DefaultJobOptions.value,
             }),
           inject: [BullMqClientManager, MESSAGING_CONFIG],
         },
         {
           provide: OUTBOX_QUEUE,
-          useFactory: (manager: BullMqClientManager, config: {BULLMQ_PREFIX: string}) =>
+          useFactory: (manager: BullMqClientManager, config: MessagingConfig) =>
             new Queue(QueueName.outbox, {
               connection: manager.get(),
               prefix: config.BULLMQ_PREFIX,
-              defaultJobOptions: {
-                attempts: 3,
-                backoff: {type: 'exponential', delay: 1000},
-              },
+              defaultJobOptions: DefaultJobOptions.value,
             }),
           inject: [BullMqClientManager, MESSAGING_CONFIG],
         },

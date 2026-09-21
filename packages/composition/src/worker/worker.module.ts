@@ -15,6 +15,7 @@ import {IdentityModule} from '../identity/identity.module'
 import {TenancyModule} from '../tenancy/tenancy.module'
 
 import {DomainEventLoggingHandler} from './domain-event-logging.handler'
+import {DomainEventSubscriptionRegistrar} from './domain-event-subscription.registrar'
 import {MaintenanceProcessorService} from './maintenance-processor.service'
 import {MaintenanceScheduler} from './maintenance-scheduler'
 import {OutboxEventProcessorService} from './outbox-event-processor.service'
@@ -51,6 +52,7 @@ export class WorkerModule {
           inject: options.inject ?? [],
         },
         DomainEventLoggingHandler,
+        DomainEventSubscriptionRegistrar,
         OutboxRelayService,
         OutboxEventProcessorService,
         PurgeRefreshSessionsUseCase,

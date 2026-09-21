@@ -52,7 +52,10 @@ Backend-only outbound calls. `nest-http` stays inbound.
 ## Messaging & background jobs
 
 - **BullMQ** lives in `packages/infrastructure/messaging` (`@b2b-saas-starter-kit/messaging`) with a dedicated blocking ioredis connection (`maxRetriesPerRequest: null`, no cache `keyPrefix`, prefix `bsk:bull`). Processors and scheduler registration live in composition; `apps/worker` stays thin.
+- Both `maintenance` and `outbox` queues share default job options: 3 attempts with exponential backoff, `removeOnComplete` (`age` 1h, `count` 1000), and `removeOnFail` (`age` 1 day). Redis is ephemeral — bound job hashes so it cannot grow without limit.
+- `QueueWorkerFactory` logs BullMQ `error`, `stalled`, and `failed` events via `LoggerLocator`. A last-attempt failure is logged as `job exhausted` (no dead-letter queue yet).
 - **Transactional outbox** stays in Postgres. Use cases write outbox rows in the same `UnitOfWork` as the domain change. The worker relay **claims** `pending` → `processing` and enqueues a BullMQ `outbox` job. The processor dispatches through `EventBus` and **then** marks the row `processed`. Do not mark processed at enqueue time.
+- Worker catch-all reactions (today: structured logging) subscribe with `EventBus.registerAll` — not a hand-maintained event-type list. Typed `register(type)` handlers still run first when present.
 - Redis is ephemeral (see [`../infrastructure/redis.md`](../infrastructure/redis.md)). Lost in-flight BullMQ jobs are recovered by reclaiming stale `processing` rows back to `pending`.
 - **Maintenance** uses BullMQ job schedulers (`maintenance` queue) for idempotent cleanup: expired/revoked refresh sessions, inactive password-reset tokens, stale invitations, and stale-outbox reclaim.
 

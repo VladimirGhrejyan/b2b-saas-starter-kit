@@ -5,6 +5,7 @@ import type Redis from 'ioredis'
 import type {MessagingConfig} from '../kernel/config/messaging-config'
 import {BULLMQ_CONNECTION, MESSAGING_CONFIG} from '../kernel/tokens'
 
+import {attachWorkerObservability} from './attach-worker-observability'
 import type {JobHandler} from './job-handler.types'
 
 /**
@@ -18,7 +19,7 @@ export class QueueWorkerFactory {
   ) {}
 
   create<TData>(queueName: string, handler: JobHandler<TData>): Worker<TData> {
-    return new Worker<TData>(
+    const worker = new Worker<TData>(
       queueName,
       async (job) => {
         await handler({
@@ -33,5 +34,9 @@ export class QueueWorkerFactory {
         prefix: this.config.BULLMQ_PREFIX,
       },
     )
+
+    attachWorkerObservability(worker, queueName)
+
+    return worker
   }
 }

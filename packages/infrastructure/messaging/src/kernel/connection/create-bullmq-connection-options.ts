@@ -1,5 +1,7 @@
 import type {RedisOptions} from 'ioredis'
 
+import {DateUtils} from '@b2b-saas-starter-kit/utils'
+
 import type {MessagingConfig} from '../config/messaging-config'
 
 /**
@@ -11,7 +13,7 @@ export class BullMqConnectionOptions {
       return null
     }
 
-    return Math.min(times * 50, 2000)
+    return Math.min(times * 50, DateUtils.secToMs(2))
   }
 
   static fromConfig(config: MessagingConfig): RedisOptions {
@@ -19,8 +21,8 @@ export class BullMqConnectionOptions {
       maxRetriesPerRequest: null,
       enableReadyCheck: true,
       enableOfflineQueue: true,
-      connectTimeout: 5000,
-      keepAlive: 10_000,
+      connectTimeout: DateUtils.secToMs(5),
+      keepAlive: DateUtils.secToMs(10),
       retryStrategy: BullMqConnectionOptions.retryStrategy,
     }
 

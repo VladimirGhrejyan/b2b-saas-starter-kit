@@ -7,5 +7,6 @@ export type DomainEventHandler = (event: IntegrationEvent) => Promise<void>
  */
 export interface EventBus {
   register(type: string, handler: DomainEventHandler): void
+  registerAll(handler: DomainEventHandler): void
   dispatch(events: readonly IntegrationEvent[]): Promise<void>
 }

@@ -82,3 +82,5 @@ Prefer **domain events + outbox** over importing another context's domain:
 |------|-----------|
 | Same-process reaction | EventBus after commit |
 | Must survive crash / other context / email | Outbox → BullMQ (`apps/worker`) |
+
+Catch-all worker reactions (e.g. structured logging of every delivered event) use `EventBus.registerAll`. Do not maintain a parallel event-type string list in composition. Typed `register(type)` remains for event-specific handlers and runs first.

@@ -107,7 +107,7 @@ export class DateUtils {
    * @throws {RangeError} If `value` is invalid or the duration is not finite.
    */
   static addUtcDays(value: Date, days: number): Date {
-    return DateUtils.addUtcMs(value, days * 24 * 60 * 60 * 1000)
+    return DateUtils.addUtcMs(value, DateUtils.secToMs(DateUtils.dayToSec(days)))
   }
 
   /**
@@ -119,7 +119,7 @@ export class DateUtils {
    * @throws {RangeError} If `value` is invalid or the duration is not finite.
    */
   static addUtcHours(value: Date, hours: number): Date {
-    return DateUtils.addUtcMs(value, hours * 60 * 60 * 1000)
+    return DateUtils.addUtcMs(value, DateUtils.secToMs(DateUtils.hourToSec(hours)))
   }
 
   /**
@@ -131,7 +131,7 @@ export class DateUtils {
    * @throws {RangeError} If `value` is invalid or the duration is not finite.
    */
   static addUtcMinutes(value: Date, minutes: number): Date {
-    return DateUtils.addUtcMs(value, minutes * 60 * 1000)
+    return DateUtils.addUtcMs(value, DateUtils.secToMs(DateUtils.minToSec(minutes)))
   }
 
   /**
@@ -172,6 +172,66 @@ export class DateUtils {
   }
 
   /**
+   * Converts days to seconds (`days * 24 * 60 * 60`).
+   *
+   * @param days - Finite day count (may be negative).
+   * @returns Equivalent seconds.
+   * @throws {RangeError} If `days` is not finite.
+   */
+  static dayToSec(days: number): number {
+    DateUtils.assertFinite(days, 'days')
+
+    return days * DateUtils.SEC_PER_DAY
+  }
+
+  /**
+   * Converts hours to seconds (`hours * 60 * 60`).
+   *
+   * @param hours - Finite hour count (may be negative).
+   * @returns Equivalent seconds.
+   * @throws {RangeError} If `hours` is not finite.
+   */
+  static hourToSec(hours: number): number {
+    DateUtils.assertFinite(hours, 'hours')
+
+    return hours * DateUtils.SEC_PER_HOUR
+  }
+
+  /**
+   * Converts minutes to seconds (`minutes * 60`).
+   *
+   * @param minutes - Finite minute count (may be negative).
+   * @returns Equivalent seconds.
+   * @throws {RangeError} If `minutes` is not finite.
+   */
+  static minToSec(minutes: number): number {
+    DateUtils.assertFinite(minutes, 'minutes')
+
+    return minutes * DateUtils.SEC_PER_MIN
+  }
+
+  /**
+   * Converts seconds to milliseconds (`seconds * 1000`).
+   *
+   * @param seconds - Finite second count (may be negative).
+   * @returns Equivalent milliseconds.
+   * @throws {RangeError} If `seconds` is not finite.
+   */
+  static secToMs(seconds: number): number {
+    DateUtils.assertFinite(seconds, 'seconds')
+
+    return seconds * DateUtils.MS_PER_SEC
+  }
+
+  private static readonly MS_PER_SEC = 1000
+
+  private static readonly SEC_PER_MIN = 60
+
+  private static readonly SEC_PER_HOUR = 60 * 60
+
+  private static readonly SEC_PER_DAY = 24 * 60 * 60
+
+  /**
    * Adds a millisecond delta to a valid date.
    *
    * @param value - Valid date.
@@ -181,10 +241,7 @@ export class DateUtils {
    */
   private static addUtcMs(value: Date, ms: number): Date {
     DateUtils.assertValid(value)
-
-    if (!Number.isFinite(ms)) {
-      throw new RangeError(`duration must be finite, received ${ms}`)
-    }
+    DateUtils.assertFinite(ms, 'duration')
 
     return new Date(value.getTime() + ms)
   }
@@ -198,6 +255,19 @@ export class DateUtils {
   private static assertValid(value: Date): void {
     if (!DateUtils.isValid(value)) {
       throw new RangeError('Invalid Date')
+    }
+  }
+
+  /**
+   * Throws if `value` is not a finite number.
+   *
+   * @param value - Number to validate.
+   * @param label - Name used in the error message.
+   * @throws {RangeError} If `value` is `NaN` or `±Infinity`.
+   */
+  private static assertFinite(value: number, label: string): void {
+    if (!Number.isFinite(value)) {
+      throw new RangeError(`${label} must be finite, received ${value}`)
     }
   }
 }

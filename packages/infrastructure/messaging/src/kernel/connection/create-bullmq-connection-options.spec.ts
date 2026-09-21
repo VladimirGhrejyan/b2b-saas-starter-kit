@@ -1,5 +1,7 @@
 import {describe, expect, it} from 'vitest'
 
+import {DateUtils} from '@b2b-saas-starter-kit/utils'
+
 import {BullMqConnectionOptions} from './create-bullmq-connection-options'
 
 describe('BullMqConnectionOptions.retryStrategy', () => {
@@ -26,8 +28,8 @@ describe('BullMqConnectionOptions.fromConfig', () => {
     expect(options.keyPrefix).toBeUndefined()
     expect(options.tls).toBeUndefined()
     expect(options.enableReadyCheck).toBe(true)
-    expect(options.connectTimeout).toBe(5000)
-    expect(options.keepAlive).toBe(10_000)
+    expect(options.connectTimeout).toBe(DateUtils.secToMs(5))
+    expect(options.keepAlive).toBe(DateUtils.secToMs(10))
     expect(options.retryStrategy).toBe(BullMqConnectionOptions.retryStrategy)
   })
 

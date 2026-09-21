@@ -1,13 +1,8 @@
 import {Inject, Injectable, type OnModuleDestroy, type OnModuleInit} from '@nestjs/common'
 
-import type {EventBus} from '@b2b-saas-starter-kit/platform'
-import {EVENT_BUS} from '@b2b-saas-starter-kit/platform'
-
 import {OutboxRelay} from '@b2b-saas-starter-kit/postgres'
 import {JobScheduler} from '@b2b-saas-starter-kit/messaging'
 
-import {DomainEventLoggingHandler} from './domain-event-logging.handler'
-import {DOMAIN_EVENT_TYPES} from './domain-event-types'
 import {WORKER_OUTBOX_CONFIG, type WorkerOutboxConfig} from './worker-outbox-config.token'
 
 /**
@@ -20,20 +15,10 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly relay: OutboxRelay,
     private readonly scheduler: JobScheduler,
-    private readonly loggingHandler: DomainEventLoggingHandler,
-    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
     @Inject(WORKER_OUTBOX_CONFIG) private readonly outboxConfig: WorkerOutboxConfig,
   ) {}
 
   onModuleInit(): void {
-    for (const type of DOMAIN_EVENT_TYPES) {
-      this.eventBus.register(type, (event) => {
-        this.loggingHandler.handle(event)
-
-        return Promise.resolve()
-      })
-    }
-
     void this.drain()
     this.timer = setInterval(() => {
       void this.drain()
