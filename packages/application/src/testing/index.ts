@@ -1,3 +1,5 @@
+export {InMemoryFileStorage} from '../shared/in-memory-file-storage'
+export type {InMemoryFileObject} from '../shared/in-memory-file-storage.types'
 export {emptyApiKeyPermissions} from './empty-api-key-permissions'
 export {FixedClock} from './fixed-clock'
 export {InMemoryApiKeyRepository} from './in-memory-api-key.repository'

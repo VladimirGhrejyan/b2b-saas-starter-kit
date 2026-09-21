@@ -11,6 +11,7 @@ import {postgresConfigSchema, PostgresInfrastructureModule} from '@b2b-saas-star
 import {NodeInfrastructureModule} from '@b2b-saas-starter-kit/node'
 import {messagingConfigSchema, MessagingInfrastructureModule} from '@b2b-saas-starter-kit/messaging'
 
+import {FileStorageModule} from '../file-storage/file-storage.module'
 import {IdentityModule} from '../identity/identity.module'
 import {TenancyModule} from '../tenancy/tenancy.module'
 
@@ -36,6 +37,7 @@ export class WorkerModule {
             postgresConfigSchema.parse((await options.useFactory(...(args as TArgs))).postgres),
         }),
         NodeInfrastructureModule,
+        FileStorageModule,
         IdentityModule,
         TenancyModule,
         MessagingInfrastructureModule.forRootAsync({

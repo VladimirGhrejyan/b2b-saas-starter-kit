@@ -14,7 +14,7 @@ Architecture: [`docs/architecture/backend.md`](../../docs/architecture/backend.m
 
 ## Internal layout
 
-One folder per capability under `src/`: `clock`, `id-generator`, `unit-of-work`, `tenant-context`, `logger`, `health`. Import only from `@b2b-saas-starter-kit/platform`. Do not deep-import those folders.
+One folder per capability under `src/`: `clock`, `id-generator`, `unit-of-work`, `tenant-context`, `logger`, `health`, `file-storage`. Import only from `@b2b-saas-starter-kit/platform`. Do not deep-import those folders.
 
 ## Allowed imports
 
@@ -37,6 +37,7 @@ Never import Nest, TypeORM, Redis, `domain`, `application`, `contracts`, `utils`
 | `RateLimiterPort` | HTTP edge (`RateLimitInterceptor`)               | `infrastructure/redis` (`RedisRateLimiter`)                                             |
 | `IdempotencyPort` | HTTP edge (`IdempotencyInterceptor`)             | `infrastructure/postgres` (`PostgresIdempotencyStore`)                                  |
 | `HealthIndicator` | HTTP edge (`HealthController` readiness)         | `infrastructure/postgres` + `redis` (`PostgresHealthIndicator`, `RedisHealthIndicator`) |
+| `FileStoragePort` | Application use cases (uploads, exports)         | Application `InMemoryFileStorage` until an S3-compatible adapter exists                 |
 
 Domain never imports this package.
 
@@ -77,6 +78,11 @@ await tenantContext.run({tenantId, actor: userActor(userId)}, async () => {
 | `LoggerNotInitializedError`        | Thrown by `LoggerLocator.get()` before `init`                         |
 | `HealthIndicator`                  | `name` + `check()` for readiness                                      |
 | `HEALTH_INDICATORS`                | Multi-token of `HealthIndicator`                                      |
+| `FileStoragePort`                  | `put` / `head` / `get` / `delete` / `presignPut` / `presignGet`       |
+| `FILE_STORAGE`                     | Nest token for `FileStoragePort`                                      |
+| `ObjectKey`                        | Tenant/global S3-safe object keys (`t/` / `g/`)                       |
+| `FileStorageBucket`                | Logical `private` \| `public`                                         |
+| `InvalidObjectKeyError`            | Thrown by `ObjectKey.parse` / `assert`                                |
 
 ## Must not go here yet
 

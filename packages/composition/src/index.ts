@@ -19,6 +19,7 @@ export {
   DeleteCustomRoleUseCase,
   GetMyProfileQuery,
   GetTenantQuery,
+  InMemoryFileStorage,
   InvalidRefreshTokenError,
   InviteMemberUseCase,
   ListApiKeysQuery,

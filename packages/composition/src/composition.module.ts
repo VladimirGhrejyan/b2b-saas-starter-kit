@@ -30,6 +30,7 @@ import {SecurityModule} from '@b2b-saas-starter-kit/security'
 import {NodeInfrastructureModule} from '@b2b-saas-starter-kit/node'
 
 import {AuthorizationModule} from './authorization/authorization.module'
+import {FileStorageModule} from './file-storage/file-storage.module'
 import {HealthIndicatorsModule} from './health/health-indicators.module'
 import {IdentityModule} from './identity/identity.module'
 import {AssertActiveMembership} from './principal/assert-active-membership'
@@ -47,6 +48,7 @@ import {TenancyModule} from './tenancy/tenancy.module'
       useFactory: () => loadHttpClientConfigFromEnv(),
     }),
     NodeInfrastructureModule,
+    FileStorageModule,
     SecurityModule,
     TenancyModule,
     IdentityModule,

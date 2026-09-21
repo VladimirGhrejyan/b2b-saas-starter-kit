@@ -72,6 +72,14 @@ stale processing            ── maintenance reclaim ──▶ pending
 - **Domain events** are dispatched **in-process** after commit for same-process reactions.
 - **Outbox events** are for **reliable, cross-boundary** delivery (e.g. `notifications` reacting to `tenancy`, or future out-of-process consumers). A context chooses in-process vs. outbox based on whether the reaction must survive a crash.
 
+## Object storage
+
+`FileStoragePort` lives in `platform`. Object keys are built by `ObjectKey` (`t/{tenantId}/{purpose}/{yyyy}/{mm}/{objectId}` or `g/{purpose}/…`) so tenant isolation is a prefix, not a bucket-per-tenant. The port takes a logical bucket (`private` | `public`); application never passes a raw bucket name.
+
+Composition always binds `InMemoryFileStorage` (`FILE_STORAGE`) until an S3-compatible adapter exists (same seam as `LoggingMailer` / SMTP). In-memory `presignPut` / `presignGet` return `memory:` URLs — they document the contract and are not HTTP. Product uploads should use presigned HTTP so bytes skip the API.
+
+Postgres file metadata, quotas, MinIO, and upload routes are deferred.
+
 ## Pub/Sub
 
 `PubSubPort` (Redis pub/sub) supports lightweight fan-out (e.g. cache invalidation across instances, future realtime). It is **not** a durability mechanism — anything that must not be lost uses the outbox. A realtime `gateway` app can later subscribe to `PubSubPort` channels; it is deferred for now (see [`decisions.md`](./decisions.md)).

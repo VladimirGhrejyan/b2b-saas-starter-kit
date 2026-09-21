@@ -8,6 +8,22 @@ export type {DomainEventHandler, EventBus} from './events/event-bus.port'
 export type {EventPublisher} from './events/event-publisher.port'
 export {InProcessEventBus} from './events/in-process-event-bus'
 export type {IntegrationEvent} from './events/integration-event'
+export type {FileStoragePort} from './file-storage/file-storage.port'
+export {FILE_STORAGE} from './file-storage/file-storage.tokens'
+export type {
+  FileObjectMeta,
+  FileStorageGetResult,
+  FileStoragePresignGetInput,
+  FileStoragePresignPutInput,
+  FileStoragePutInput,
+  ParsedGlobalObjectKey,
+  ParsedObjectKey,
+  ParsedTenantObjectKey,
+  PresignedUrl,
+} from './file-storage/file-storage.types'
+export {FileStorageBucket} from './file-storage/file-storage.types'
+export {InvalidObjectKeyError} from './file-storage/invalid-object-key.error'
+export {ObjectKey} from './file-storage/object-key'
 export type {HealthIndicator} from './health/health.port'
 export {HEALTH_INDICATORS} from './health/health.tokens'
 export type {HealthCheckResult} from './health/health.types'
