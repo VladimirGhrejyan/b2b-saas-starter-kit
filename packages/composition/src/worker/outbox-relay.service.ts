@@ -1,5 +1,7 @@
 import {Inject, Injectable, type OnModuleDestroy, type OnModuleInit} from '@nestjs/common'
 
+import {LoggerLocator} from '@b2b-saas-starter-kit/platform'
+
 import {OutboxRelay} from '@b2b-saas-starter-kit/postgres'
 import {JobScheduler} from '@b2b-saas-starter-kit/messaging'
 
@@ -10,7 +12,11 @@ import {WORKER_OUTBOX_CONFIG, type WorkerOutboxConfig} from './worker-outbox-con
  */
 @Injectable()
 export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
-  private timer: NodeJS.Timeout | undefined
+  #stopped = false
+
+  #timer: NodeJS.Timeout | undefined
+
+  private readonly logger = LoggerLocator.get().context(OutboxRelayService.name)
 
   constructor(
     private readonly relay: OutboxRelay,
@@ -19,20 +25,40 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    void this.drain()
-    this.timer = setInterval(() => {
-      void this.drain()
-    }, this.outboxConfig.pollIntervalMs)
+    this.#stopped = false
+    void this.#tick()
   }
 
   onModuleDestroy(): void {
-    if (this.timer !== undefined) {
-      clearInterval(this.timer)
-      this.timer = undefined
+    this.#stopped = true
+
+    if (this.#timer !== undefined) {
+      clearTimeout(this.#timer)
+      this.#timer = undefined
     }
   }
 
-  private async drain(): Promise<void> {
+  async #tick(): Promise<void> {
+    await this.#drainSafely()
+
+    if (this.#stopped) {
+      return
+    }
+
+    this.#timer = setTimeout(() => {
+      void this.#tick()
+    }, this.outboxConfig.pollIntervalMs)
+  }
+
+  async #drainSafely(): Promise<void> {
+    try {
+      await this.#drain()
+    } catch (error) {
+      this.logger.error({err: error}, 'outbox drain failed')
+    }
+  }
+
+  async #drain(): Promise<void> {
     let claimed = await this.relay.claimBatch(this.outboxConfig.batchSize)
 
     while (claimed.length > 0) {

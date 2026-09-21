@@ -54,6 +54,8 @@ export class OutboxEntryEntity {
 
 Always include `tenantId` in the payload when the work is tenant-scoped so the worker can re-establish `TenantContext`.
 
+Delivery is **at-least-once**: a crash after handlers succeed and before the row is `processed`, or a stale-`processing` reclaim, dispatches again. Handlers with side effects must be idempotent (event identity / `outboxId`). Do not wrap worker dispatch in HTTP `IdempotencyPort` (`@Idempotent()` stays for mutating API routes).
+
 ## Worker Must Restore Tenant Context
 
 ```typescript

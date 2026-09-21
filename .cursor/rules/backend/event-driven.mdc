@@ -84,3 +84,5 @@ Prefer **domain events + outbox** over importing another context's domain:
 | Must survive crash / other context / email | Outbox → BullMQ (`apps/worker`) |
 
 Catch-all worker reactions (e.g. structured logging of every delivered event) use `EventBus.registerAll`. Do not maintain a parallel event-type string list in composition. Typed `register(type)` remains for event-specific handlers and runs first.
+
+Outbox → BullMQ delivery is **at-least-once** (reclaim / crash before `processed` can re-run handlers). Side-effectful handlers must be idempotent, keyed by event identity or `outboxId`. Do not wrap worker `EventBus.dispatch` in HTTP `IdempotencyPort`.

@@ -3,7 +3,7 @@ import {Inject, Injectable, type OnModuleDestroy, type OnModuleInit} from '@nest
 import {TenantId, userActor} from '@b2b-saas-starter-kit/shared-kernel-types'
 
 import type {EventBus, IntegrationEvent, TenantContext} from '@b2b-saas-starter-kit/platform'
-import {EVENT_BUS, TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
+import {EVENT_BUS, LoggerLocator, TENANT_CONTEXT} from '@b2b-saas-starter-kit/platform'
 
 import {OutboxRelay, OutboxSerializer, OutboxStatus} from '@b2b-saas-starter-kit/postgres'
 import type {OutboxJobPayload} from '@b2b-saas-starter-kit/messaging'
@@ -15,6 +15,8 @@ import {QueueName, QueueWorkerFactory} from '@b2b-saas-starter-kit/messaging'
 @Injectable()
 export class OutboxEventProcessorService implements OnModuleInit, OnModuleDestroy {
   #worker: {close(): Promise<void>} | undefined
+
+  private readonly logger = LoggerLocator.get().context(OutboxEventProcessorService.name)
 
   constructor(
     private readonly workers: QueueWorkerFactory,
@@ -45,6 +47,8 @@ export class OutboxEventProcessorService implements OnModuleInit, OnModuleDestro
     }
 
     try {
+      this.logger.info({outboxId: entry.id, eventType: entry.eventType}, 'outbox event dispatching')
+
       await this.#dispatch(entry.tenantId, OutboxSerializer.deserialize(entry.payload))
       await this.relay.complete(entry.id)
     } catch (error) {
