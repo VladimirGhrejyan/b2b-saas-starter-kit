@@ -12,6 +12,8 @@ import {WORKER_ENV} from '../config/worker-env.token'
     WorkerModule.forRootAsync({
       inject: [WORKER_ENV],
       useFactory: (env: WorkerEnv): WorkerRuntimeConfig => ({
+        postgres: {DATABASE_URL: env.DATABASE_URL},
+        messaging: {REDIS_URL: env.REDIS_URL, BULLMQ_PREFIX: env.BULLMQ_PREFIX},
         outbox: {
           pollIntervalMs: env.OUTBOX_POLL_INTERVAL_MS,
           batchSize: env.OUTBOX_BATCH_SIZE,

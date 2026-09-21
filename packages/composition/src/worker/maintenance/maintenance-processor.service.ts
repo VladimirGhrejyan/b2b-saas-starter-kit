@@ -1,7 +1,9 @@
 import {Inject, Injectable, type OnModuleDestroy, type OnModuleInit} from '@nestjs/common'
 
+import {DateUtils, ObjectUtils} from '@b2b-saas-starter-kit/utils'
+
 import type {Clock} from '@b2b-saas-starter-kit/platform'
-import {CLOCK} from '@b2b-saas-starter-kit/platform'
+import {CLOCK, LoggerLocator} from '@b2b-saas-starter-kit/platform'
 
 import {
   PURGE_BATCH_SIZE,
@@ -22,6 +24,10 @@ import {WORKER_MAINTENANCE_CONFIG, type WorkerMaintenanceConfig} from './worker-
 export class MaintenanceProcessorService implements OnModuleInit, OnModuleDestroy {
   #worker: {close(): Promise<void>} | undefined
 
+  private readonly logger = LoggerLocator.get().context(MaintenanceProcessorService.name)
+
+  private readonly handlers: Record<MaintenanceJobName, () => Promise<number>>
+
   constructor(
     private readonly workers: QueueWorkerFactory,
     private readonly scheduler: JobScheduler,
@@ -31,7 +37,15 @@ export class MaintenanceProcessorService implements OnModuleInit, OnModuleDestro
     private readonly outboxRelay: OutboxRelay,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(WORKER_MAINTENANCE_CONFIG) private readonly config: WorkerMaintenanceConfig,
-  ) {}
+  ) {
+    this.handlers = {
+      [MaintenanceJobName.purgeRefreshSessions]: async () => (await this.purgeRefreshSessions.execute()).deleted,
+      [MaintenanceJobName.purgePasswordResetTokens]: async () =>
+        (await this.purgePasswordResetTokens.execute()).deleted,
+      [MaintenanceJobName.purgeStaleInvitations]: async () => (await this.purgeStaleInvitations.execute()).deleted,
+      [MaintenanceJobName.reclaimStaleOutbox]: () => this.#reclaimStaleOutbox(),
+    }
+  }
 
   onModuleInit(): void {
     this.#worker = this.workers.create(QueueName.maintenance, async (job) => {
@@ -48,24 +62,17 @@ export class MaintenanceProcessorService implements OnModuleInit, OnModuleDestro
   }
 
   async #run(name: string): Promise<number> {
-    if (name === MaintenanceJobName.purgeRefreshSessions) {
-      return (await this.purgeRefreshSessions.execute()).deleted
+    if (!ObjectUtils.hasOwn(this.handlers, name)) {
+      this.logger.warn({jobName: name}, 'unknown maintenance job')
+      throw new Error(`Unknown maintenance job: ${name}`)
     }
 
-    if (name === MaintenanceJobName.purgePasswordResetTokens) {
-      return (await this.purgePasswordResetTokens.execute()).deleted
-    }
+    return this.handlers[name as MaintenanceJobName]()
+  }
 
-    if (name === MaintenanceJobName.purgeStaleInvitations) {
-      return (await this.purgeStaleInvitations.execute()).deleted
-    }
+  #reclaimStaleOutbox(): Promise<number> {
+    const olderThan = DateUtils.fromUnixMs(DateUtils.toUnixMs(this.clock.now()) - this.config.staleProcessingMs)
 
-    if (name === MaintenanceJobName.reclaimStaleOutbox) {
-      const olderThan = new Date(this.clock.now().getTime() - this.config.staleProcessingMs)
-
-      return this.outboxRelay.reclaimStaleProcessing(olderThan, PURGE_BATCH_SIZE)
-    }
-
-    return 0
+    return this.outboxRelay.reclaimStaleProcessing(olderThan, PURGE_BATCH_SIZE)
   }
 }
