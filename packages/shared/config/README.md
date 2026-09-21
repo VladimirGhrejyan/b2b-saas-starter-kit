@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/config`
 
-Shared configuration loader for the monorepo. Apps call `ConfigLoader`; YAML is the current source and can be extended later (env, secrets manager) without changing call-site shape.
+Shared configuration loader for the monorepo. Apps call `ConfigLoader`; YAML holds structured values, and a small env overlay supplies secrets.
 
 **Path:** `packages/shared/config`  
 **Nx project:** `config`  
@@ -9,30 +9,35 @@ Shared configuration loader for the monorepo. Apps call `ConfigLoader`; YAML is 
 ## Purpose
 
 - Load structured config from a pluggable **source**
+- Overlay selected environment variables onto YAML paths
 - Validate with **Zod** (fail fast)
 - Stay framework-free (no Nest, no React)
 
-Apps own Zod **schemas** and config **values** (`apps/*/config/`). This package owns **how** values are obtained.
+Apps own Zod **schemas** and config **values** (`apps/*/config/default.yml`). This package owns **how** values are obtained.
 
 Architecture: [`docs/architecture/shared-packages.md`](../../../docs/architecture/shared-packages.md), [`docs/architecture/infrastructure.md`](../../../docs/architecture/infrastructure.md).
 
 ## Usage
 
 ```typescript
-import {resolve} from 'node:path'
+import {join} from 'node:path'
+import {fileURLToPath} from 'node:url'
 
-import {ConfigLoader} from '@b2b-saas-starter-kit/config'
+import {AppConfigFiles, ConfigLoader} from '@b2b-saas-starter-kit/config'
 import {z} from 'zod'
 
-const ApiRootSchema = z.object({
-  app: z.object({
-    port: z.number().int(),
-  }),
+const schema = z.object({
+  appEnv: z.enum(['development', 'staging', 'production']),
+  postgres: z.object({url: z.url(), poolMax: z.number().int()}),
 })
 
-const config = ConfigLoader.load(ApiRootSchema, {
+const directory = AppConfigFiles.resolveDirectory(join(fileURLToPath(new URL('.', import.meta.url)), 'config'))
+
+const config = ConfigLoader.load(schema, {
   source: 'yaml',
-  directory: resolve('config'),
+  directory,
+  files: AppConfigFiles.resolve(directory),
+  envOverlay: {'postgres.url': 'DATABASE_URL'},
 })
 ```
 
@@ -40,37 +45,29 @@ const config = ConfigLoader.load(ApiRootSchema, {
 
 ### YAML options
 
-| Field            | Meaning                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
-| `source: 'yaml'` | Discriminant                                                                                   |
-| `directory`      | Folder containing YAML files                                                                   |
-| `files?`         | Explicit file names; default all `*.yml` / `*.yaml` (sorted; later files win on shallow merge) |
+| Field            | Meaning                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| `source: 'yaml'` | Discriminant                                                                                |
+| `directory`      | Folder containing YAML files                                                                |
+| `files?`         | Explicit file names; default all `*.yml` / `*.yaml` (sorted; later files **deep-merge**)    |
+| `envOverlay?`    | Dot-path → env key (e.g. `postgres.url` → `DATABASE_URL`). Undefined env values are skipped |
+| `env?`           | Environment to read for the overlay; defaults to `process.env`                              |
 
-Copy `config.dist.yml` → `config.yml` per app (gitignored values). Do not commit secrets to git.
+App load order via `AppConfigFiles.resolve`: `default.yml`, optional gitignored `local.yml`, then `CONFIG_OVERLAY` when set. Directory via `AppConfigFiles.resolveDirectory`: `CONFIG_DIR` or the compiled `config/` folder next to the bundle.
+
+Do not commit secrets. Put them in env (`DATABASE_URL`, `JWT_ACCESS_SECRET`, …).
+
+### Shared env schemas
+
+- `nodeEnvSchema` — `development \| production`. `production` stays production; any other string (including Vitest `test`) becomes `development`.
+- `appEnvSchema` — `staging \| production`.
+- `kitAppEnvSchema` — `appEnvSchema` plus local `development`.
+- `mailProviderSchema` — discriminated `smtp` \| `http` mail transport. Optional on app schemas; omit it to keep `LoggingMailer`.
+- `logSchema` / `telemetrySchema` — shared observability fragments.
 
 ### Env options
 
-The env source is the container/12-factor contract (`DATABASE_URL`, `REDIS_URL`, …). Values are raw strings, so use coercing schemas.
-
-| Field           | Meaning                                                                                      |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `source: 'env'` | Discriminant                                                                                 |
-| `prefix?`       | Only include vars starting with this prefix; the prefix is stripped from result keys         |
-| `keys?`         | Restrict to these variable names (looked up with `prefix` applied); default all defined vars |
-| `env?`          | Environment to read from; defaults to `process.env`                                          |
-
-```typescript
-import {ConfigLoader} from '@b2b-saas-starter-kit/config'
-import {z} from 'zod'
-
-const EnvSchema = z.object({
-  DATABASE_URL: z.url(),
-  REDIS_URL: z.url(),
-  PORT: z.coerce.number().int(),
-})
-
-const config = ConfigLoader.load(EnvSchema, {source: 'env', keys: ['DATABASE_URL', 'REDIS_URL', 'PORT']})
-```
+The env source remains for CLI and test harnesses that only need `DATABASE_URL`. Values are raw strings, so use coercing schemas.
 
 ## Extending sources later
 

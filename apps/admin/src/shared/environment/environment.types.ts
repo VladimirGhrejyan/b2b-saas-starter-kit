@@ -1,7 +1,10 @@
 export type AppEnv = 'development' | 'staging' | 'production'
 
+export type NodeEnv = 'development' | 'production'
+
 export type EnvironmentConfig = {
-  env: AppEnv
+  appEnv: AppEnv
+  nodeEnv: NodeEnv
   apiBaseUrl: string
 }
 

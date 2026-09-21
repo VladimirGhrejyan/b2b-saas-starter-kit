@@ -19,7 +19,7 @@ module.exports = {
       compiler: 'swc',
       main: './src/main.ts',
       tsConfig: './tsconfig.app.json',
-      assets: ['./src/assets'],
+      assets: ['./src/assets', {input: join(__dirname, 'config'), glob: '**/*', output: 'config'}],
       mergeExternals: true,
       optimization: false,
       outputHashing: 'none',

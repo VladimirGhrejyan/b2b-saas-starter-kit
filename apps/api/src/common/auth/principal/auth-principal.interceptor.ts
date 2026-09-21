@@ -73,7 +73,7 @@ export class AuthPrincipalInterceptor implements NestInterceptor {
       return this.bindUserPrincipal(request, next, claims.userId, claims.tenantId, tenantOptional)
     }
 
-    if (this.jwt.nodeEnv === 'development' || this.jwt.nodeEnv === 'test') {
+    if (this.jwt.nodeEnv === 'development') {
       return this.authenticateFromHeaders(request, next, tenantOptional)
     }
 

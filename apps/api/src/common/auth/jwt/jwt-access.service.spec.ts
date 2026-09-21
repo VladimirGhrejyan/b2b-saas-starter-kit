@@ -15,7 +15,7 @@ function createService() {
     ttlSeconds: JWT_ACCESS_TTL_SECONDS,
     issuer: JWT_ISSUER,
     audience: JWT_AUDIENCE,
-    nodeEnv: 'test',
+    nodeEnv: 'development',
     cookieSecure: false,
   })
 }

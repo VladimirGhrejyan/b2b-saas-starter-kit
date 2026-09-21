@@ -4,31 +4,69 @@ import {assertAuthBootstrap} from './assert-auth-bootstrap'
 import {DEV_JWT_ACCESS_SECRET} from './jwt-access.constants'
 
 describe('assertAuthBootstrap', () => {
-  it('allows non-production environments with the development secret', () => {
+  it('allows local development with the development secret', () => {
     expect(() => {
-      assertAuthBootstrap('development', DEV_JWT_ACCESS_SECRET)
-    }).not.toThrow()
-
-    expect(() => {
-      assertAuthBootstrap('test', DEV_JWT_ACCESS_SECRET)
+      assertAuthBootstrap({
+        nodeEnv: 'development',
+        appEnv: 'development',
+        jwtAccessSecret: DEV_JWT_ACCESS_SECRET,
+        corsOrigins: [],
+      })
     }).not.toThrow()
   })
 
-  it('refuses production with the development secret', () => {
+  it('refuses production nodeEnv with the development secret', () => {
     expect(() => {
-      assertAuthBootstrap('production', DEV_JWT_ACCESS_SECRET)
-    }).toThrow('JWT_ACCESS_SECRET must not be the development default in production')
+      assertAuthBootstrap({
+        nodeEnv: 'production',
+        appEnv: 'staging',
+        jwtAccessSecret: DEV_JWT_ACCESS_SECRET,
+        corsOrigins: ['https://app.example.com'],
+      })
+    }).toThrow('JWT_ACCESS_SECRET must not be the development default in production or staging')
   })
 
-  it('allows production with a distinct secret', () => {
+  it('refuses staging appEnv with the development secret even when nodeEnv is development', () => {
     expect(() => {
-      assertAuthBootstrap('production', 'production-jwt-access-secret')
+      assertAuthBootstrap({
+        nodeEnv: 'development',
+        appEnv: 'staging',
+        jwtAccessSecret: DEV_JWT_ACCESS_SECRET,
+        corsOrigins: ['https://app.example.com'],
+      })
+    }).toThrow('JWT_ACCESS_SECRET must not be the development default in production or staging')
+  })
+
+  it('allows production with a distinct secret and CORS origins', () => {
+    expect(() => {
+      assertAuthBootstrap({
+        nodeEnv: 'production',
+        appEnv: 'production',
+        jwtAccessSecret: 'production-jwt-access-secret',
+        corsOrigins: ['https://app.example.com'],
+      })
     }).not.toThrow()
   })
 
   it('refuses an empty secret', () => {
     expect(() => {
-      assertAuthBootstrap('development', '')
+      assertAuthBootstrap({
+        nodeEnv: 'development',
+        appEnv: 'development',
+        jwtAccessSecret: '',
+        corsOrigins: [],
+      })
     }).toThrow('JWT_ACCESS_SECRET is required')
+  })
+
+  it('requires CORS origins when appEnv is not development', () => {
+    expect(() => {
+      assertAuthBootstrap({
+        nodeEnv: 'production',
+        appEnv: 'staging',
+        jwtAccessSecret: 'production-jwt-access-secret',
+        corsOrigins: [],
+      })
+    }).toThrow('http.cors.origins must be non-empty when appEnv is not development')
   })
 })

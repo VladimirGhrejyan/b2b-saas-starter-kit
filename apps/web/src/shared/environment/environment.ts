@@ -1,4 +1,4 @@
-import type {AppEnv, EnvironmentConfig, ViteRuntimeFlags} from './environment.types'
+import type {AppEnv, EnvironmentConfig, NodeEnv, ViteRuntimeFlags} from './environment.types'
 
 export class Environment {
   constructor(
@@ -11,7 +11,11 @@ export class Environment {
   }
 
   get appEnv(): AppEnv {
-    return this.config.env
+    return this.config.appEnv
+  }
+
+  get nodeEnv(): NodeEnv {
+    return this.config.nodeEnv
   }
 
   get mode(): string {
@@ -27,10 +31,10 @@ export class Environment {
   }
 
   get isStaging(): boolean {
-    return this.config.env === 'staging'
+    return this.config.appEnv === 'staging'
   }
 
   get isProduction(): boolean {
-    return this.config.env === 'production'
+    return this.config.appEnv === 'production'
   }
 }

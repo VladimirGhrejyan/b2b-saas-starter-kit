@@ -1,4 +1,7 @@
+export type {HttpMailerConfig} from './config/http-mailer-config'
+export {httpMailerConfigSchema} from './config/http-mailer-config'
 export {tryLoadSmtpConfigFromEnv} from './config/load-smtp-config'
 export type {SmtpConfig} from './config/smtp-config'
 export {smtpConfigSchema} from './config/smtp-config'
+export {HttpMailer} from './http-mailer'
 export {SmtpMailer} from './smtp-mailer'

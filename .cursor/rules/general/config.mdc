@@ -13,21 +13,19 @@ Source of truth: `packages/shared/config` (`@b2b-saas-starter-kit/config`) and `
 ## Always use ConfigLoader
 
 ```typescript
-// ✅
-import {ConfigLoader} from '@b2b-saas-starter-kit/config'
+import {AppConfigFiles, ConfigLoader} from '@b2b-saas-starter-kit/config'
 
 const config = ConfigLoader.load(AppRootSchema, {
   source: 'yaml',
-  directory: resolve('config'),
+  directory,
+  files: AppConfigFiles.resolve(directory),
+  envOverlay: {'postgres.url': 'DATABASE_URL', nodeEnv: 'NODE_ENV'},
 })
 ```
 
-`LoadConfigOptions` is a discriminated union on `source`. Implemented: `source: 'yaml'` and `source: 'env'` (the container/12-factor contract — raw strings, use coercing schemas). Future sources (secrets manager) extend the same union.
+`LoadConfigOptions` is a discriminated union on `source`. Apps use `source: 'yaml'` plus an explicit `envOverlay` allow-list for secrets. `source: 'env'` remains for CLI / test harnesses. Future sources (secrets manager) extend the same union.
 
-```typescript
-// ✅ Env-driven config in containers (DATABASE_URL / REDIS_URL / PORT …)
-const config = ConfigLoader.load(EnvSchema, {source: 'env', keys: ['DATABASE_URL', 'REDIS_URL', 'PORT']})
-```
+Every app config includes `nodeEnv` (`development | production`, from `NODE_ENV`) and `appEnv` (`kitAppEnvSchema`: `development | staging | production`).
 
 ## Do not
 
@@ -36,7 +34,7 @@ const config = ConfigLoader.load(EnvSchema, {source: 'env', keys: ['DATABASE_URL
 import {load} from 'js-yaml'
 import {readFileSync} from 'node:fs'
 
-// ❌ process.env for nested app settings (except thin process identity like APP_TYPE / NODE_ENV)
+// ❌ process.env for nested app settings (except the overlay allow-list)
 const port = Number(process.env.PORT)
 
 // ❌ Load at module import time inside shared packages
@@ -45,6 +43,6 @@ export const config = ConfigLoader.load(...)
 
 ## Ownership
 
-- **Apps** own Zod schemas and `config/*.yml` values (`config.dist.yml` templates; gitignore real `config.yml`).
+- **Apps** own Zod schemas and `config/default.yml` (optional gitignored `local.yml`).
 - **`@b2b-saas-starter-kit/config`** owns how values are loaded and validated.
 - Call `ConfigLoader.load` explicitly from bootstrap / Vite plugins — no import-time singleton.

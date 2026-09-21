@@ -1,6 +1,7 @@
 declare module 'virtual:web-config' {
   export const webConfig: {
-    env: 'development' | 'staging' | 'production'
+    appEnv: 'development' | 'staging' | 'production'
+    nodeEnv: 'development' | 'production'
     apiBaseUrl: string
   }
 }

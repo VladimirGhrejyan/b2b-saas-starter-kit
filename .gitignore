@@ -32,17 +32,14 @@ graph-check.html
 .output
 storybook-static
 
-# Env / secrets (keep examples). App YAML in `**/.env/` is committed except local overlays.
+# Env / secrets (keep examples).
 .env
 .env.*
 !.env.example
 !.env.*.example
-!.env/
-!**/.env/
-!**/.env/config.dist.yml
-!**/.env/config.yml
-!**/.env/config.test.yml
-**/.env/config.local.yml
+
+# Machine-specific YAML overlays (never commit secrets here either).
+apps/*/config/local.yml
 
 # Logs
 *.log

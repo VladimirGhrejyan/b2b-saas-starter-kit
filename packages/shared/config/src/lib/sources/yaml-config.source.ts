@@ -6,10 +6,11 @@ import {load as loadYaml} from 'js-yaml'
 import {ObjectUtils} from '@b2b-saas-starter-kit/utils'
 
 import type {YamlLoadConfigOptions} from '../config-loader.types'
+import {DeepMerge} from '../deep-merge'
 
 import {YamlConfigFilePattern} from './yaml-config-file.pattern'
 
-/** Reads, parses, and shallow-merges YAML config files into one object. */
+/** Reads, parses, and deep-merges YAML config files into one object. */
 export class YamlConfigSource {
   /**
    * Loads YAML from `options.directory` and returns a merged plain object.
@@ -35,7 +36,7 @@ export class YamlConfigSource {
         throw new Error(`Config file "${filePath}" must contain a YAML mapping (object), got ${typeof parsed}`)
       }
 
-      merged = ObjectUtils.merge(merged, parsed)
+      merged = DeepMerge.merge(merged, parsed)
     }
 
     return merged

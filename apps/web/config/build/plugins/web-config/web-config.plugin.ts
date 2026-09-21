@@ -25,14 +25,16 @@ export class WebConfigPlugin {
         }
 
         const jiti = createJiti(import.meta.url)
-        const {ConfigLoader} = await jiti.import<ConfigLoaderPackage>('@b2b-saas-starter-kit/config')
+        const {AppConfigFiles, ConfigLoader} = await jiti.import<ConfigLoaderPackage>('@b2b-saas-starter-kit/config')
         const {webConfigSchema} = await jiti.import<WebConfigSchemaPackage>(
           fileURLToPath(new URL('../../../app/web-config.schema.ts', import.meta.url)),
         )
+        const directory = fileURLToPath(new URL('../../..', import.meta.url))
         const config = ConfigLoader.load(webConfigSchema, {
           source: 'yaml',
-          directory: fileURLToPath(new URL('../../../../.env', import.meta.url)),
-          files: ['config.yml'],
+          directory,
+          files: AppConfigFiles.resolve(directory),
+          envOverlay: {nodeEnv: 'NODE_ENV'},
         })
 
         return `export const webConfig = ${JSON.stringify(config)}`

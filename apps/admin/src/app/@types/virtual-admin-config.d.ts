@@ -1,6 +1,7 @@
 declare module 'virtual:admin-config' {
   export const adminConfig: {
-    env: 'development' | 'staging' | 'production'
+    appEnv: 'development' | 'staging' | 'production'
+    nodeEnv: 'development' | 'production'
     apiBaseUrl: string
   }
 }

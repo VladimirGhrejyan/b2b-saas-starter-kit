@@ -1,38 +1,36 @@
-import type {Type} from '@nestjs/common'
+import {join} from 'node:path'
+
 import {NestFactory} from '@nestjs/core'
 
-import {ConfigLoader} from '@b2b-saas-starter-kit/config'
+import {AppConfigFiles} from '@b2b-saas-starter-kit/config'
 
 import {LoggerLocator, PinoLogger} from '@b2b-saas-starter-kit/logger'
 import {mapTelemetryConfig, startTelemetry} from '@b2b-saas-starter-kit/telemetry'
 
-import {WorkerEnvSchema} from './config/env.schema'
+import {loadWorkerConfig} from './config/load-worker-config'
 
 async function bootstrap() {
-  const env = ConfigLoader.load(WorkerEnvSchema, {
-    source: 'env',
-    keys: [
-      'APP_TYPE',
-      'NODE_ENV',
-      'LOG_LEVEL',
-      'LOG_PRETTY',
-      'TELEMETRY_ENABLED',
-      'OTEL_EXPORTER_OTLP_ENDPOINT',
-      'OTEL_SERVICE_NAME',
-    ],
-  })
+  const configDirectory = AppConfigFiles.resolveDirectory(join(__dirname, 'config'))
+  const config = loadWorkerConfig(configDirectory)
 
-  const telemetry = await startTelemetry(mapTelemetryConfig(env))
-
-  LoggerLocator.init(
-    new PinoLogger({
-      level: env.LOG_LEVEL,
-      isPretty: env.LOG_PRETTY ? env.LOG_PRETTY === 'true' : env.NODE_ENV === 'development',
+  const telemetry = await startTelemetry(
+    mapTelemetryConfig({
+      enabled: config.telemetry.enabled,
+      otlpEndpoint: config.telemetry.otlpEndpoint,
+      serviceName: config.telemetry.serviceName,
+      appType: config.appType,
     }),
   )
 
-  const {AppModule} = (await import('./app/app.module.js')) as {AppModule: Type}
-  const app = await NestFactory.createApplicationContext(AppModule, {
+  LoggerLocator.init(
+    new PinoLogger({
+      level: config.log.level,
+      isPretty: config.log.pretty ?? config.nodeEnv === 'development',
+    }),
+  )
+
+  const {AppModule} = await import('./app/app.module.js')
+  const app = await NestFactory.createApplicationContext(AppModule.forRoot(config), {
     logger: false,
   })
 

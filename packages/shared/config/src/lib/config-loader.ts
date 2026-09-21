@@ -2,6 +2,7 @@ import type {ZodType} from 'zod'
 
 import {EnvConfigSource} from './sources/env-config.source'
 import {YamlConfigSource} from './sources/yaml-config.source'
+import {EnvOverlay} from './apply-env-overlay'
 import type {LoadConfigOptions} from './config-loader.types'
 import {ConfigValidationError} from './config-validation.error'
 
@@ -36,10 +37,16 @@ export class ConfigLoader {
   }
 
   private static loadRaw(options: LoadConfigOptions): Record<string, unknown> {
-    if (options.source === 'yaml') {
-      return YamlConfigSource.load(options)
+    if (options.source === 'env') {
+      return EnvConfigSource.load(options)
     }
 
-    return EnvConfigSource.load(options)
+    const yaml = YamlConfigSource.load(options)
+
+    if (options.envOverlay === undefined) {
+      return yaml
+    }
+
+    return EnvOverlay.apply(yaml, options.envOverlay, options.env ?? process.env)
   }
 }

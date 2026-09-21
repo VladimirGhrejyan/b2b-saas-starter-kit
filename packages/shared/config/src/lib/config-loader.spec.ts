@@ -31,7 +31,45 @@ app:
     expect(config).toEqual({app: {name: 'api', port: 3000}})
   })
 
-  it('shallow-merges multiple YAML files (later wins)', () => {
+  it('deep-merges nested YAML mappings (later wins, siblings kept)', () => {
+    const NestedSchema = z.object({
+      http: z.object({
+        port: z.number().int(),
+        cors: z.object({origins: z.array(z.string()), credentials: z.boolean()}),
+      }),
+    })
+    const directory = createConfigDir({
+      'default.yml': `
+http:
+  port: 3000
+  cors:
+    origins:
+      - http://localhost:4200
+    credentials: true
+`,
+      'overlay.yml': `
+http:
+  cors:
+    origins:
+      - https://app.example.com
+`,
+    })
+
+    const config = ConfigLoader.load(NestedSchema, {
+      source: 'yaml',
+      directory,
+      files: ['default.yml', 'overlay.yml'],
+    })
+
+    expect(config).toEqual({
+      http: {
+        port: 3000,
+        cors: {origins: ['https://app.example.com'], credentials: true},
+      },
+    })
+  })
+
+  it('merges multiple YAML files (later wins)', () => {
     const directory = createConfigDir({
       '01-base.yml': `
 app:
@@ -113,6 +151,54 @@ app:
     })
 
     expect(() => ConfigLoader.load(SampleSchema, {source: 'yaml', directory})).toThrow(/YAML mapping/)
+  })
+
+  it('overlays selected env vars onto YAML paths', () => {
+    const OverlaySchema = z.object({
+      nodeEnv: z.string(),
+      postgres: z.object({url: z.url(), poolMax: z.number().int()}),
+    })
+    const directory = createConfigDir({
+      'default.yml': `
+postgres:
+  poolMax: 10
+`,
+    })
+
+    const config = ConfigLoader.load(OverlaySchema, {
+      source: 'yaml',
+      directory,
+      files: ['default.yml'],
+      envOverlay: {nodeEnv: 'NODE_ENV', 'postgres.url': 'DATABASE_URL'},
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgres://app@postgres:5432/app',
+      },
+    })
+
+    expect(config).toEqual({
+      nodeEnv: 'production',
+      postgres: {url: 'postgres://app@postgres:5432/app', poolMax: 10},
+    })
+  })
+
+  it('skips undefined overlay env vars so Zod can fail required secrets', () => {
+    const SecretSchema = z.object({
+      postgres: z.object({url: z.url()}),
+    })
+    const directory = createConfigDir({
+      'default.yml': `postgres: {}\n`,
+    })
+
+    expect(() =>
+      ConfigLoader.load(SecretSchema, {
+        source: 'yaml',
+        directory,
+        files: ['default.yml'],
+        envOverlay: {'postgres.url': 'DATABASE_URL'},
+        env: {},
+      }),
+    ).toThrow(ConfigValidationError)
   })
 })
 

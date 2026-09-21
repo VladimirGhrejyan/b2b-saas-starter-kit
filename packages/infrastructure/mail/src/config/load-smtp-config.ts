@@ -6,7 +6,7 @@ import {smtpConfigSchema} from './smtp-config'
 /**
  * Loads SMTP config when `SMTP_HOST` is set. Returns null so composition can keep the logging stub.
  */
-export function tryLoadSmtpConfigFromEnv(env: Record<string, string | undefined> = process.env): SmtpConfig | null {
+export function tryLoadSmtpConfigFromEnv(env: NodeJS.ProcessEnv = process.env): SmtpConfig | null {
   if (env.SMTP_HOST === undefined || env.SMTP_HOST === '') {
     return null
   }

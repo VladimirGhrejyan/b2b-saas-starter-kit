@@ -1,0 +1,32 @@
+appEnv: development
+appType: api
+http:
+  title: B2B SaaS API
+  port: 3000
+  version: '1'
+  plainHttp: false
+  cors:
+    origins:
+      - http://localhost:4200
+    credentials: true
+  swagger:
+    path: /docs
+postgres:
+  poolMax: 10
+  connectTimeoutMs: 5000
+  statementTimeoutMs: 15000
+  lockTimeoutMs: 5000
+  idleInTxTimeoutMs: 30000
+  applicationName: b2b-saas
+  slowQueryMs: 500
+redis:
+  keyPrefix: ''
+httpClient: {}
+jwt:
+  ttlSeconds: 900
+  issuer: b2b-saas-starter-kit
+  audience: b2b-saas-api
+log:
+  level: info
+telemetry:
+  enabled: false

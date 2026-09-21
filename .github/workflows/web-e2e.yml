@@ -21,8 +21,6 @@ jobs:
       HUSKY: '0'
       DATABASE_URL: postgres://app:change-me-local-only@localhost:5432/app
       REDIS_URL: redis://localhost:6379
-      CORS_ORIGINS: http://localhost:4200
-      CORS_CREDENTIALS: 'true'
     steps:
       - uses: actions/checkout@v5
         with:

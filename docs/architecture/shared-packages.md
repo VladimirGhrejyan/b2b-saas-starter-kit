@@ -13,7 +13,7 @@ Only these cross the frontend/backend boundary. Each is pure and framework-free.
 | `shared-kernel-types` (`packages/shared/kernel-types`) | Branded IDs (`UserId`, `TenantId`, …), cross-cutting enums, primitive scalar/value types   | — (leaf)                      |
 | `contracts` (`packages/shared/contracts`)              | Zod API request/response schemas, inferred types, `HttpStatus`, error/pagination envelopes | `shared-kernel-types` (+ Zod) |
 | `utils` (`packages/shared/utils`)                      | Generic pure helpers: `ObjectUtils`, `ArrayUtils`, `DateUtils`, `StringUtils`, …           | — (leaf; no Zod)              |
-| `config` (`packages/shared/config`)                    | `ConfigLoader` — pluggable sources (YAML today) + Zod validation                           | `utils` (+ Zod, js-yaml)      |
+| `config` (`packages/shared/config`)                    | `ConfigLoader` — YAML (deep-merge) + env overlay + Zod validation                          | `utils` (+ Zod, js-yaml)      |
 
 There is intentionally **no `constants` package** — cross-cutting enums live in `shared-kernel-types`; anything else that looks like a "constant" belongs to a context, not to shared.
 
@@ -76,7 +76,7 @@ Sharing anything from these across the FE/BE line is a boundary violation (see [
 
 ### `config` leaf policy
 
-- Public entry: `ConfigLoader.load(schema, options)` with `options` discriminated by `source` (`yaml` today).
-- Apps own Zod schemas and `config/*.yml` values; do not commit secrets.
+- Public entry: `ConfigLoader.load(schema, options)` with `options` discriminated by `source` (`yaml` | `env`).
+- Apps own Zod schemas and `config/default.yml`; secrets come from an explicit `envOverlay` allow-list. Also exports `nodeEnvSchema`, `appEnvSchema`, `kitAppEnvSchema`, and shared fragments (`mailProviderSchema`, `logSchema`, `telemetrySchema`).
 - No Nest/React inside this package. No load-at-import-time singleton.
-- Future sources (env, secrets manager) extend the `LoadConfigOptions` union without changing existing call sites.
+- Future sources (secrets manager) extend the `LoadConfigOptions` union without changing existing call sites.

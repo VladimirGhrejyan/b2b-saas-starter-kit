@@ -4,11 +4,11 @@ import {mapTelemetryConfig} from './map-telemetry-config'
 import {TELEMETRY_ENDPOINT_REQUIRED} from './telemetry-config'
 
 describe('mapTelemetryConfig', () => {
-  it('defaults serviceName from APP_TYPE', () => {
+  it('defaults serviceName from appType', () => {
     expect(
       mapTelemetryConfig({
-        TELEMETRY_ENABLED: 'false',
-        APP_TYPE: 'worker',
+        enabled: false,
+        appType: 'worker',
       }),
     ).toEqual({enabled: false, serviceName: 'worker'})
   })
@@ -16,8 +16,8 @@ describe('mapTelemetryConfig', () => {
   it('throws when enabled without an endpoint', () => {
     expect(() =>
       mapTelemetryConfig({
-        TELEMETRY_ENABLED: 'true',
-        APP_TYPE: 'api',
+        enabled: true,
+        appType: 'api',
       }),
     ).toThrow(TELEMETRY_ENDPOINT_REQUIRED)
   })

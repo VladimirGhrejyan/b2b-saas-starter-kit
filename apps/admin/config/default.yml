@@ -1,0 +1,7 @@
+# Values are baked into the Vite bundle at build time — rebuild after edits.
+#
+# appEnv is the product environment (kit: development | staging | production).
+# nodeEnv is overlaid from NODE_ENV (development | production) at bake time.
+
+appEnv: development
+apiBaseUrl: http://localhost:3000/v1

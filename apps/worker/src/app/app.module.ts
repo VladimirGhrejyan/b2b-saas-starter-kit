@@ -1,60 +1,48 @@
-import {Module} from '@nestjs/common'
+import {type DynamicModule, Module} from '@nestjs/common'
 
-import {ConfigLoader} from '@b2b-saas-starter-kit/config'
+import {
+  CompositionInfraConfigMapper,
+  RuntimeConfigModule,
+  toCompositionRuntimeConfig,
+  WorkerModule,
+  type WorkerRuntimeConfig,
+} from '@b2b-saas-starter-kit/composition'
 
-import {WorkerModule, type WorkerRuntimeConfig} from '@b2b-saas-starter-kit/composition'
+import type {WorkerConfig} from '../config/worker-config.schema'
+import {WORKER_CONFIG} from '../config/worker-config.token'
 
-import {type WorkerEnv, WorkerEnvSchema} from '../config/env.schema'
-import {WORKER_ENV} from '../config/worker-env.token'
-
-@Module({
-  imports: [
-    WorkerModule.forRootAsync({
-      inject: [WORKER_ENV],
-      useFactory: (env: WorkerEnv): WorkerRuntimeConfig => ({
-        postgres: {DATABASE_URL: env.DATABASE_URL},
-        messaging: {REDIS_URL: env.REDIS_URL, BULLMQ_PREFIX: env.BULLMQ_PREFIX},
-        outbox: {
-          pollIntervalMs: env.OUTBOX_POLL_INTERVAL_MS,
-          batchSize: env.OUTBOX_BATCH_SIZE,
-        },
-        maintenance: {
-          refreshSessionsEveryMs: env.PURGE_REFRESH_SESSIONS_EVERY_MS,
-          passwordResetTokensEveryMs: env.PURGE_PASSWORD_RESET_TOKENS_EVERY_MS,
-          staleInvitationsEveryMs: env.PURGE_STALE_INVITATIONS_EVERY_MS,
-          reclaimStaleOutboxEveryMs: env.RECLAIM_STALE_OUTBOX_EVERY_MS,
-          staleProcessingMs: env.OUTBOX_STALE_PROCESSING_MS,
-        },
-      }),
-    }),
-  ],
-  providers: [
-    {
-      provide: WORKER_ENV,
-      useFactory: (): WorkerEnv =>
-        ConfigLoader.load(WorkerEnvSchema, {
-          source: 'env',
-          keys: [
-            'APP_TYPE',
-            'NODE_ENV',
-            'DATABASE_URL',
-            'REDIS_URL',
-            'BULLMQ_PREFIX',
-            'OUTBOX_POLL_INTERVAL_MS',
-            'OUTBOX_BATCH_SIZE',
-            'OUTBOX_STALE_PROCESSING_MS',
-            'PURGE_REFRESH_SESSIONS_EVERY_MS',
-            'PURGE_PASSWORD_RESET_TOKENS_EVERY_MS',
-            'PURGE_STALE_INVITATIONS_EVERY_MS',
-            'RECLAIM_STALE_OUTBOX_EVERY_MS',
-            'LOG_LEVEL',
-            'LOG_PRETTY',
-            'TELEMETRY_ENABLED',
-            'OTEL_EXPORTER_OTLP_ENDPOINT',
-            'OTEL_SERVICE_NAME',
-          ],
+@Module({})
+export class AppModule {
+  static forRoot(config: WorkerConfig): DynamicModule {
+    return {
+      module: AppModule,
+      imports: [
+        RuntimeConfigModule.forRoot(
+          toCompositionRuntimeConfig({
+            postgres: config.postgres,
+            redis: config.redis,
+            mail: config.mail,
+          }),
+        ),
+        WorkerModule.forRootAsync({
+          useFactory: (): WorkerRuntimeConfig => ({
+            postgres: CompositionInfraConfigMapper.postgres(config.postgres),
+            messaging: {REDIS_URL: config.redis.url, BULLMQ_PREFIX: config.messaging.prefix},
+            outbox: {
+              pollIntervalMs: config.outbox.pollIntervalMs,
+              batchSize: config.outbox.batchSize,
+            },
+            maintenance: {
+              refreshSessionsEveryMs: config.maintenance.refreshSessionsEveryMs,
+              passwordResetTokensEveryMs: config.maintenance.passwordResetTokensEveryMs,
+              staleInvitationsEveryMs: config.maintenance.staleInvitationsEveryMs,
+              reclaimStaleOutboxEveryMs: config.maintenance.reclaimStaleOutboxEveryMs,
+              staleProcessingMs: config.outbox.staleProcessingMs,
+            },
+          }),
         }),
-    },
-  ],
-})
-export class AppModule {}
+      ],
+      providers: [{provide: WORKER_CONFIG, useValue: config}],
+    }
+  }
+}

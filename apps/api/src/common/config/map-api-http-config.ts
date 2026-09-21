@@ -1,30 +1,27 @@
 import type {ApiHttpConfig} from '@b2b-saas-starter-kit/nest-http'
 
-import type {ApiEnv} from './env.schema'
+import type {ApiConfig} from './api-config.schema'
 
-/** Maps validated process env onto the nest-http bootstrap config. */
-export function mapApiHttpConfig(env: ApiEnv): ApiHttpConfig {
-  const isProduction = env.NODE_ENV === 'production'
-  const swaggerUser = env.SWAGGER_BASIC_AUTH_USER
-  const swaggerPassword = env.SWAGGER_BASIC_AUTH_PASSWORD
+/** Maps validated API config onto the nest-http bootstrap config. */
+export function mapApiHttpConfig(config: ApiConfig): ApiHttpConfig {
+  const isProduction = config.nodeEnv === 'production'
+  const swagger = config.http.swagger
+  const swaggerUser = swagger.basicAuth?.username
+  const swaggerPassword = swagger.basicAuth?.password
 
   return {
-    title: env.API_TITLE,
-    port: env.PORT,
-    host: env.API_HOST,
-    version: env.API_VERSION,
-    globalPrefix: env.API_GLOBAL_PREFIX,
+    title: config.http.title,
+    port: config.http.port,
+    host: config.http.host,
+    version: config.http.version,
+    globalPrefix: config.http.globalPrefix,
     isProduction,
-    isPlainHttp: env.API_PLAIN_HTTP === 'true',
-    corsOrigins: env.CORS_ORIGINS
-      ? env.CORS_ORIGINS.split(',')
-          .map((origin) => origin.trim())
-          .filter((origin) => origin.length > 0)
-      : [],
-    corsCredentials: env.CORS_CREDENTIALS === 'true',
+    isPlainHttp: config.http.plainHttp,
+    corsOrigins: config.http.cors.origins,
+    corsCredentials: config.http.cors.credentials,
     swagger: {
-      enabled: env.SWAGGER_ENABLED ? env.SWAGGER_ENABLED === 'true' : !isProduction,
-      path: env.SWAGGER_PATH,
+      enabled: swagger.enabled ?? !isProduction,
+      path: swagger.path,
       basicAuth:
         swaggerUser !== undefined && swaggerPassword !== undefined
           ? {username: swaggerUser, password: swaggerPassword}

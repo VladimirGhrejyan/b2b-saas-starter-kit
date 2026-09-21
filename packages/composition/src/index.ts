@@ -1,5 +1,10 @@
 /** App-facing: Nest modules, helpers, and application use cases. Do not re-export platform or infrastructure to bypass Nx tags (ADR-033). */
 export {CompositionModule} from './composition.module'
+export {COMPOSITION_RUNTIME_CONFIG} from './config/composition-runtime-config.token'
+export type {CompositionRuntimeConfig} from './config/composition-runtime-config.types'
+export {CompositionInfraConfigMapper} from './config/map-composition-infra-config'
+export {RuntimeConfigModule} from './config/runtime-config.module'
+export {toCompositionRuntimeConfig} from './config/to-composition-runtime-config'
 export {AssertActiveMembership} from './principal/assert-active-membership'
 export {
   WORKER_MAINTENANCE_CONFIG,

@@ -14,6 +14,13 @@ export type YamlLoadConfigOptions = {
    * Default: all `*.yml` / `*.yaml` files, sorted; later files overwrite earlier keys.
    */
   files?: string[]
+  /**
+   * Copy selected env vars onto the merged YAML at dot-paths
+   * (e.g. `{ 'postgres.url': 'DATABASE_URL' }`). Undefined env values are skipped.
+   */
+  envOverlay?: Record<string, string>
+  /** Environment to read for {@link YamlLoadConfigOptions.envOverlay}. Defaults to `process.env`. */
+  env?: NodeJS.ProcessEnv
 }
 
 /**
@@ -35,5 +42,5 @@ export type EnvLoadConfigOptions = {
    */
   keys?: string[]
   /** Environment to read from. Defaults to `process.env`. */
-  env?: Record<string, string | undefined>
+  env?: NodeJS.ProcessEnv
 }

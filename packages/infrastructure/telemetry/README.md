@@ -10,7 +10,7 @@ Architecture: [`docs/architecture/infrastructure.md`](../../../docs/architecture
 
 ## Purpose
 
-Start the Node SDK only when `TELEMETRY_ENABLED=true`. The extra `layer:telemetry` tag lets `type:app` bootstrap this package without opening `postgres`.
+Start the Node SDK only when app YAML `telemetry.enabled` is true. The extra `layer:telemetry` tag lets `type:app` bootstrap this package without opening `postgres`.
 
 Not a Nest provider. Do not add `@Injectable()` or a `MetricsPort`.
 
@@ -40,14 +40,21 @@ Never import Nest, domain, application, contracts, logger, nest-http, compositio
 Call `startTelemetry` **before** `LoggerLocator.init` and `NestFactory`. Dynamic-import `AppModule` afterwards so `pg` / ioredis / undici load after instrumentations register.
 
 ```typescript
-const telemetry = await startTelemetry(mapTelemetryConfig(env))
+const telemetry = await startTelemetry(
+  mapTelemetryConfig({
+    enabled: config.telemetry.enabled,
+    otlpEndpoint: config.telemetry.otlpEndpoint,
+    serviceName: config.telemetry.serviceName,
+    appType: config.appType,
+  }),
+)
 
-LoggerLocator.init(new PinoLogger({level: env.LOG_LEVEL}))
+LoggerLocator.init(new PinoLogger({level: config.log.level}))
 
 const {AppModule} = await import('./app/app.module')
 ```
 
-`TELEMETRY_ENABLED` defaults to `'false'`. When `'true'`, `OTEL_EXPORTER_OTLP_ENDPOINT` is required (no localhost default). `OTEL_SERVICE_NAME` defaults to `APP_TYPE`. There is no `OTEL_SDK_DISABLED` switch.
+`telemetry.enabled` defaults to `false`. When `true`, `telemetry.otlpEndpoint` is required (no localhost default). `telemetry.serviceName` defaults to `appType`. There is no `OTEL_SDK_DISABLED` switch.
 
 When disabled, `startTelemetry` returns a no-op handle (including `shutdown()`). When enabled, the SDK exports OTLP HTTP traces and metrics, auto-instruments incoming/Node HTTP, `pg`, ioredis, and undici, and ignores `/live`, `/ready`, `/health`, and `/docs`. Tenant identity is a span attribute via `applyActiveSpanAttributes` — never a metric label.
 

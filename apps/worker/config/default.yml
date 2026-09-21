@@ -1,0 +1,27 @@
+appEnv: development
+appType: worker
+postgres:
+  poolMax: 10
+  connectTimeoutMs: 5000
+  statementTimeoutMs: 15000
+  lockTimeoutMs: 5000
+  idleInTxTimeoutMs: 30000
+  applicationName: b2b-saas-worker
+  slowQueryMs: 500
+redis:
+  keyPrefix: ''
+messaging:
+  prefix: bsk:bull
+outbox:
+  pollIntervalMs: 1000
+  batchSize: 25
+  staleProcessingMs: 300000
+maintenance:
+  refreshSessionsEveryMs: 3600000
+  passwordResetTokensEveryMs: 86400000
+  staleInvitationsEveryMs: 86400000
+  reclaimStaleOutboxEveryMs: 60000
+log:
+  level: info
+telemetry:
+  enabled: false

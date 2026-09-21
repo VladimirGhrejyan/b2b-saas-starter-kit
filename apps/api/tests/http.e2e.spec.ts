@@ -1,4 +1,6 @@
 import {randomUUID} from 'node:crypto'
+import {join} from 'node:path'
+import {fileURLToPath} from 'node:url'
 
 import type {INestApplication} from '@nestjs/common'
 import {VersioningType} from '@nestjs/common'
@@ -19,6 +21,7 @@ import {applyCookieParser} from '@b2b-saas-starter-kit/nest-http'
 
 import {AppModule} from '../src/app/app.module'
 import {AuthRateLimits} from '../src/common/auth/rate-limit/auth-rate-limits'
+import {loadApiConfig} from '../src/common/config/load-api-config'
 
 describe('HTTP e2e', () => {
   let app: INestApplication
@@ -27,7 +30,10 @@ describe('HTTP e2e', () => {
   beforeAll(async () => {
     database = await preparePostgresTestDatabase()
     LoggerLocator.init(new PinoLogger({level: 'error', isPretty: false}))
-    app = await NestFactory.create(AppModule, {logger: false, abortOnError: false})
+
+    const config = loadApiConfig(join(fileURLToPath(new URL('../config', import.meta.url))))
+
+    app = await NestFactory.create(AppModule.forRoot(config), {logger: false, abortOnError: false})
     applyCookieParser(app)
     app.enableVersioning({type: VersioningType.URI, defaultVersion: '1'})
     await app.init()

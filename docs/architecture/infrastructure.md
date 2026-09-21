@@ -112,14 +112,15 @@ Bootstrap (`apps/api`, `apps/worker`): `LoggerLocator.init(new PinoLogger({level
 ## Metrics and traces
 
 - **Adapter:** `packages/infrastructure/telemetry` (`@b2b-saas-starter-kit/telemetry`). Extra tag `layer:telemetry` so apps can start the SDK without opening `postgres`. See [ADR-036](./decisions.md).
-- **Env gate:** `TELEMETRY_ENABLED` defaults to `'false'`. When `'true'`, `OTEL_EXPORTER_OTLP_ENDPOINT` is required (fail-fast; no localhost default). `OTEL_SERVICE_NAME` defaults to `APP_TYPE`. Do not also use `OTEL_SDK_DISABLED`.
+- **YAML gate:** `telemetry.enabled` defaults to `false`. When `true`, `telemetry.otlpEndpoint` is required (fail-fast; no localhost default). `telemetry.serviceName` defaults to `appType`. Do not also use `OTEL_SDK_DISABLED`.
 - Bootstrap (`apps/api`, `apps/worker`) calls `startTelemetry` **before** `LoggerLocator.init` / `NestFactory`, then shuts the handle down with the process. Auto-instrument HTTP, `pg`, ioredis, and undici. Ignore incoming `/live`, `/ready`, `/health`, `/docs`. Tenant identity is a **span attribute** (`applyActiveSpanAttributes` after auth), never a metric label.
 - No Prometheus `GET /metrics`, no Compose collector in this slice, no `MetricsPort`.
 
 ## Configuration
 
 - **`@b2b-saas-starter-kit/config`** (`packages/shared/config`) exposes `ConfigLoader`: load from a pluggable `source`, validate with **Zod**, return a typed object.
-- **Sources:** `source: 'yaml'` (merge YAML files from an app `config/` directory; see `config.dist.yml` templates when apps exist) and `source: 'env'` — the container/12-factor contract that reads/validates `process.env` (raw strings; use coercing schemas). Containers use the env source (see [ADR-026](./decisions.md), [`../infrastructure/README.md`](../infrastructure/README.md)).
-- Apps own schemas and values; the shared package owns the load pipeline. Call `ConfigLoader.load` explicitly at bootstrap / Vite plugin time (no import-time load).
+- **Sources:** `source: 'yaml'` (deep-merge YAML from an app `config/` directory, then overlay a small env allow-list for secrets and `nodeEnv`) and `source: 'env'` for CLI / test harnesses that only need connection strings. Compose injects secrets as env; it does not replace structured YAML (see [ADR-026](./decisions.md), [`../infrastructure/README.md`](../infrastructure/README.md)).
+- Apps own schemas and `config/default.yml`; the shared package owns the load pipeline. Call `ConfigLoader.load` explicitly at bootstrap / Vite plugin time (no import-time load).
+- Every app config has `nodeEnv` (`development | production`, from `NODE_ENV`) and `appEnv` (`staging | production`, kit-extended with `development`).
 - Invalid config **fails fast** (`ConfigValidationError`).
-- Secrets must not be committed. In containers they arrive as env vars (`DATABASE_URL`, `REDIS_URL`, …); locally they may live in gitignored YAML. Before production, prefer a secret-manager overlay behind a new `source` variant without changing app facades.
+- Secrets must not be committed. They arrive as env vars (`DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, …) overlaid onto the YAML tree. Before production, prefer a secret-manager that **sets the same env names**.

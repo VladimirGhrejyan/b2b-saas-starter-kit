@@ -1,5 +1,7 @@
 import {Module} from '@nestjs/common'
 
+import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
+
 import {
   API_KEY_REPOSITORY,
   LOCAL_PASSWORD_REPOSITORY,
@@ -33,7 +35,11 @@ import {
   TypeOrmRefreshSessionRepository,
   TypeOrmUserRepository,
 } from '@b2b-saas-starter-kit/postgres'
-import {SmtpMailer, tryLoadSmtpConfigFromEnv} from '@b2b-saas-starter-kit/mail'
+import {HttpMailer, SmtpMailer} from '@b2b-saas-starter-kit/mail'
+
+import {COMPOSITION_RUNTIME_CONFIG} from '../config/composition-runtime-config.token'
+import type {CompositionRuntimeConfig} from '../config/composition-runtime-config.types'
+import {CompositionInfraConfigMapper} from '../config/map-composition-infra-config'
 
 @Module({
   providers: [
@@ -49,12 +55,20 @@ import {SmtpMailer, tryLoadSmtpConfigFromEnv} from '@b2b-saas-starter-kit/mail'
     LoggingMailer,
     {
       provide: MAILER,
-      useFactory: (logging: LoggingMailer): MailerPort => {
-        const config = tryLoadSmtpConfigFromEnv()
+      useFactory: (logging: LoggingMailer, runtime: CompositionRuntimeConfig): MailerPort => {
+        const mail = runtime.mail
 
-        return config === null ? logging : new SmtpMailer(config)
+        if (TypeScriptUtils.isNil(mail)) {
+          return logging
+        }
+
+        if (mail.transport === 'smtp') {
+          return new SmtpMailer(CompositionInfraConfigMapper.smtp(mail))
+        }
+
+        return new HttpMailer(CompositionInfraConfigMapper.httpMail(mail))
       },
-      inject: [LoggingMailer],
+      inject: [LoggingMailer, COMPOSITION_RUNTIME_CONFIG],
     },
     CreateUserUseCase,
     RegisterUserUseCase,

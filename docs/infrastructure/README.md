@@ -12,8 +12,9 @@ containerized applications. For the architectural intent behind Redis/Postgres u
 - **Staging = everything in Docker on one VPS** (Postgres + Redis + built app images + NGINX).
 - **Production (future GCP) = app images only**; Postgres/Redis become managed services. Compose
   is never a production dependency.
-- **Env-driven config.** The same image runs everywhere; only `DATABASE_URL`, `REDIS_URL`, and
-  friends change. See [`../architecture/infrastructure.md`](../architecture/infrastructure.md).
+- **YAML + env secrets.** Structured settings live in `apps/*/config/default.yml`. The same
+  image runs everywhere; only `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, and friends
+  change. See [`../architecture/infrastructure.md`](../architecture/infrastructure.md).
 
 ## Quick start (local)
 
