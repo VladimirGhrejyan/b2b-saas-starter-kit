@@ -1,6 +1,6 @@
 # `@b2b-saas-starter-kit/nest-http`
 
-Nest HTTP delivery kit: `ApiBuilder`, global pipe/filter/interceptor, Swagger, CORS, URI versioning, `@Public()`, `@ApiRoute()`, `@Idempotent()`, process error handlers.
+Nest HTTP delivery kit: `ApiBuilder`, global pipe/filter/interceptor, Swagger, CORS, URI versioning, `@Public()`, `@ApiRoute()`, `@Idempotent()`.
 
 **Path:** `packages/nest-http`  
 **Nx project:** `nest-http`  

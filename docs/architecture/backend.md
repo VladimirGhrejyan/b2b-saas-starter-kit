@@ -99,11 +99,10 @@ Infrastructure may use NestJS (`@Injectable`, module providers) where it is a Ne
 - Exception filter — Zod 400s, `HttpException` (5xx logged, internals hidden), duck-typed `{code, message}` mapped with the **contracts** error envelope and `HttpStatus` (no domain error class imports)
 - OpenAPI setup (`cleanupOpenApiDoc`); basic-auth on `/docs` optional
 - `@Public()` metadata decorator (JWT / `RequirePermission` stay in `apps/api`)
-- Process handlers — `unhandledRejection` / `uncaughtException` → `LoggerLocator.get().fatal`
 
 Depends on Nest, `contracts`, `platform` (`LoggerLocator.get`). Does **not** depend on domain, application, or postgres.
 
-`apps/api` `main.ts`: load config → `LoggerLocator.init` → `NestFactory.create` → `new ApiBuilder(app, apiConfig).useSecurity().enableVersioning()…`.
+`apps/api` `ApiBootstrap.run()`: load config → `LoggerLocator.init` → `NestFactory.create` → `new ApiBuilder(app, apiConfig).useSecurity().enableVersioning()…`. Process handlers (`unhandledRejection` / `uncaughtException` → `LoggerLocator.get().fatal`) live in `@b2b-saas-starter-kit/logger`.
 
 ## Composition layer (`packages/composition`)
 

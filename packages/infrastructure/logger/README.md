@@ -12,6 +12,8 @@ Architecture: [`docs/architecture/infrastructure.md`](../../../docs/architecture
 
 Wrap `pino` (and `pino.child({context})`) behind the platform locator so application never imports Pino. The extra `layer:logger` tag lets `type:app` bootstrap this package without opening `postgres`.
 
+`registerProcessErrorHandlers()` logs `unhandledRejection` / `uncaughtException` via `LoggerLocator.get().fatal`. Call it after `LoggerLocator.init`.
+
 The Pino mixin adds `requestId` / `tenantId` / `actorId` from `RequestContextLocator` and, when an OpenTelemetry span is active, `traceId` / `spanId` from `@opentelemetry/api` (no SDK in this package).
 
 Not a Nest provider. Do not add `@Injectable()`, `@Inject(Logger)`, or `nestjs-pino`.
