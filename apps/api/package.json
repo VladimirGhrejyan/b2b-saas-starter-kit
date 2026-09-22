@@ -92,9 +92,9 @@
     "@b2b-saas-starter-kit/shared-kernel-types": "workspace:*",
     "@b2b-saas-starter-kit/telemetry": "workspace:*",
     "@b2b-saas-starter-kit/utils": "workspace:*",
-    "@nestjs/common": "^12.0.3",
-    "@nestjs/core": "^12.0.3",
-    "@nestjs/platform-express": "^12.0.3",
+    "@nestjs/common": "^12.0.4",
+    "@nestjs/core": "^12.0.4",
+    "@nestjs/platform-express": "^12.0.4",
     "jose": "^6.2.12",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
@@ -102,9 +102,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@nestjs/testing": "^12.0.3",
+    "@nestjs/testing": "^12.0.4",
     "@types/cookie-parser": "^1.4.10",
     "@types/supertest": "^7.2.1",
-    "supertest": "^7.2.2"
+    "supertest": "^7.3.0"
   }
 }

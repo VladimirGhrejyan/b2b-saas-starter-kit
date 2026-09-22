@@ -87,14 +87,14 @@
     "@b2b-saas-starter-kit/config": "workspace:*",
     "@b2b-saas-starter-kit/logger": "workspace:*",
     "@b2b-saas-starter-kit/telemetry": "workspace:*",
-    "@nestjs/common": "^12.0.3",
-    "@nestjs/core": "^12.0.3",
+    "@nestjs/common": "^12.0.4",
+    "@nestjs/core": "^12.0.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "tslib": "^2.8.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@nestjs/testing": "^12.0.3"
+    "@nestjs/testing": "^12.0.4"
   }
 }
