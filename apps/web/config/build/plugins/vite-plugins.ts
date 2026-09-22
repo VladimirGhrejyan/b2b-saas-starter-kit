@@ -11,7 +11,10 @@ export class VitePlugins {
     if (VitePlugins.isDevServe(env)) {
       plugins.push(
         checker({
-          typescript: {tsconfigPath: 'tsconfig.app.json'},
+          typescript: {
+            tsconfigPath: 'tsconfig.app.json',
+            buildMode: true,
+          },
         }),
       )
     }
