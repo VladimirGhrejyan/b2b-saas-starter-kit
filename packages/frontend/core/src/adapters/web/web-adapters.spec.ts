@@ -1,3 +1,5 @@
+import {vi} from 'vitest'
+
 import {ConsoleLogger} from './console-logger'
 import {createWebPorts} from './create-web-ports'
 import {InMemoryStorage} from './in-memory-storage'
@@ -28,5 +30,15 @@ describe('web adapters', () => {
       ports.window.minimize()
       ports.linking.subscribe(() => undefined)()
     }).not.toThrow()
+  })
+
+  it('does not write debug when nodeEnv is production', () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined)
+    const ports = createWebPorts({nodeEnv: 'production'})
+
+    ports.logger.debug('hidden')
+
+    expect(debug).not.toHaveBeenCalled()
+    debug.mockRestore()
   })
 })

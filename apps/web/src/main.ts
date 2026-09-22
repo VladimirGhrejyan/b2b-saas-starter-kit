@@ -4,10 +4,12 @@ import {TypeScriptUtils} from '@b2b-saas-starter-kit/utils'
 import {createWebPorts} from '@b2b-saas-starter-kit/frontend-core'
 
 import {createProductApp} from '@/app/create-product-app'
+import {environment} from '@/shared/environment'
 
 async function bootstrap(): Promise<void> {
+  const ports = createWebPorts({nodeEnv: environment.nodeEnv})
   const element = await createProductApp({
-    ports: createWebPorts(),
+    ports,
     history: 'browser',
   })
   const rootElement = document.getElementById('root')
@@ -17,6 +19,7 @@ async function bootstrap(): Promise<void> {
   }
 
   createRoot(rootElement).render(element)
+  ports.logger.debug('App rendered')
 }
 
 void bootstrap()

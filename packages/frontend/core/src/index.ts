@@ -1,3 +1,4 @@
+export type {CreateWebPortsOptions} from './adapters/web'
 export {
   ConsoleLogger,
   createWebPorts,

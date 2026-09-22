@@ -1,5 +1,6 @@
 export {ConsoleLogger} from './console-logger'
 export {createWebPorts} from './create-web-ports'
+export type {CreateWebPortsOptions} from './create-web-ports.types'
 export {InMemoryStorage} from './in-memory-storage'
 export {LocalStorageAdapter} from './local-storage-adapter'
 export {WebLinkingAdapter} from './web-linking'
