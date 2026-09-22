@@ -20,6 +20,7 @@ export class ViteConfig {
       server: ViteServerOptions.build(),
       preview: ViteServerOptions.buildPreview(),
       resolve: ViteResolvers.build(ViteConfig.root),
+      base: process.env.VITE_BASE ?? '/',
       plugins: VitePlugins.build(env),
       build: ViteBuildConfig.build(),
       test: ViteTestOptions.build(),

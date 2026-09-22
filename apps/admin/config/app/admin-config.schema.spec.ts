@@ -13,11 +13,17 @@ describe('adminConfigSchema', () => {
     })
   })
 
+  it('accepts a same-origin API path', () => {
+    expect(adminConfigSchema.parse({appEnv: 'staging', apiBaseUrl: '/api/v1'})).toMatchObject({
+      appEnv: 'staging',
+      apiBaseUrl: '/api/v1',
+    })
+  })
+
   it('rejects a missing or invalid API URL', () => {
     expect(() => adminConfigSchema.parse({})).toThrow()
     expect(() => adminConfigSchema.parse({appEnv: 'development', apiBaseUrl: ''})).toThrow()
     expect(() => adminConfigSchema.parse({appEnv: 'development', apiBaseUrl: 'not-a-url'})).toThrow()
-    expect(() => adminConfigSchema.parse({appEnv: 'development', apiBaseUrl: '/v1'})).toThrow()
   })
 
   it('rejects a missing or invalid appEnv', () => {

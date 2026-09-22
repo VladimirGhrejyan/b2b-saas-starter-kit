@@ -25,6 +25,7 @@ export const httpSchema = z.object({
   version: z.string().min(1).default('1'),
   globalPrefix: z.string().min(1).optional(),
   plainHttp: z.boolean().default(false),
+  refreshCookiePath: z.string().min(1).default('/v1/auth'),
   cors: corsSchema,
   swagger: swaggerSchema,
 })

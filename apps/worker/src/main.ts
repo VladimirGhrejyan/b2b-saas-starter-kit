@@ -31,7 +31,8 @@ async function bootstrap() {
 
   const {AppModule} = await import('./app/app.module.js')
   const app = await NestFactory.createApplicationContext(AppModule.forRoot(config), {
-    logger: false,
+    logger: ['error'],
+    abortOnError: false,
   })
 
   app.enableShutdownHooks()
@@ -48,4 +49,7 @@ async function bootstrap() {
   })
 }
 
-void bootstrap()
+void bootstrap().catch((error: unknown) => {
+  console.error(error)
+  process.exit(1)
+})

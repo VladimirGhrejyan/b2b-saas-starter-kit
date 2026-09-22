@@ -16,7 +16,8 @@ module.exports = {
   plugins: [
     ...createNodeNativeIgnorePlugins(),
     new webpack.IgnorePlugin({
-      resourceRegExp: /^(class-validator|class-transformer(?:\/.*)?|@fastify\/static)$/,
+      resourceRegExp:
+        /^(class-validator|class-transformer(?:\/.*)?|@fastify\/static|@nestjs\/(?:microservices|websockets)(?:\/.*)?)$/,
     }),
     new NxAppWebpackPlugin({
       target: 'node',
@@ -24,6 +25,8 @@ module.exports = {
       main: './src/main.ts',
       tsConfig: './tsconfig.app.json',
       assets: [{input: join(__dirname, 'config'), glob: '**/*', output: 'config'}],
+      // Images copy only dist + @node-rs/argon2. Nx defaults to externalizing all node_modules.
+      externalDependencies: process.env.NODE_ENV === 'production' ? 'none' : 'all',
       mergeExternals: true,
       optimization: false,
       outputHashing: 'none',

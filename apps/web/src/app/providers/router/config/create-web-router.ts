@@ -7,5 +7,6 @@ export function createWebRouter(history: AppRouterHistory): AppRouter {
   return createAppRouter({
     history,
     routes: webRoutes,
+    basename: import.meta.env.BASE_URL,
   })
 }

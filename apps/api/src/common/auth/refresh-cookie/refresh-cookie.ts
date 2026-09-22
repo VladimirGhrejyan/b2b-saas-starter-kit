@@ -5,7 +5,7 @@ import {REFRESH_TTL_MS} from '@b2b-saas-starter-kit/composition'
 import type {JwtAccessConfig} from '../jwt/jwt-access.types'
 import {JWT_ACCESS_CONFIG} from '../jwt/jwt-access-config.token'
 
-import {REFRESH_COOKIE_NAME, REFRESH_COOKIE_PATH} from './refresh-cookie.constants'
+import {REFRESH_COOKIE_NAME} from './refresh-cookie.constants'
 import type {RefreshCookieOptions, RefreshCookieRequest, RefreshCookieResponse} from './refresh-cookie.types'
 
 @Injectable()
@@ -30,7 +30,7 @@ export class RefreshCookie {
     return {
       httpOnly: true,
       sameSite: 'lax',
-      path: REFRESH_COOKIE_PATH,
+      path: this.config.cookiePath,
       secure: this.config.cookieSecure,
       maxAge,
     }

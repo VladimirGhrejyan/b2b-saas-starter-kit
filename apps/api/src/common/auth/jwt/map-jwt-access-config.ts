@@ -10,5 +10,6 @@ export function mapJwtAccessConfig(config: ApiConfig): JwtAccessConfig {
     audience: config.jwt.audience,
     nodeEnv: config.nodeEnv,
     cookieSecure: config.nodeEnv === 'production' && !config.http.plainHttp,
+    cookiePath: config.http.refreshCookiePath,
   }
 }

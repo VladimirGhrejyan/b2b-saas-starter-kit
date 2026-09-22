@@ -1,6 +1,7 @@
 import {isSpanContextValid, trace} from '@opentelemetry/api'
 import type {Logger as PinoInstance, LoggerOptions} from 'pino'
 import pino from 'pino'
+import pinoPretty from 'pino-pretty'
 
 import type {Logger, LogLevel} from '@b2b-saas-starter-kit/platform'
 import {RequestContextLocator} from '@b2b-saas-starter-kit/platform'
@@ -61,18 +62,24 @@ export class PinoLogger implements Logger {
       },
     }
 
+    if (destination !== undefined) {
+      return pino(pinoOptions, destination)
+    }
+
+    // Stream destination (not `transport.target`) so webpack can inline pino-pretty.
+    // Worker-thread transports resolve the package from node_modules at runtime.
     if (isPretty) {
-      pinoOptions.transport = {
-        target: 'pino-pretty',
-        options: {
+      return pino(
+        pinoOptions,
+        pinoPretty({
           colorize: true,
           translateTime: 'HH:MM:ss.l',
           ignore: 'pid,hostname',
-        },
-      }
+        }),
+      )
     }
 
-    return destination === undefined ? pino(pinoOptions) : pino(pinoOptions, destination)
+    return pino(pinoOptions)
   }
 
   static #requestContextFields(): Record<string, string> {

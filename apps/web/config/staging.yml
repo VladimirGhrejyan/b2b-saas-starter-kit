@@ -1,0 +1,2 @@
+appEnv: staging
+apiBaseUrl: /api/v1

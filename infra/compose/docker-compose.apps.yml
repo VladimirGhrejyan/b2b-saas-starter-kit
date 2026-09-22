@@ -1,0 +1,81 @@
+# Optional laptop overlay: api + worker images against Compose Postgres/Redis.
+# Use with the base file AND the dev override (so host tools keep localhost ports).
+# Web/admin stay on the host (`pnpm nx serve`) — CORS stays http://localhost:4200.
+#
+#   pnpm infra:apps:up
+#
+# This is not a replacement for `pnpm nx serve`. Bind-mounting src will not give HMR.
+
+x-app-logging: &app-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+
+services:
+  api:
+    <<: *app-logging
+    profiles: [apps]
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-api:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+        APP: api
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:3000:3000'
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-app}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/ready').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - appnet
+
+  worker:
+    <<: *app-logging
+    profiles: [apps]
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-worker:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+        APP: worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-app}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'kill -0 1']
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    networks:
+      - appnet

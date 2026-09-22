@@ -29,7 +29,7 @@ bind-mount filesystem issues, while keeping Postgres/Redis versions identical to
    `127.0.0.1` only (`5432`, `6379`) — not exposed to your network. If a native Postgres
    already occupies `5432`, set `POSTGRES_PORT` (and `DATABASE_URL`) in `infra/env/.env`.
 
-3. Run apps on the host (once they exist):
+3. Run apps on the host:
 
    ```bash
    pnpm nx serve api
@@ -46,9 +46,11 @@ bind-mount filesystem issues, while keeping Postgres/Redis versions identical to
 ## Everyday commands
 
 ```bash
-pnpm infra:logs    # tail postgres + redis logs
-pnpm infra:down    # stop containers (keeps the pgdata volume)
-pnpm infra:reset   # down --volumes then up -> fresh database (DESTROYS local data)
+pnpm infra:logs         # tail postgres + redis logs
+pnpm infra:down         # stop containers (keeps the pgdata volume)
+pnpm infra:reset        # down --volumes then up -> fresh database (DESTROYS local data)
+pnpm infra:apps:up      # optional: api + worker images against Compose Postgres
+pnpm infra:staging:up   # full stack in Docker; gateway on :80 (needs JWT_ACCESS_SECRET)
 ```
 
 ## Resetting the database
@@ -59,5 +61,5 @@ schema is (re)created by TypeORM migrations at app startup, not by Compose. See
 
 ## Node version
 
-`.nvmrc`, `package.json` `engines.node`, and future Dockerfile `ARG NODE_VERSION` must agree.
+`.nvmrc`, `package.json` `engines.node`, and `infra/docker/*.Dockerfile` `ARG NODE_VERSION` must agree.
 `pnpm check:node-version` enforces this and runs in `lint-staged` when those files change.

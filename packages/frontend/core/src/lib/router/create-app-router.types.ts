@@ -7,4 +7,5 @@ export type AppRouterHistory = 'browser' | 'hash'
 export type CreateAppRouterOptions = {
   history: AppRouterHistory
   routes: RouteObject[]
+  basename?: string
 }

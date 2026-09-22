@@ -1,0 +1,65 @@
+name: Images
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api
+            file: infra/docker/backend.Dockerfile
+            args: APP=api
+          - name: worker
+            file: infra/docker/backend.Dockerfile
+            args: APP=worker
+          - name: web
+            file: infra/docker/web.Dockerfile
+            args: CONFIG_OVERLAY=staging.yml
+          - name: admin
+            file: infra/docker/admin.Dockerfile
+            args: |
+              VITE_BASE=/admin/
+              CONFIG_OVERLAY=staging.yml
+          - name: storybook
+            file: infra/docker/storybook.Dockerfile
+            args: STORYBOOK_BASE=/storybook/
+          - name: gateway
+            file: infra/docker/gateway.Dockerfile
+            args: ''
+          - name: migrate
+            file: infra/docker/migrate.Dockerfile
+            args: ''
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          push: false
+          build-args: |
+            NODE_VERSION=24.19.0
+            ${{ matrix.args }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=min,scope=${{ matrix.name }}
+          tags: b2b-saas-starter-kit-${{ matrix.name }}:ci

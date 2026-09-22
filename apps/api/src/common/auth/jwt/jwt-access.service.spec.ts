@@ -17,6 +17,7 @@ function createService() {
     audience: JWT_AUDIENCE,
     nodeEnv: 'development',
     cookieSecure: false,
+    cookiePath: '/v1/auth',
   })
 }
 

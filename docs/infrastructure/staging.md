@@ -2,53 +2,54 @@
 
 Cheap, simple, reliable staging on one VPS with Docker Compose. Not Kubernetes — deliberately.
 
-> Status: the app services + reverse proxy overlay (`docker-compose.staging.yml`) is **deferred**
-> until `apps/*` exist. The base infra (`docker-compose.yml`) is ready today. This documents the
-> agreed staging design.
-
 ## Topology
 
 ```
-        Internet
-           │  80/443
+        Internet (or localhost)
+           │  80
         ┌──▼───────────┐
-        │    nginx     │  reverse proxy + TLS, serves web static
-        └──┬────────┬──┘
-     /api  │        │  /
-        ┌──▼──┐  ┌──▼──┐
-        │ api │  │ web │        (worker has no ingress)
-        └──┬──┘  └─────┘
-           │ internal network (service names)
-     ┌─────▼─────┐   ┌────────┐
-     │ postgres  │   │ redis  │  not exposed to the host/public
-     └───────────┘   └────────┘
+        │   gateway    │  NGINX reverse proxy (TLS is a product concern)
+        └──┬───────────┘
+           ├── /            web
+           ├── /admin       admin
+           ├── /storybook   ui-kit Storybook
+           └── /api         api :3000  (/api/v1, /api/live)
+        worker, postgres, redis — Docker network only
 ```
 
 ## Bring-up
 
 ```bash
 cp infra/env/.env.example infra/env/.env   # set real staging values (chmod 600)
-docker compose --project-directory . --env-file infra/env/.env \
-  -f infra/compose/docker-compose.yml \
-  -f infra/compose/docker-compose.staging.yml up -d
+# JWT_ACCESS_SECRET must be set and must not be the development default.
+pnpm infra:migrate                         # one-shot against host `postgres`
+pnpm infra:staging:up
 ```
 
-The dev override is **not** used in staging (so Postgres/Redis are never published to the host).
+The dev override is **not** used (`pnpm infra:staging:up` is base + staging only), so
+Postgres/Redis are never published to the host.
 
-## Operational settings (staging overlay)
+Laptop check after `up`:
+
+- `http://localhost/` — web
+- `http://localhost/admin/` — admin
+- `http://localhost/storybook/` — Storybook
+- `http://localhost/api/live` — API liveness
+
+Daily development stays `pnpm infra:up` + `pnpm nx serve`. Staging images are not for HMR.
+
+## Operational settings
 
 - `restart: unless-stopped` on every service.
-- Healthchecks on Postgres, Redis, and each app (`GET /health` on the API — readiness: Postgres `SELECT 1` + Redis `PING`; `GET /live` is process-only and does not touch dependencies); app `depends_on` uses
-  `condition: service_healthy`.
-- Modest `deploy.resources.limits` per service to protect the box.
-- JSON-file log rotation (`max-size`, `max-file`) to bound disk usage.
-- Only NGINX publishes ports (80/443). Postgres/Redis stay internal.
+- Healthchecks on Postgres, Redis, and api (`GET /ready`); worker is process-only.
+- App `depends_on` uses `condition: service_healthy` where a probe exists.
+- Modest `deploy.resources.limits` and JSON-file log rotation.
+- Only the gateway publishes a host port (`80:8080`).
 
-## Reverse proxy & TLS (NGINX)
+## Reverse proxy & TLS
 
-An `nginx` service terminates TLS and routes `/` → web static container, `/api` → api container.
-TLS certificates via a Certbot sidecar (or pre-provisioned certs) mounted into NGINX. Keep the cert
-path documented so it can be swapped for a managed certificate / load balancer on GCP.
+The kit gateway is HTTP. TLS (Certbot sidecar, Cloudflare Origin cert, or a load balancer) is
+product work. Keep the cert path documented so it can be swapped for a managed certificate on GCP.
 
 ## Backups
 
@@ -57,9 +58,10 @@ see [`redis.md`](./redis.md)).
 
 ## Updates
 
-1. Pull new **pinned** images / rebuild affected app images.
-2. `docker compose … up -d` (recreates only changed services).
-3. Run `pnpm nx run postgres:migration:run` as a **one-shot** against the internal `DATABASE_URL` (host `postgres`), then `up -d` the app services. Do not `create` / `generate` on the server, and do not set `migrationsRun: true` on API boot.
+1. Rebuild or pull **pinned** images (`IMAGE_TAG`).
+2. `pnpm infra:migrate` (or `docker compose … --profile migrate run --rm migrate`).
+3. `pnpm infra:staging:up` (recreates only changed services).
+4. Do not `create` / `generate` migrations on the server, and do not set `migrationsRun: true` on API boot.
 
 Because tags are pinned, redeploys are reproducible; roll back by pointing to the previous tag.
 

@@ -1,6 +1,7 @@
 # Base infrastructure shared by local dev and staging.
-# Runs ONLY Postgres + Redis. Application containers are added by the (deferred)
-# docker-compose.staging.yml overlay once apps exist. In dev, apps run on the host.
+# Runs ONLY Postgres + Redis. Application containers are added by
+# docker-compose.staging.yml (full stack) or docker-compose.apps.yml (api+worker).
+# In daily dev, apps run on the host (`pnpm nx serve`).
 #
 # Invoke via the root pnpm scripts (they pass --env-file and both -f files):
 #   pnpm infra:up | infra:down | infra:reset | infra:logs

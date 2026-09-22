@@ -8,6 +8,7 @@ export type JwtAccessConfig = {
   readonly audience: string
   readonly nodeEnv: NodeEnv
   readonly cookieSecure: boolean
+  readonly cookiePath: string
 }
 
 export type JwtAccessClaims = {

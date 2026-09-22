@@ -25,6 +25,10 @@ function createCapture(): {destination: {write: (msg: string) => void}; records:
 }
 
 describe('PinoLogger', () => {
+  it('constructs with isPretty without throwing', () => {
+    expect(() => new PinoLogger({level: 'error', isPretty: true})).not.toThrow()
+  })
+
   it('does not emit debug when the default level is info', () => {
     const capture = createCapture()
     const logger = new PinoLogger({destination: capture.destination})

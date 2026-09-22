@@ -6,9 +6,8 @@
 **/node_modules
 .pnpm-store
 
-# Build / test output
+# Build / test output (do not ignore apps/*/config/build — those are Vite sources)
 **/dist
-**/build
 **/out-tsc
 **/coverage
 **/*.tsbuildinfo
@@ -36,8 +35,10 @@ Thumbs.db
 docs
 **/*.md
 
-# Infra config (compose/env live outside the image build)
-infra
+# Infra compose/env live outside the image build. Keep infra/docker so
+# NGINX conf can be COPY'd into frontend and gateway images.
+infra/compose
+infra/env
 
 # Tests (not shipped in runtime images)
 **/*.spec.ts

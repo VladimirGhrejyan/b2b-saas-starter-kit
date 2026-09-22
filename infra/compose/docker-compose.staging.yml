@@ -1,0 +1,168 @@
+# Staging overlay: app images + gateway. Never combine with docker-compose.override.yml
+# (that file publishes Postgres/Redis to the host).
+#
+#   pnpm infra:staging:up
+#   pnpm infra:migrate
+#
+# Secrets come from infra/env/.env. JWT_ACCESS_SECRET is required (staging/production
+# refuse the development default). DATABASE_URL/REDIS_URL must use service names.
+
+x-app-logging: &app-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+
+x-app-limits: &app-limits
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+
+services:
+  api:
+    <<: [*app-logging, *app-limits]
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-api:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+        APP: api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      CONFIG_OVERLAY: staging.yml
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-app}
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required for staging}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/ready').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - appnet
+
+  worker:
+    <<: [*app-logging, *app-limits]
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-worker:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+        APP: worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-app}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'kill -0 1']
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    networks:
+      - appnet
+
+  web:
+    <<: [*app-logging, *app-limits]
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-web:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+        CONFIG_OVERLAY: staging.yml
+        VITE_BASE: /
+    restart: unless-stopped
+    networks:
+      - appnet
+
+  admin:
+    <<: [*app-logging, *app-limits]
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-admin:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/admin.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+        CONFIG_OVERLAY: staging.yml
+        VITE_BASE: /admin/
+    restart: unless-stopped
+    networks:
+      - appnet
+
+  storybook:
+    <<: [*app-logging, *app-limits]
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-storybook:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/storybook.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+        STORYBOOK_BASE: /storybook/
+    restart: unless-stopped
+    networks:
+      - appnet
+
+  gateway:
+    <<: [*app-logging, *app-limits]
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-gateway:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/gateway.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+    restart: unless-stopped
+    ports:
+      - '80:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+      admin:
+        condition: service_started
+      storybook:
+        condition: service_started
+    networks:
+      - appnet
+
+  migrate:
+    image: ${COMPOSE_PROJECT_NAME:-b2b-saas-starter-kit}-migrate:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: infra/docker/migrate.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-24.19.0}
+    profiles:
+      - migrate
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-app}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - appnet

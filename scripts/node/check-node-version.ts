@@ -9,8 +9,8 @@ type SemVer = readonly [number, number, number]
  *  - `package.json` engines.node   — install-time policy (single LTS major range)
  *  - `infra/docker/*.Dockerfile`   — image build arg `ARG NODE_VERSION=…`
  *
- * Dockerfiles are optional (they arrive with the first app); that check is
- * skipped when `infra/docker` is absent. Exits non-zero on any mismatch so it
+ * Dockerfiles are required in `infra/docker/`; that check is skipped only when
+ * the directory is absent. Exits non-zero on any mismatch so it
  * can run from Husky/lint-staged and CI. Extra CLI args (staged file paths
  * passed by lint-staged) are ignored — the check always reads the fixed paths.
  */

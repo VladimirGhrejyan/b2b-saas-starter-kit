@@ -1,6 +1,6 @@
 # Infrastructure (Docker, Local & Staging)
 
-Operational guide for running the stack's infrastructure dependencies and (later) its
+Operational guide for running the stack's infrastructure dependencies and its
 containerized applications. For the architectural intent behind Redis/Postgres usage, see
 [`../architecture/infrastructure.md`](../architecture/infrastructure.md) and
 [ADR-026](../architecture/decisions.md).
@@ -34,8 +34,9 @@ infra/
   compose/
     docker-compose.yml           # base infra: postgres + redis (dev + staging)
     docker-compose.override.yml  # dev: publish db/redis on 127.0.0.1
-    docker-compose.staging.yml   # DEFERRED: app services + NGINX
-  docker/                        # DEFERRED: per-app Dockerfiles + nginx conf
+    docker-compose.staging.yml   # app images + gateway (no host DB ports)
+    docker-compose.apps.yml      # optional local api+worker containers
+  docker/                        # per-app Dockerfiles + nginx conf
   env/
     .env.example                 # template -> copy to infra/env/.env
 .dockerignore                    # keeps the (repo-root) build context minimal

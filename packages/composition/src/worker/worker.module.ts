@@ -8,6 +8,7 @@ import {
 } from '@b2b-saas-starter-kit/application'
 
 import {postgresConfigSchema, PostgresInfrastructureModule} from '@b2b-saas-starter-kit/postgres'
+import {SecurityModule} from '@b2b-saas-starter-kit/security'
 import {NodeInfrastructureModule} from '@b2b-saas-starter-kit/node'
 import {messagingConfigSchema, MessagingInfrastructureModule} from '@b2b-saas-starter-kit/messaging'
 
@@ -37,6 +38,7 @@ export class WorkerModule {
             postgresConfigSchema.parse((await options.useFactory(...(args as TArgs))).postgres),
         }),
         NodeInfrastructureModule,
+        SecurityModule,
         FileStorageModule,
         IdentityModule,
         TenancyModule,

@@ -7,5 +7,6 @@ export function createAdminRouter(history: AppRouterHistory): AppRouter {
   return createAppRouter({
     history,
     routes: adminRoutes,
+    basename: import.meta.env.BASE_URL,
   })
 }

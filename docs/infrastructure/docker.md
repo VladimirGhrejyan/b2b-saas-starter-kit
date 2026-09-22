@@ -1,84 +1,86 @@
 # Docker & Image Build Strategy
 
-How application images are built for staging and (later) GCP. **Dev does not use app images** —
+How application images are built for staging and (later) GCP. **Daily dev does not use app images** —
 apps run on the host (see [`local-development.md`](./local-development.md)).
 
-> Status: per-app Dockerfiles are **deferred** until `apps/*` exist. This documents the agreed
-> design so the first app can add its Dockerfile without re-litigating decisions.
+Images live in [`infra/docker/`](../../infra/docker/). `pnpm check:node-version` enforces
+`ARG NODE_VERSION` against [`.nvmrc`](../../.nvmrc).
 
 ## Principles
 
-- **One Dockerfile per app type** (`api`, `worker`, `web`), each **multi-stage**. No mega-image
-  containing the whole monorepo at runtime.
-- **Build inside Docker** (`pnpm nx build <app>`), so staging/GCP builds are hermetic and need no
-  Nx toolchain on the target.
+- **One image per app**, multi-stage. No mega-image containing the whole monorepo at runtime.
+- **Build inside Docker** (`pnpm nx build <app>`), so staging builds need no Nx toolchain on the VPS.
 - **Build context = repo root.** The workspace lockfile, `pnpm-workspace.yaml`, and every
   `package.json` are required for a deterministic install. [`.dockerignore`](../../.dockerignore)
   keeps the context small.
-- **pnpm via Corepack** (`corepack enable`) — it reads `packageManager` from `package.json`. Never
-  install pnpm globally.
-- **Node version** comes from `ARG NODE_VERSION`, kept in sync with `.nvmrc`/`engines` by
-  `pnpm check:node-version`.
+- **pnpm via Corepack** (`corepack enable`) — it reads `packageManager` from `package.json`.
+- **Node version** comes from `ARG NODE_VERSION`, kept in sync with `.nvmrc` / `engines`.
 
-## Backend (NestJS) — multi-stage shape
+## Backend (api / worker)
 
-```dockerfile
-ARG NODE_VERSION=24.19.0
+[`infra/docker/backend.Dockerfile`](../../infra/docker/backend.Dockerfile) is parameterized
+(`ARG APP=api` or `worker`).
 
-FROM node:${NODE_VERSION}-bookworm-slim AS deps
-RUN corepack enable
-WORKDIR /repo
-# Copy only manifests first for a cacheable install layer.
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY packages ./packages
-COPY apps/api/package.json ./apps/api/package.json
-RUN pnpm install --frozen-lockfile
+- Build: `pnpm nx build ${APP}` (webpack, `externalDependencies: none` in production). Output is
+  `apps/${APP}/dist` (`main.js`, chunks, `config/default.yml`).
+- Runtime: copy that `dist` to `/app` and install only `@node-rs/argon2` (the sole webpack
+  external). `CMD ["node", "main.js"]`.
+- Debian `bookworm-slim` (not Alpine/musl) for native prebuilds.
+- Do not copy the whole monorepo `node_modules`. Do not use `pnpm deploy --prod` — webpack
+  already inlines JS.
 
-FROM deps AS build
-COPY . .
-RUN pnpm nx build api --configuration=production
-# Emit a pruned, self-contained production package (only api's prod deps + dist).
-RUN pnpm --filter api deploy --prod /app/out
-
-FROM node:${NODE_VERSION}-bookworm-slim AS runtime
-ENV NODE_ENV=production
-WORKDIR /app
-COPY --chown=node:node --from=build /app/out ./
-USER node
-EXPOSE 3000
-CMD ["node", "dist/main.js"]
+```bash
+docker build -f infra/docker/backend.Dockerfile --build-arg APP=api -t kit-api .
+docker build -f infra/docker/backend.Dockerfile --build-arg APP=worker -t kit-worker .
 ```
 
-`worker` is identical except the entrypoint. Use Debian `bookworm-slim` (not Alpine/musl) to avoid
-native-module surprises with `pg`, hashing libs, etc.
+API health: `GET /ready` on port 3000. Worker has no HTTP server — Compose uses a process probe.
 
-## Frontend (React/Vite)
+`CONFIG_DIR` / `CONFIG_OVERLAY` select extra YAML (for example `staging.yml` baked next to
+`default.yml`). Secrets stay env (`DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`).
 
-Build stage produces static assets; runtime is a minimal NGINX serving them:
+## Frontend (web / admin / Storybook)
 
-```dockerfile
-ARG NODE_VERSION=24.19.0
-FROM node:${NODE_VERSION}-bookworm-slim AS build
-RUN corepack enable
-WORKDIR /repo
-COPY . .
-RUN pnpm install --frozen-lockfile && pnpm nx build web --configuration=production
+Unprivileged NGINX serves the Vite/Storybook static output:
 
-FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
-COPY --from=build /repo/dist/apps/web /usr/share/nginx/html
+| Image     | Dockerfile             | Copy from                                   | Staging `base` |
+| --------- | ---------------------- | ------------------------------------------- | -------------- |
+| web       | `web.Dockerfile`       | `apps/web/dist`                             | `/`            |
+| admin     | `admin.Dockerfile`     | `apps/admin/dist`                           | `/admin/`      |
+| storybook | `storybook.Dockerfile` | `packages/frontend/ui-kit/storybook-static` | `/storybook/`  |
+
+Staging builds set `CONFIG_OVERLAY=staging.yml` so `apiBaseUrl` is `/api/v1` (same origin through
+the gateway). `VITE_BASE` / `STORYBOOK_BASE` keep asset URLs correct under those prefixes.
+
+## Gateway and migrate
+
+- [`gateway.Dockerfile`](../../infra/docker/gateway.Dockerfile) — reverse proxy only. Routes `/`
+  → web, `/admin/` → admin, `/storybook/` → storybook, `/api/` → api (strips the `/api` prefix so
+  Nest still sees `/v1` and `/live`).
+- [`migrate.Dockerfile`](../../infra/docker/migrate.Dockerfile) — one-shot `pnpm nx run postgres:migration:run`.
+  Compose profile `migrate`; `pnpm infra:migrate`. Never set `migrationsRun: true` on API boot.
+
+## Compose
+
+| File                               | Role                                                |
+| ---------------------------------- | --------------------------------------------------- |
+| `infra/compose/docker-compose.yml` | Postgres + Redis                                    |
+| `docker-compose.override.yml`      | Dev: publish DB/Redis on `127.0.0.1`                |
+| `docker-compose.staging.yml`       | Full app stack + gateway (no override)              |
+| `docker-compose.apps.yml`          | Optional local api+worker images (`--profile apps`) |
+
+```bash
+pnpm infra:up            # postgres + redis; apps on the host
+pnpm infra:apps:up       # also api + worker containers (mini-staging)
+pnpm infra:staging:up    # everything in Docker; gateway on :80
+pnpm infra:migrate       # one-shot migrations against staging compose
 ```
 
-The same NGINX image also acts as the staging reverse proxy (see [`staging.md`](./staging.md)).
-
-## Nx integration
-
-- Images call `pnpm nx build <app> --configuration=production`.
-- CI uses `pnpm nx affected` to rebuild only changed app images; each app → an independent image.
-- `pnpm --filter <app> deploy --prod` prunes to production dependencies for a minimal runtime.
-- Nx remote cache (Nx Cloud) can accelerate builds later; not required now.
+CI ([`.github/workflows/images.yml`](../../.github/workflows/images.yml)) builds every image and
+does **not** push.
 
 ## Security baseline
 
 - Non-root `node` user (or the unprivileged NGINX image).
 - Pinned base image tags; no secrets baked into images (env at runtime only).
-- Only necessary ports exposed; slim runtime layers.
+- Only the gateway publishes a host port in staging.

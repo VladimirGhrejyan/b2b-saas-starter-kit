@@ -1,0 +1,9 @@
+appEnv: staging
+http:
+  plainHttp: true
+  refreshCookiePath: /api/v1/auth
+  cors:
+    origins:
+      - http://localhost
+      - http://127.0.0.1
+    credentials: true
