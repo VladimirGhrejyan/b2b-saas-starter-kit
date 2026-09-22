@@ -1,8 +1,21 @@
 {
   "name": "@b2b-saas-starter-kit/source",
   "version": "0.0.0",
+  "description": "Nx monorepo starter for multi-tenant B2B SaaS — NestJS API and worker, React web/admin, Postgres, Redis, and Docker Compose staging.",
   "license": "MIT",
   "private": true,
+  "author": {
+    "name": "Vladimir Ghrejyan",
+    "email": "vladimir.ghrejyan@gmail.com"
+  },
+  "keywords": [
+    "b2b",
+    "saas",
+    "nx",
+    "nestjs",
+    "react",
+    "multitenant"
+  ],
   "packageManager": "pnpm@12.4.1",
   "engines": {
     "node": ">=24.0.0 <25.0.0"

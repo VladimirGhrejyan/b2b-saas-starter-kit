@@ -101,7 +101,7 @@ Examples:
 ## Related Files
 
 - `../AGENTS.md` - General AI agent guidelines for Nx
-- `../docs/nx_guide.md` - Comprehensive Nx workspace guide
+- `../docs/nx/guide.md` - Comprehensive Nx workspace guide
 
 ---
 

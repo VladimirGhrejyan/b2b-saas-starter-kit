@@ -215,7 +215,7 @@ Status legend: **Accepted** · **Supersedes** (replaces a prior decision).
 
 **Decision:** Traces and metrics use an env-gated OpenTelemetry Node SDK in `packages/infrastructure/telemetry` (`@b2b-saas-starter-kit/telemetry`, extra tag `layer:telemetry`). `TELEMETRY_ENABLED` defaults to `'false'`; when `'true'`, `OTEL_EXPORTER_OTLP_ENDPOINT` is required. The SDK auto-instruments HTTP, `pg`, ioredis, and undici; ignores `/live` `/ready` `/health` `/docs`; exports OTLP HTTP traces and metrics. Pino stays in `logger` and joins traces via `@opentelemetry/api` (`traceId` / `spanId`). Tenant identity is a span attribute after auth, never a metric label. No Terminus, no Prometheus `/metrics`, no Compose collector in this slice.
 **Options:** (A) Combo 1 — logs + health only; (B) Combo 2 — kit-owned Prometheus scrape; (C) Combo 4 — OTel traces+metrics, OTLP ✓; (D) vendor APM in the app.
-**Rationale:** One kit switch, vendor-neutral export, and no SDK cost in tests/local/e2e unless opted in. Putting the SDK in `logger` would violate ADR-027 and `layer:logger`. See [`observability-options.md`](./observability-options.md) and [`infrastructure.md`](./infrastructure.md).
+**Rationale:** One kit switch, vendor-neutral export, and no SDK cost in tests/local/e2e unless opted in. Putting the SDK in `logger` would violate ADR-027 and `layer:logger`. See [`infrastructure.md`](./infrastructure.md).
 
 ## ADR-037 — Tenant API keys as a second principal
 

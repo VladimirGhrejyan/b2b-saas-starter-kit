@@ -1463,7 +1463,7 @@ Nx is designed to make CI fast and efficient.
 
 ### Basic CI Setup
 
-The live workflow is [`.github/workflows/main-ci.yml`](../.github/workflows/main-ci.yml). It runs on pull requests and on pushes to `main`. Nx Cloud is **not** connected.
+The live workflow is [`.github/workflows/main-ci.yml`](../../.github/workflows/main-ci.yml). It runs on pull requests and on pushes to `main`. Nx Cloud is **not** connected.
 
 What it does:
 
@@ -1550,7 +1550,7 @@ Nx Cloud can distribute tasks across multiple machines:
 - Each machine runs a subset of tasks
 - Huge speedup for large monorepos
 
-CI is [`.github/workflows/main-ci.yml`](../.github/workflows/main-ci.yml). DTE is not enabled (it requires Nx Cloud).
+CI is [`.github/workflows/main-ci.yml`](../../.github/workflows/main-ci.yml). DTE is not enabled (it requires Nx Cloud).
 
 ---
 

@@ -1,8 +1,8 @@
 # Frontend Architecture
 
-React + Vite, **audience** applications sharing libraries, Redux Toolkit + RTK Query for state. UI component/CSS technology is **TBD**. Thin Electron/Capacitor **hosts** load the web dist (they are not extra FSD products).
+React + Vite, **audience** applications sharing libraries, Redux Toolkit + RTK Query for state. The kit has **no CSS framework** (native `ui-kit` only). Thin Electron/Capacitor **hosts** load the web dist (they are not extra FSD products).
 
-Related: [`design-system.md`](./design-system.md), [`api-contracts.md`](./api-contracts.md), [`authorization.md`](./authorization.md). Investigation of runtime hosts (Electron / Capacitor): [`frontend-foundation-investigation.md`](./frontend-foundation-investigation.md).
+Related: [`design-system.md`](./design-system.md), [`api-contracts.md`](./api-contracts.md), [`authorization.md`](./authorization.md).
 
 ## Applications
 
@@ -20,7 +20,7 @@ Related: [`design-system.md`](./design-system.md), [`api-contracts.md`](./api-co
 **Decision:** Feature-Sliced Design applied pragmatically.
 
 - **Shared libraries** (Nx projects), reused by both apps:
-  - `frontend/ui-kit` — presentation package (native `Button` for now; UI tech TBD — see [`design-system.md`](./design-system.md)).
+  - `frontend/ui-kit` — presentation package (native `Button` only; no Tailwind/Radix/theme — see [`design-system.md`](./design-system.md)).
   - `frontend/core` — RTK store setup, RTK Query base API, auth/tenant/permission state, the `can()` helper, API client wiring, shared hooks.
   - `contracts`, `shared-kernel-types`, `utils`, `config` — shared with the backend.
 - **Features live as FSD folders inside each _audience_ app** (`apps/web` and `apps/admin` each have `src/{app,pages,features,shared}`), and are **promoted to a `frontend/feature-*` library only when a second audience app (admin) needs them.** Runtime hosts never justify that promotion. Members UI stays in `apps/web` until admin actually needs it.

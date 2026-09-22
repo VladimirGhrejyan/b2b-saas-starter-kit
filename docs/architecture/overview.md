@@ -1,8 +1,8 @@
 # Architecture Overview
 
-This directory is the **source of truth** for the architecture of the B2B multi-tenant SaaS starter kit. It documents _decisions and their rationale_ — not implementation. No applications, packages, entities, or framework wiring exist yet; these documents describe how they will be built.
+This directory is the **source of truth** for the architecture of the B2B multi-tenant SaaS starter kit. It documents decisions and how they show up in this repo. The code is the implementation source of truth; these pages must not describe a future stack we did not ship (for example Tailwind).
 
-> Status: **Design finalized, implementation pending.** Cursor rules will be rewritten to match these documents in a later phase.
+> Status: **Foundation implemented.** Identity, tenancy, authorization, jobs, contracts, and the `web` / `admin` shells exist. `audit` and `notifications` are deferred.
 
 ## Reading order
 
@@ -16,27 +16,23 @@ This directory is the **source of truth** for the architecture of the B2B multi-
 8. [`authorization.md`](./authorization.md) — authentication, RBAC, policies.
 9. [`api-contracts.md`](./api-contracts.md) — Zod contracts shared between backend and frontend.
 10. [`frontend.md`](./frontend.md) — React/Vite apps, state, permission-aware UI.
-11. [`design-system.md`](./design-system.md) — `ui-kit` presentation package (UI tech TBD).
+11. [`design-system.md`](./design-system.md) — `ui-kit` (native HTML only; no CSS framework).
 12. [`shared-packages.md`](./shared-packages.md) — what may and may not be shared.
 13. [`boundaries.md`](./boundaries.md) — Nx tags, dependency constraints, enforcement.
 14. [`decisions.md`](./decisions.md) — the decision log (ADRs) with rationale.
-
-Investigation (not source of truth): [`frontend-foundation-investigation.md`](./frontend-foundation-investigation.md) — Web / Electron / Capacitor hosts vs the existing `web` / `admin` audience split. [`observability-options.md`](./observability-options.md) — comparison that led to Combo 4 / [ADR-036](./decisions.md).
 
 ## Architectural goal
 
 A reusable foundation for future B2B SaaS products. It should provide, as generic and replaceable building blocks:
 
-- Authentication & identity (users, credentials, sessions)
-- Tenancy (tenants/organizations, memberships)
-- Authorization (roles, permissions, policies)
-- Audit logging
-- Notifications
-- Background jobs, caching, messaging
-- Typed API contracts
-- A frontend application shell + a shared presentation package (`ui-kit`)
-
-These are **not implemented** here. This documentation defines _how they are to be architected_ so that each can be built, replaced, or extended without eroding the boundaries.
+- Authentication & identity (users, credentials, sessions) — **shipped**
+- Tenancy (tenants/organizations, memberships) — **shipped**
+- Authorization (roles, permissions, policies) — **shipped**
+- Audit logging — **deferred**
+- Notifications — **deferred**
+- Background jobs, caching, messaging — **shipped**
+- Typed API contracts — **shipped**
+- A frontend application shell + a shared presentation package (`ui-kit`) — **shipped** (no CSS framework)
 
 ## Chosen technologies (explicitly selected, not merely observed)
 
@@ -53,7 +49,7 @@ These are **not implemented** here. This documentation defines _how they are to 
 | HTTP kit                | **`packages/nest-http`**      | ApiBuilder, pipe/filter/interceptor, Swagger, CORS, URI `/v1`            |
 | Frontend                | **React + Vite**              | Two apps: `web`, `admin`                                                 |
 | Frontend state          | **Redux Toolkit + RTK Query** | Server state via RTK Query                                               |
-| Styling / UI            | **TBD**                       | `ui-kit` package exists; native `Button` only (no Tailwind/Radix/theme)  |
+| Styling / UI            | **None in the kit**           | Native `ui-kit` `Button` only. No Tailwind, Radix, tokens, or theme      |
 | Testing                 | **Vitest**                    | All projects                                                             |
 | Monorepo                | **Nx + pnpm**                 | Boundaries enforced via tags                                             |
 

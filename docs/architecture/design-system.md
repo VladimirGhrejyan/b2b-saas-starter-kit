@@ -1,6 +1,6 @@
 # Frontend UI kit
 
-Shared presentation library for `web` and `admin`. UI **technology is TBD** — this document defines the **package boundary**, not a component/CSS stack.
+Shared presentation library for `web` and `admin`. The kit ships **no CSS framework** — native HTML only. This document is the package boundary, not a future Tailwind/Radix stack.
 
 Related: [`frontend.md`](./frontend.md). ADR: [ADR-030](./decisions.md).
 
@@ -10,7 +10,7 @@ Related: [`frontend.md`](./frontend.md). ADR: [ADR-030](./decisions.md).
 
 It owns reusable presentational components. It is **presentation-only**: no data fetching, no business logic, no RTK, no `contracts` dependency for behavior. It may use `utils`.
 
-**Not in this package (until a later ADR):** Tailwind, Radix, shadcn, CSS-variable tokens, `ThemeProvider`, light/dark theming, per-tenant branding.
+**Not in this package:** Tailwind, Radix, shadcn, CSS-variable tokens, `ThemeProvider`, light/dark theming, per-tenant branding. A product may add those later; they are not part of the kit.
 
 ## Foundation surface
 
@@ -30,10 +30,10 @@ Stories live next to components (`*.stories.tsx`). Serve with `pnpm nx run ui-ki
 
 ## Deferred (product goals, not current implementation)
 
-Per-tenant white-labeling (brand color, light/dark, runtime tokens) remains a **later** design-system concern. It is **not** implemented until UI technology is chosen. Do not add a `ThemeProvider` or token layer as a placeholder.
+Per-tenant white-labeling (brand color, light/dark, runtime tokens) is a **product** concern, not kit work. Do not add a `ThemeProvider` or token layer as a placeholder.
 
 ## What does NOT go in `ui-kit`
 
 - API calls, RTK Query, business rules (those live in `frontend/core` / features).
 - App-specific layouts that aren't reusable (keep in the app until shared).
-- Tailwind, Radix, shadcn, or any other UI stack until an ADR selects them.
+- Tailwind, Radix, shadcn, or any other UI stack. The kit stays at native HTML.
