@@ -70,7 +70,10 @@ describe('OpenApi', () => {
         '/docs',
         app,
         expect.anything(),
-        expect.objectContaining({swaggerOptions: {persistAuthorization: true}}),
+        expect.objectContaining({
+          customSwaggerUiPath: expect.stringMatching(/swagger-ui-dist$/),
+          swaggerOptions: {persistAuthorization: true},
+        }),
       )
       expect(JSON.parse(readFileSync(join(outputDirectory, 'openapi.json'), 'utf8'))).toMatchObject({
         info: {title: 'Test API'},

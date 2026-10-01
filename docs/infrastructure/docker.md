@@ -37,7 +37,7 @@ docker build -f infra/docker/backend.Dockerfile --build-arg APP=worker -t kit-wo
 API health: `GET /ready` on port 3000. Worker has no HTTP server — Compose uses a process probe.
 
 `CONFIG_DIR` / `CONFIG_OVERLAY` select extra YAML (for example `staging.yml` baked next to
-`default.yml`). Secrets stay env (`DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`).
+`default.yml`). Secrets stay env (`DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, `SWAGGER_BASIC_AUTH_PASSWORD`).
 
 ## Frontend (web / admin / Storybook)
 

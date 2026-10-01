@@ -2,6 +2,7 @@ import {timingSafeEqual} from 'node:crypto'
 import {existsSync, mkdirSync, writeFileSync} from 'node:fs'
 import {dirname, isAbsolute, join} from 'node:path'
 import {cwd} from 'node:process'
+import {fileURLToPath} from 'node:url'
 
 import type {INestApplication} from '@nestjs/common'
 import type {OpenAPIObject} from '@nestjs/swagger'
@@ -25,12 +26,19 @@ export class OpenApi {
     const document = OpenApi.#createDocument(app, config)
 
     SwaggerModule.setup(path, app, document, {
+      customSwaggerUiPath: OpenApi.#swaggerUiPath(),
       swaggerOptions: {
         persistAuthorization: swagger.persistAuthorization ?? true,
       },
     })
 
     OpenApi.#writeSchema(document, config)
+  }
+
+  static #swaggerUiPath(): string {
+    const directory = typeof __dirname === 'string' ? __dirname : dirname(fileURLToPath(import.meta.url))
+
+    return join(directory, 'swagger-ui-dist')
   }
 
   static #createDocument(app: INestApplication, config: ApiHttpConfig): OpenAPIObject {

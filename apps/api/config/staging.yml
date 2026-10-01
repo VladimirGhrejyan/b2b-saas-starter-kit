@@ -7,3 +7,7 @@ http:
       - http://localhost
       - http://127.0.0.1
     credentials: true
+  swagger:
+    enabled: true
+    basicAuth:
+      username: b2b-saas

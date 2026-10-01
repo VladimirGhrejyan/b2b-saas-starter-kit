@@ -22,6 +22,7 @@ Cheap, simple, reliable staging on one VPS with Docker Compose. Not Kubernetes â
 ```bash
 cp infra/env/.env.example infra/env/.env   # set real staging values (chmod 600)
 # JWT_ACCESS_SECRET must be set and must not be the development default.
+# SWAGGER_BASIC_AUTH_PASSWORD must be set (Swagger is on; the username is in staging YAML).
 pnpm infra:migrate                         # one-shot against host `postgres`
 pnpm infra:staging:up
 ```
